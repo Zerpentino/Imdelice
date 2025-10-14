@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Class="Imdeliceapp.Pages.ProductModifiersPage"
+    Title="Personaliza tu producto"
+    BackgroundColor="{AppThemeBinding Light=White, Dark=Black}"
+    Shell.NavBarIsVisible="True"
+    Shell.BackgroundColor="{StaticResource BrandPrimary}"
+    Shell.ForegroundColor="{StaticResource BrandOnPrimary}"
+    Shell.TitleColor="{StaticResource BrandOnPrimary}">
+
+    <Grid RowDefinitions="*,Auto"
+          Padding="12">
+        <CollectionView x:Name="GroupsCV"
+                        ItemsSource="{Binding Groups}"
+                        Margin="0,0,0,8">
+            <CollectionView.EmptyView>
+                <VerticalStackLayout Padding="24"
+                        Spacing="6"
+                        HorizontalOptions="Center"
+                        VerticalOptions="Center">
+                    <Label Text="Este producto no tiene opciones vinculadas."
+                           TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"/>
+                    <Label Text="(Si esperabas ver algo, revisa que el producto tenga grupos activos y opciones activas.)"
+                           FontSize="12"
+                           TextColor="{AppThemeBinding Light=#999, Dark=#777}"/>
+                </VerticalStackLayout>
+            </CollectionView.EmptyView>
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Frame Margin="0,8"
+                           Padding="12"
+                           HasShadow="False"
+                           BackgroundColor="{AppThemeBinding Light=#FFF, Dark=#1E1E1E}">
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="{Binding GroupName}"
+                                   FontAttributes="Bold"
+                                   TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+
+                            <!-- Radios si min=1 y max=1 -->
+                            <!-- Radios si min=1 y max=1 -->
+                            <VerticalStackLayout IsVisible="{Binding ShowRadios}">
+                                <CollectionView ItemsSource="{Binding Options}"
+                                                SelectionMode="None">
+                                    <CollectionView.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid ColumnDefinitions="*,Auto"
+                                                  Padding="6">
+                                                <Label Text="{Binding Name}"
+                                                       Grid.Column="0"
+                                                       TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+
+                                                <!-- Usa ExtraLabel/HasExtra (centavos → $) -->
+                                                <Label Text="{Binding ExtraLabel}"
+                                                       Grid.Column="0"
+                                                       Margin="0,0,60,0"
+                                                       HorizontalOptions="End"
+                                                       TextColor="{AppThemeBinding Light=#666, Dark=#CCC}">
+                                                    <Label.Triggers>
+                                                        <DataTrigger TargetType="Label"
+                                                                     Binding="{Binding HasExtra}"
+                                                                     Value="False">
+                                                            <Setter Property="IsVisible"
+                                                                    Value="False"/>
+                                                        </DataTrigger>
+                                                    </Label.Triggers>
+                                                </Label>
+
+                                                <RadioButton Grid.Column="1"
+                                                             IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                             CheckedChanged="Radio_CheckedChanged"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </CollectionView.ItemTemplate>
+                                </CollectionView>
+                            </VerticalStackLayout>
+
+
+                            <!-- Checkboxes si NO es (1,1) -->
+                            <VerticalStackLayout IsVisible="{Binding ShowChecks}">
+                                <CollectionView ItemsSource="{Binding Options}"
+                                                SelectionMode="None">
+                                    <CollectionView.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid ColumnDefinitions="*,Auto"
+                                                  Padding="6">
+                                                <Label Text="{Binding Name}"
+                                                       Grid.Column="0"
+                                                       TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+
+                                                <Label Text="{Binding ExtraLabel}"
+                                                       Grid.Column="0"
+                                                       Margin="0,0,60,0"
+                                                       HorizontalOptions="End"
+                                                       TextColor="{AppThemeBinding Light=#666, Dark=#CCC}">
+                                                    <Label.Triggers>
+                                                        <DataTrigger TargetType="Label"
+                                                                     Binding="{Binding HasExtra}"
+                                                                     Value="False">
+                                                            <Setter Property="IsVisible"
+                                                                    Value="False"/>
+                                                        </DataTrigger>
+                                                    </Label.Triggers>
+                                                </Label>
+
+                                                <CheckBox Grid.Column="1"
+                                                          IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                          CheckedChanged="Check_CheckedChanged"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </CollectionView.ItemTemplate>
+                                </CollectionView>
+                            </VerticalStackLayout>
+
+
+                            <!-- Regla min/max -->
+                            <!-- Regla min/max -->
+                            <Label FontSize="11"
+                                   TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"
+                                   Text="{Binding RuleText}"/>
+
+                        </VerticalStackLayout>
+                    </Frame>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <!-- Footer: total + confirmar -->
+        <Grid Grid.Row="1"
+              ColumnDefinitions="*,Auto"
+              Padding="8,12">
+            <Label Text="{Binding TotalLabel}"
+                   FontAttributes="Bold"
+                   TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+            <Button Grid.Column="1"
+                    Text="Agregar"
+                    BackgroundColor="{AppThemeBinding Light=#894164, Dark=#894164}"
+                    TextColor="White"
+                    Clicked="Confirm_Clicked"/>
+        </Grid>
+    </Grid>
+</ContentPage>

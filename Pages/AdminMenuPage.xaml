@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+  x:Class="Imdeliceapp.Pages.AdminMenuPage"
+  xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+  Title="Menús"
+  BackgroundColor="{AppThemeBinding Light=White, Dark=Black}"
+  Shell.NavBarIsVisible="True"
+  Shell.BackgroundColor="{StaticResource BrandPrimary}"
+  Shell.ForegroundColor="{StaticResource BrandOnPrimary}"
+  Shell.TitleColor="{StaticResource BrandOnPrimary}">
+
+  <!-- estilos -->
+  <ContentPage.Resources>
+    <!-- Tarjeta -->
+    <Style x:Key="CardBorder"
+        TargetType="Border">
+      <Setter Property="Stroke"
+          Value="{AppThemeBinding Light=#E6E6E6, Dark=#333}"/>
+      <Setter Property="StrokeThickness"
+          Value="1"/>
+      <Setter Property="Background"
+          Value="{AppThemeBinding Light=#FFFFFF, Dark=#1E1E1E}"/>
+      <Setter Property="Padding"
+          Value="12"/>
+      <Setter Property="Margin"
+          Value="0,8"/>
+      <Setter Property="StrokeShape">
+        <Setter.Value>
+          <RoundRectangle CornerRadius="12"/>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <!-- Botón pequeño tipo “chip” -->
+    <Style x:Key="ChipButton"
+        TargetType="Button">
+      <Setter Property="Padding"
+          Value="14,8"/>
+      <Setter Property="CornerRadius"
+          Value="10"/>
+      <Setter Property="FontSize"
+          Value="13"/>
+    </Style>
+
+    <!-- Icono -->
+    <Style x:Key="IconBtn"
+        TargetType="ImageButton">
+      <Setter Property="BackgroundColor"
+          Value="Transparent"/>
+      <Setter Property="WidthRequest"
+          Value="32"/>
+      <Setter Property="HeightRequest"
+          Value="32"/>
+      <Setter Property="Padding"
+          Value="4"/>
+      <Setter Property="Aspect"
+          Value="AspectFit"/>
+      <Setter Property="HorizontalOptions"
+          Value="Center"/>
+      <Setter Property="VerticalOptions"
+          Value="Center"/>
+    </Style>
+  </ContentPage.Resources>
+
+  <Grid RowDefinitions="Auto,*,Auto"
+      RowSpacing="0">
+
+    <!-- Acciones (crear) -->
+    <HorizontalStackLayout Margin="16,12,16,8"
+        Spacing="8">
+      <Entry x:Name="TxtNewMenu"
+             Placeholder="Nombre del nuevo menú"
+             HorizontalOptions="FillAndExpand"/>
+      <Button Text="Crear"
+              Clicked="CrearMenu_Clicked"
+              Style="{StaticResource ChipButton}"/>
+    </HorizontalStackLayout>
+
+    <!-- Lista -->
+    <RefreshView Grid.Row="1"
+        x:Name="Refresh"
+        Refreshing="Refresh_Refreshing">
+      <CollectionView x:Name="MenusCV"
+                      Margin="16,0,16,0"
+                      SelectionMode="Single"
+                      SelectionChanged="MenusCV_SelectionChanged"
+                      ItemSizingStrategy="MeasureAllItems">
+
+        <CollectionView.ItemTemplate>
+          <DataTemplate>
+            <Border Style="{StaticResource CardBorder}">
+              <Grid ColumnDefinitions="*,Auto,Auto"
+                    ColumnSpacing="12">
+                <!-- info -->
+                <VerticalStackLayout Spacing="2">
+                  <Label Text="{Binding name}"
+                         FontAttributes="Bold"
+                         LineBreakMode="TailTruncation"
+                         MaxLines="1"
+                         TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+                  <Label Text="{Binding isActive, StringFormat='Activo: {0}'}"
+                         FontSize="12"
+                         Opacity="0.7"
+                         TextColor="{AppThemeBinding Light=#555, Dark=#CCC}"/>
+                </VerticalStackLayout>
+
+                <!-- switch -->
+                <Switch Grid.Column="1"
+                        VerticalOptions="Center"
+                        IsToggled="{Binding isActive}"
+                        Toggled="ToggleActivo_Toggled"/>
+
+                <!-- acciones -->
+                <HorizontalStackLayout Grid.Column="2"
+                                       Spacing="8"
+                                       VerticalOptions="Center">
+                  <Button Text="Abrir"
+                          Style="{StaticResource ChipButton}"
+                          Clicked="Abrir_Clicked"/>
+                  <ImageButton Source="delete.png"
+                               Style="{StaticResource IconBtn}"
+                               Clicked="Eliminar_Clicked"/>
+                </HorizontalStackLayout>
+              </Grid>
+            </Border>
+          </DataTemplate>
+        </CollectionView.ItemTemplate>
+
+        <CollectionView.EmptyView>
+          <VerticalStackLayout Padding="32"
+              Spacing="8"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center">
+            <Label x:Name="EmptyLbl"
+                   Text="No hay menús"
+                   FontAttributes="Bold"
+                   TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+            <Button Text="Reintentar"
+                Clicked="Retry_Clicked"/>
+          </VerticalStackLayout>
+        </CollectionView.EmptyView>
+      </CollectionView>
+    </RefreshView>
+
+    <!-- Renombrar (fijo abajo con padding extra para TabBar) -->
+    <Border Grid.Row="2"
+            Background="{AppThemeBinding Light=#FAFAFA, Dark=#171717}"
+            Stroke="{AppThemeBinding Light=#E6E6E6, Dark=#333}"
+            StrokeThickness="1"
+            StrokeShape="{RoundRectangle CornerRadius=0}"
+            Padding="{OnPlatform Android='16,8,16,24',
+                  iOS='16,8,16,14',
+                  MacCatalyst='16,8,16,12',
+                  WinUI='16,8,16,12',
+                  Default='16,8,16,16'}">
+      <Grid ColumnDefinitions="*,Auto"
+          ColumnSpacing="8">
+        <Entry x:Name="TxtRename"
+               Placeholder="Renombrar (selecciona con 'Abrir' y edita aquí)"
+               HorizontalOptions="FillAndExpand"/>
+        <Button Grid.Column="1"
+                Text="Renombrar"
+                Style="{StaticResource ChipButton}"
+                Clicked="Renombrar_Clicked"/>
+      </Grid>
+    </Border>
+
+  </Grid>
+</ContentPage>

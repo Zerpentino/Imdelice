@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Class="Imdeliceapp.Pages.RoleEditorPage"
+    Title="Rol"
+    BackgroundColor="{AppThemeBinding Light=White, Dark=Black}"
+    Shell.NavBarIsVisible="True"
+    Shell.BackgroundColor="{StaticResource BrandPrimary}"
+    Shell.ForegroundColor="{StaticResource BrandOnPrimary}"
+    Shell.TitleColor="{StaticResource BrandOnPrimary}">
+
+  <ContentPage.Resources>
+    <Style TargetType="Entry" x:Key="CompactEntry">
+      <Setter Property="HeightRequest" Value="44"/>
+      <Setter Property="FontSize" Value="14"/>
+      <Setter Property="ClearButtonVisibility" Value="WhileEditing"/>
+    </Style>
+  </ContentPage.Resources>
+
+  <ScrollView>
+    <VerticalStackLayout Padding="20" Spacing="12">
+
+      <Label x:Name="TitleLabel"
+             Text="Crear rol"
+             FontSize="20"
+             FontAttributes="Bold"
+             TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+
+      <!-- Hint edición -->
+      <Label x:Name="HintEditGeneral"
+             Text="En edición: los campos vacíos no se actualizan. Cambia sólo lo que necesites."
+             FontSize="12"
+             Opacity="0.7"
+             IsVisible="False"
+             Margin="0,0,0,4"
+             TextColor="{AppThemeBinding Light=#555, Dark=#CCC}" />
+
+      <!-- Nombre del rol -->
+      <VerticalStackLayout Spacing="2">
+        <Border x:Name="BdrName" StrokeThickness="1"
+                Stroke="{AppThemeBinding Light=#DDDDDD, Dark=#444444}"
+                StrokeShape="{RoundRectangle CornerRadius=6}" Padding="8,0">
+          <Entry x:Name="TxtName"
+                 Style="{StaticResource CompactEntry}"
+                 Placeholder="Nombre del rol (p. ej., Mesero)"
+                 Keyboard="Chat"
+                 TextChanged="TxtName_TextChanged"/>
+        </Border>
+        <Label x:Name="ErrName"
+               Text="Nombre requerido (sólo letras y espacios, mínimo 2)."
+               TextColor="Red" FontSize="12" IsVisible="False"/>
+      </VerticalStackLayout>
+
+      <!-- Descripción (opcional) -->
+      <VerticalStackLayout Spacing="2">
+        <Border x:Name="BdrDesc" StrokeThickness="1"
+                Stroke="{AppThemeBinding Light=#DDDDDD, Dark=#444444}"
+                StrokeShape="{RoundRectangle CornerRadius=6}" Padding="8,0">
+          <Entry x:Name="TxtDesc"
+                 Style="{StaticResource CompactEntry}"
+                 Placeholder="Descripción (opcional)"/>
+        </Border>
+        <Label x:Name="ErrDesc"
+               Text="Descripción demasiado larga."
+               TextColor="Red" FontSize="12" IsVisible="False"/>
+      </VerticalStackLayout>
+
+      <!-- Botones -->
+      <HorizontalStackLayout Spacing="12" Margin="0,12,0,0">
+        <Button x:Name="BtnGuardar"
+                Text="Guardar"
+                Clicked="Guardar_Clicked"
+                Style="{StaticResource PrimaryButtonStyle}"/>
+        <Button x:Name="BtnCancelar"
+                Text="Cancelar"
+                Clicked="Cancelar_Clicked"/>
+      </HorizontalStackLayout>
+    </VerticalStackLayout>
+  </ScrollView>
+</ContentPage>

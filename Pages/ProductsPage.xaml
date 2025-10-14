@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+  xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+  x:Class="Imdeliceapp.Pages.ProductsPage"
+  Title="Productos"
+  BackgroundColor="{AppThemeBinding Light=White, Dark=Black}"
+  Shell.NavBarIsVisible="True"
+  Shell.BackgroundColor="{StaticResource BrandPrimary}"
+  Shell.ForegroundColor="{StaticResource BrandOnPrimary}"
+  Shell.TitleColor="{StaticResource BrandOnPrimary}">
+
+  <Grid RowDefinitions="Auto,Auto,*">
+    <Picker x:Name="PkCategory"
+            Title="Categoría"
+            Margin="12"
+            SelectedIndexChanged="PkCategory_SelectedIndexChanged"
+            ItemDisplayBinding="{Binding name}"/>
+
+    <SearchBar x:Name="SearchBox"
+               Grid.Row="1"
+               Placeholder="Buscar por nombre..."
+               Margin="12,0,12,12"
+               TextChanged="SearchBox_TextChanged"/>
+
+    <RefreshView x:Name="ProdRefresh"
+                 Grid.Row="2"
+                 IsRefreshing="{Binding IsRefreshing}"
+                 Refreshing="ProdRefresh_Refreshing">
+      <CollectionView x:Name="ProductsCV"
+                      ItemsSource="{Binding Products}"
+                      SelectionMode="None"
+                      Margin="12">
+        <CollectionView.EmptyView>
+          <VerticalStackLayout Padding="32"
+                               Spacing="8"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center">
+            <Label Text="{Binding EmptyMessage}"
+                   FontAttributes="Bold"
+                   Opacity="0.9"
+                   TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+            <Button Text="Reintentar"
+                    Clicked="Retry_Clicked"
+                    Margin="0,8,0,0"/>
+          </VerticalStackLayout>
+        </CollectionView.EmptyView>
+
+        <CollectionView.ItemTemplate>
+          <DataTemplate>
+            <SwipeView>
+              <SwipeView.LeftItems>
+                <SwipeItems Mode="Reveal"
+                            SwipeBehaviorOnInvoked="Close">
+                  <SwipeItem Text="Eliminar"
+                             BackgroundColor="#E53935"
+                             Invoked="DeleteSwipe_Invoked"/>
+                </SwipeItems>
+              </SwipeView.LeftItems>
+              <SwipeView.RightItems>
+                <SwipeItems Mode="Reveal"
+                            SwipeBehaviorOnInvoked="Close">
+                  <SwipeItem Text="Editar"
+                             BackgroundColor="#4CAF50"
+                             Invoked="EditSwipe_Invoked"/>
+                </SwipeItems>
+              </SwipeView.RightItems>
+
+              <Grid Padding="12"
+                    ColumnSpacing="12"
+                    ColumnDefinitions="Auto,*,64"
+                    RowDefinitions="Auto,Auto"
+                    BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E1E1E}"
+                    Margin="0,6">
+                      <Grid.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="ProductCard_Tapped" />
+                      </Grid.GestureRecognizers>
+
+                <!-- MINIATURA -->
+                <Border Grid.RowSpan="2"
+                        WidthRequest="56"
+                        HeightRequest="56"
+                        StrokeThickness="0"
+                        BackgroundColor="#EEE"
+                        StrokeShape="{RoundRectangle CornerRadius=8}">
+                  <Image Source="{Binding thumb, FallbackValue=no_disponible.png}"
+                         Aspect="AspectFill"/>
+                </Border>
+
+                <!-- NOMBRE -->
+                <Label Grid.Column="1"
+                       Text="{Binding name}"
+                       FontAttributes="Bold"
+                       TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+
+                <!-- CHIPS / PRECIO -->
+                <HorizontalStackLayout Grid.Column="1"
+                                       Grid.Row="1"
+                                       Spacing="8">
+                  <Border StrokeThickness="0"
+                          BackgroundColor="#EEE"
+                          Padding="6,2"
+                          StrokeShape="{RoundRectangle CornerRadius=8}">
+                    <Label Text="{Binding type}"
+                           FontSize="11"/>
+                  </Border>
+                  <!-- Chip INACTIVO -->
+    <Border StrokeThickness="0" BackgroundColor="#FFE0B2" Padding="6,2"
+            StrokeShape="{RoundRectangle CornerRadius=8}">
+      <Border.Triggers>
+        <DataTrigger TargetType="Border" Binding="{Binding isActive}" Value="True">
+          <Setter Property="IsVisible" Value="False"/>
+        </DataTrigger>
+      </Border.Triggers>
+      <Label Text="Inactivo" FontSize="11" TextColor="#E65100"/>
+    </Border>
+
+    <!-- Chip NO DISPONIBLE (solo si ACTIVO y no disponible) -->
+    <Border StrokeThickness="0" BackgroundColor="#FAD7D7" Padding="6,2"
+            StrokeShape="{RoundRectangle CornerRadius=8}">
+      <Border.Triggers>
+        <DataTrigger TargetType="Border" Binding="{Binding isAvailable}" Value="True">
+          <Setter Property="IsVisible" Value="False"/>
+        </DataTrigger>
+        <DataTrigger TargetType="Border" Binding="{Binding isActive}" Value="False">
+          <Setter Property="IsVisible" Value="False"/>
+        </DataTrigger>
+      </Border.Triggers>
+      <Label Text="No disponible" FontSize="11" TextColor="#B71C1C"/>
+    </Border>
+
+                  <Label Text="{Binding priceLabel}"
+                         FontSize="12"
+                         TextColor="{AppThemeBinding Light=#666, Dark=#CCC}"/>
+                </HorizontalStackLayout>
+                <!-- SWITCH estado (usa isActive porque SÍ persiste) -->
+<Switch Grid.Column="2" Grid.RowSpan="2"
+        HorizontalOptions="End" VerticalOptions="Center"
+        IsToggled="{Binding isActive, Mode=TwoWay}"
+        Toggled="ToggleActivo_Toggled"/>
+
+
+              </Grid>
+            </SwipeView>
+          </DataTemplate>
+        </CollectionView.ItemTemplate>
+        <CollectionView.Footer>
+          <!-- espacio para que la última fila no quede debajo del FAB -->
+          <Grid HeightRequest="104"/>
+          <!-- si quieres por plataforma:
+  <Grid HeightRequest="{OnPlatform iOS=120, Android=104}" />
+  -->
+        </CollectionView.Footer>
+      </CollectionView>
+    </RefreshView>
+
+    <Button Grid.RowSpan="3"
+            Text="+"
+            Clicked="AddProduct_Clicked"
+            CornerRadius="28"
+            WidthRequest="56"
+            HeightRequest="56"
+            BackgroundColor="{AppThemeBinding Light=#894164, Dark=#894164}"
+            TextColor="White"
+            HorizontalOptions="End"
+            VerticalOptions="End"
+            Margin="16,16,16,28"/>
+  </Grid>
+</ContentPage>

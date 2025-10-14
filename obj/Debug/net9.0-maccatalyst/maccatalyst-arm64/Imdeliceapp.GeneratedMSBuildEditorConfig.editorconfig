@@ -1,0 +1,181 @@
+is_global = true
+build_property.RefitInternalNamespace = Imdeliceapp
+build_property.EnableAotAnalyzer = 
+build_property.EnableSingleFileAnalyzer = 
+build_property.EnableTrimAnalyzer = false
+build_property.IncludeAllContentForSelfExtract = 
+build_property.MvvmToolkitEnableINotifyPropertyChangingSupport = true
+build_property._MvvmToolkitIsUsingWindowsRuntimePack = false
+build_property.CsWinRTComponent = 
+build_property.CsWinRTAotOptimizerEnabled = 
+build_property.CsWinRTAotWarningLevel = 
+build_property.TargetFramework = net9.0-maccatalyst
+build_property.TargetPlatformMinVersion = 
+build_property.UsingMicrosoftNETSdkWeb = 
+build_property.ProjectTypeGuids = 
+build_property.InvariantGlobalization = false
+build_property.PlatformNeutralAssembly = 
+build_property.EnforceExtendedAnalyzerRules = 
+build_property._SupportedPlatformList = Linux,macOS,Windows
+build_property.RootNamespace = Imdeliceapp
+build_property.ProjectDir = /Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/
+build_property.EnableComHosting = 
+build_property.EnableGeneratedComInterfaceComImportInterop = 
+build_property.EffectiveAnalysisLevelStyle = 9.0
+build_property.EnableCodeStyleSeverity = 
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/App.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.App.xaml
+build_metadata.AdditionalFiles.TargetPath = App.xaml
+build_metadata.AdditionalFiles.RelativePath = App.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/AppShell.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.AppShell.xaml
+build_metadata.AdditionalFiles.TargetPath = AppShell.xaml
+build_metadata.AdditionalFiles.RelativePath = AppShell.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/MainPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.MainPage.xaml
+build_metadata.AdditionalFiles.TargetPath = MainPage.xaml
+build_metadata.AdditionalFiles.RelativePath = MainPage.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/AdminMenuPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.AdminMenuPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages/AdminMenuPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages/AdminMenuPage.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/AttachGroupToProductPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.AttachGroupToProductPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages/AttachGroupToProductPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages/AttachGroupToProductPage.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/CategoriesPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.CategoriesPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages/CategoriesPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages/CategoriesPage.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/CategoryEditorPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.CategoryEditorPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages/CategoryEditorPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages/CategoryEditorPage.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/GroupEditorPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.GroupEditorPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages/GroupEditorPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages/GroupEditorPage.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/GroupLinkedProductsPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.GroupLinkedProductsPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages/GroupLinkedProductsPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages/GroupLinkedProductsPage.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/LoginPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.LoginPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages/LoginPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages/LoginPage.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/MenuSectionsPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.MenuSectionsPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages/MenuSectionsPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages/MenuSectionsPage.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/ModifierGroupsPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.ModifierGroupsPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages/ModifierGroupsPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages/ModifierGroupsPage.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/OptionsPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.OptionsPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages/OptionsPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages/OptionsPage.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/OrdersPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.OrdersPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages/OrdersPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages/OrdersPage.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/ProductEditorPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.ProductEditorPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages/ProductEditorPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages/ProductEditorPage.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/ProductModifiersPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.ProductModifiersPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages/ProductModifiersPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages/ProductModifiersPage.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/ProductPickerPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.ProductPickerPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages/ProductPickerPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages/ProductPickerPage.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/ProductsPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.ProductsPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages/ProductsPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages/ProductsPage.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/RoleEditorPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.RoleEditorPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages/RoleEditorPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages/RoleEditorPage.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/RolesPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.RolesPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages/RolesPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages/RolesPage.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/SectionItemsPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.SectionItemsPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages/SectionItemsPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages/SectionItemsPage.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/TakeOrderPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.TakeOrderPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages/TakeOrderPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages/TakeOrderPage.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/UserEditorPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.UserEditorPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages/UserEditorPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages/UserEditorPage.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/UsersPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.UsersPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages/UsersPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages/UsersPage.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Resources/Styles/Colors.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Resources.Styles.Colors.xaml
+build_metadata.AdditionalFiles.TargetPath = Resources/Styles/Colors.xaml
+build_metadata.AdditionalFiles.RelativePath = Resources/Styles/Colors.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Resources/Styles/Styles.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Resources.Styles.Styles.xaml
+build_metadata.AdditionalFiles.TargetPath = Resources/Styles/Styles.xaml
+build_metadata.AdditionalFiles.RelativePath = Resources/Styles/Styles.xaml

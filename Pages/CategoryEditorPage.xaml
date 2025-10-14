@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Class="Imdeliceapp.Pages.CategoryEditorPage"
+    Title="Categoría"
+    BackgroundColor="{AppThemeBinding Light=White, Dark=Black}"
+    Shell.NavBarIsVisible="True"
+    Shell.BackgroundColor="{StaticResource BrandPrimary}"
+    Shell.ForegroundColor="{StaticResource BrandOnPrimary}"
+    Shell.TitleColor="{StaticResource BrandOnPrimary}">
+
+  <ContentPage.Resources>
+    <Style TargetType="Entry" x:Key="CompactEntry">
+      <Setter Property="HeightRequest" Value="44"/>
+      <Setter Property="FontSize" Value="14"/>
+      <Setter Property="ClearButtonVisibility" Value="WhileEditing"/>
+    </Style>
+  </ContentPage.Resources>
+
+  <ScrollView>
+    <VerticalStackLayout Padding="20" Spacing="12">
+      <Label x:Name="TitleLabel" Text="Crear categoría"
+             FontSize="20" FontAttributes="Bold"
+             TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+      <Label x:Name="HintEdit" Text="En edición: los campos vacíos no se actualizan."
+             FontSize="12" Opacity="0.7" IsVisible="False"
+             TextColor="{AppThemeBinding Light=#555, Dark=#CCC}"/>
+
+      <!-- Nombre -->
+      <VerticalStackLayout Spacing="2">
+        <Border x:Name="BdrName" StrokeThickness="1"
+                Stroke="{AppThemeBinding Light=#DDD, Dark=#444}"
+                StrokeShape="{RoundRectangle CornerRadius=6}" Padding="8,0">
+          <Entry x:Name="TxtName" Style="{StaticResource CompactEntry}"
+                 Placeholder="Nombre (ej. Bebidas)" TextChanged="TxtName_TextChanged"/>
+        </Border>
+        <Label x:Name="ErrName" Text="Escribe un nombre."
+               TextColor="Red" FontSize="12" IsVisible="False"/>
+      </VerticalStackLayout>
+
+      <!-- Slug -->
+      <VerticalStackLayout Spacing="2">
+        <Border x:Name="BdrSlug" StrokeThickness="1"
+                Stroke="{AppThemeBinding Light=#DDD, Dark=#444}"
+                StrokeShape="{RoundRectangle CornerRadius=6}" Padding="8,0">
+          <Entry x:Name="TxtSlug" Style="{StaticResource CompactEntry}"
+            IsEnabled ="False"
+                 Placeholder="slug (auto: bebidas-frappes)"/>
+        </Border>
+        <Label x:Name="ErrSlug" Text="Slug inválido (min 2, solo letras/números/guiones)."
+               TextColor="Red" FontSize="12" IsVisible="False"/>
+      </VerticalStackLayout>
+
+      <!-- Posición -->
+      <VerticalStackLayout Spacing="2">
+        <Border x:Name="BdrPos" StrokeThickness="1"
+                Stroke="{AppThemeBinding Light=#DDD, Dark=#444}"
+                StrokeShape="{RoundRectangle CornerRadius=6}" Padding="8,0">
+          <Entry x:Name="TxtPosition" Style="{StaticResource CompactEntry}"
+                 Placeholder="Posición (0..n)" Keyboard="Numeric" TextChanged="TxtPosition_TextChanged"/>
+        </Border>
+        <Label x:Name="ErrPos" Text="Posición inválida."
+               TextColor="Red" FontSize="12" IsVisible="False"/>
+      </VerticalStackLayout>
+
+      <!-- Activo -->
+      <HorizontalStackLayout Spacing="8" VerticalOptions="Center">
+        <Label Text="Activo" VerticalTextAlignment="Center"
+               TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+        <Switch x:Name="SwActive" IsToggled="False"/>
+      </HorizontalStackLayout>
+      <!-- ¿Categoría de combos? -->
+<HorizontalStackLayout Spacing="8" VerticalOptions="Center">
+  <Label Text="¿Categoría de combos?" VerticalTextAlignment="Center"
+         TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+  <Switch x:Name="SwIsCombo" IsToggled="False"/>
+</HorizontalStackLayout>
+
+
+      <HorizontalStackLayout Spacing="12" Margin="0,12,0,0">
+        <Button x:Name="BtnGuardar" Text="Guardar" Clicked="Guardar_Clicked" Style="{StaticResource PrimaryButtonStyle}"/>
+        <Button x:Name="BtnCancelar" Text="Cancelar" Clicked="Cancelar_Clicked"/>
+      </HorizontalStackLayout>
+    </VerticalStackLayout>
+  </ScrollView>
+</ContentPage>

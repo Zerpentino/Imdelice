@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="Imdeliceapp.Pages.SectionItemsPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="{Binding Titulo}"
+    BackgroundColor="{AppThemeBinding Light=White, Dark=Black}">
+
+  <!-- Estilos reutilizados -->
+  <ContentPage.Resources>
+    <Style x:Key="ChipButton" TargetType="Button">
+      <Setter Property="Padding" Value="12,6"/>
+      <Setter Property="CornerRadius" Value="10"/>
+      <Setter Property="FontSize" Value="13"/>
+      <Setter Property="MinimumWidthRequest" Value="96"/>
+    </Style>
+
+    <Style x:Key="IconBtn" TargetType="ImageButton">
+      <Setter Property="BackgroundColor" Value="Transparent"/>
+      <Setter Property="WidthRequest" Value="26"/>
+      <Setter Property="HeightRequest" Value="26"/>
+      <Setter Property="Padding" Value="4"/>
+      <Setter Property="Aspect" Value="AspectFit"/>
+      <Setter Property="HorizontalOptions" Value="Center"/>
+      <Setter Property="VerticalOptions" Value="Center"/>
+    </Style>
+
+    <Style x:Key="DangerIconBtn" TargetType="ImageButton" BasedOn="{StaticResource IconBtn}" />
+    <Style x:Key="CardBorder" TargetType="Border">
+      <Setter Property="Stroke" Value="{AppThemeBinding Light=#E6E6E6, Dark=#333}"/>
+      <Setter Property="StrokeThickness" Value="1"/>
+      <Setter Property="Background" Value="{AppThemeBinding Light=#FFFFFF, Dark=#1E1E1E}"/>
+      <Setter Property="Padding" Value="12"/>
+      <Setter Property="Margin" Value="16,8,16,8"/>
+      <Setter Property="StrokeShape">
+        <Setter.Value><RoundRectangle CornerRadius="12"/></Setter.Value>
+      </Setter>
+    </Style>
+  </ContentPage.Resources>
+
+  <Grid RowDefinitions="Auto,*" RowSpacing="0">
+
+    <!-- Acciones -->
+    <HorizontalStackLayout Margin="16,12,16,4" Spacing="8">
+      <Button Text="Agregar ítem"
+              Style="{StaticResource ChipButton}"
+              Clicked="AgregarItem_Clicked"/>
+      <Button Text="Refrescar"
+              Style="{StaticResource ChipButton}"
+              Clicked="Refrescar_Clicked"/>
+    </HorizontalStackLayout>
+
+    <!-- Lista -->
+    <CollectionView Grid.Row="1"
+                    x:Name="ItemsCV"
+                    SelectionMode="None"
+                    ItemSizingStrategy="MeasureAllItems"
+                    Margin="{OnPlatform Android='0,0,0,96', iOS='0,0,0,84', MacCatalyst='0,0,0,72', WinUI='0,0,0,72'}">
+      <CollectionView.ItemTemplate>
+        <DataTemplate>
+          <Border Style="{StaticResource CardBorder}">
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="10">
+
+              <!-- Info -->
+              <VerticalStackLayout Spacing="2">
+                <Label Text="{Binding displayNameOrProduct}"
+                       FontAttributes="Bold"
+                       LineBreakMode="TailTruncation"
+                       MaxLines="2"
+                       TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+                <HorizontalStackLayout Spacing="10">
+                  <Label Text="{Binding priceLabel}"
+                         FontSize="12" Opacity="0.8"
+                         TextColor="{AppThemeBinding Light=#555, Dark=#CCC}"/>
+                  <Label Text="{Binding position, StringFormat='Pos: {0}'}"
+                         FontSize="12" Opacity="0.8"
+                         TextColor="{AppThemeBinding Light=#555, Dark=#CCC}"/>
+                  <Label Text="{Binding isFeatured, StringFormat='Destacado: {0}'}"
+                         FontSize="12" Opacity="0.8"
+                         TextColor="{AppThemeBinding Light=#555, Dark=#CCC}"/>
+                </HorizontalStackLayout>
+              </VerticalStackLayout>
+
+              <!-- Acciones -->
+              <ImageButton Grid.Column="1"
+                           Source="edit.png"
+                           Style="{StaticResource IconBtn}"
+                           Clicked="Editar_Clicked"/>
+              <ImageButton Grid.Column="2"
+                           Source="up.png"
+                           Style="{StaticResource IconBtn}"
+                           Clicked="MoverArriba_Clicked"/>
+              <ImageButton Grid.Column="3"
+                           Source="delete.png"
+                           Style="{StaticResource DangerIconBtn}"
+                           Clicked="Eliminar_Clicked"/>
+            </Grid>
+          </Border>
+        </DataTemplate>
+      </CollectionView.ItemTemplate>
+
+      <CollectionView.EmptyView>
+        <VerticalStackLayout Padding="32" Spacing="8"
+                             HorizontalOptions="Center"
+                             VerticalOptions="Center">
+          <Label Text="Sin ítems"
+                 FontAttributes="Bold"
+                 TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+        </VerticalStackLayout>
+      </CollectionView.EmptyView>
+    </CollectionView>
+
+  </Grid>
+</ContentPage>

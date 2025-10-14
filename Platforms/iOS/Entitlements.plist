@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+   "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <!-- Para Push Notifications (desarrollo) -->
+    
+    <key>keychain-access-groups</key>
+  <array>
+    <string>$(AppIdentifierPrefix)$(CFBundleIdentifier)</string>
+  </array>
+
+<key>NSPhotoLibraryUsageDescription</key>
+    <string>Necesitamos acceder a tu galería para cambiar tu foto de perfil.</string>
+    <key>NSPhotoLibraryAddUsageDescription</key>
+    <string>Necesitamos guardar temporalmente la imagen seleccionada.</string>
+    <key>NSCameraUsageDescription</key>
+    <string>Necesitamos acceso a la cámara para tomar una foto de perfil.</string>
+
+
+  </dict>
+</plist>

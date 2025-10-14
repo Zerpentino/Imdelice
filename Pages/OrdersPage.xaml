@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Class="Imdeliceapp.Pages.OrdersPage"
+   
+    Title="Órdenes"
+    BackgroundColor="{AppThemeBinding Light=White, Dark=Black}">
+  <Grid>
+    <Label Text="Aquí estará OrdersPage (lista de órdenes)"
+           HorizontalOptions="Center"
+           VerticalOptions="Center"
+           FontAttributes="Bold"
+           TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+  </Grid>
+</ContentPage>

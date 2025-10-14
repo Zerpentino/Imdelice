@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="Imdeliceapp.Pages.TakeOrderPage"
+             BackgroundColor="{AppThemeBinding Light=White, Dark=Black}"
+            >
+
+  <Grid RowDefinitions="Auto,*">
+    <SearchBar x:Name="SearchBox"
+               Placeholder="Buscar..."
+               Margin="12"
+               TextChanged="SearchBox_TextChanged"/>
+
+    <CollectionView Grid.Row="1"
+                    x:Name="GroupedCV"
+                    ItemsSource="{Binding Groups}"
+                    SelectionMode="None"
+                    Margin="12"
+                    ItemSizingStrategy="MeasureAllItems">
+      <CollectionView.EmptyView>
+        <VerticalStackLayout Padding="32" Spacing="6"
+                             HorizontalOptions="Center" VerticalOptions="Center">
+          <Label Text="Sin resultados" FontAttributes="Bold" Opacity="0.85"/>
+          <Label Text="Prueba con otro término de búsqueda."
+                 FontSize="12" Opacity="0.6"/>
+        </VerticalStackLayout>
+      </CollectionView.EmptyView>
+
+      <CollectionView.ItemTemplate>
+        <DataTemplate>
+          <Frame Padding="16" Margin="0,6"
+                 CornerRadius="16"
+                 HasShadow="True"
+                 BackgroundColor="{AppThemeBinding Light=White, Dark=#1E1E1E}"
+                 BorderColor="{AppThemeBinding Light=#E0E0E0, Dark=Gray}">
+            <toolkit:Expander IsExpanded="{Binding IsExpanded}">
+              <toolkit:Expander.Header>
+                <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,8">
+                  <Label Text="{Binding Name}" FontAttributes="Bold" FontSize="18"/>
+                  <Label Grid.Column="1"
+                         Text="{Binding IsExpanded, Converter={StaticResource BoolToIconConverter}}"
+                         FontSize="18" VerticalOptions="Center"/>
+                </Grid>
+              </toolkit:Expander.Header>
+
+              <toolkit:Expander.Content>
+                <VerticalStackLayout Spacing="6">
+                  <Grid ColumnDefinitions="*,Auto" Padding="4,0,4,8">
+                    <Label Text="Producto" FontAttributes="Bold"/>
+                    <Label Grid.Column="1" Text="Precio" FontAttributes="Bold"/>
+                  </Grid>
+
+                  <CollectionView ItemsSource="{Binding Items}" SelectionMode="None">
+                    <CollectionView.ItemTemplate>
+                      <DataTemplate>
+                        <Grid ColumnDefinitions="*,Auto,Auto" Padding="6" Margin="2,0">
+                          <Label Text="{Binding Name}" LineBreakMode="TailTruncation"/>
+                          <Label Grid.Column="1" Text="{Binding Price, StringFormat='${0:F0}'}">
+                            <Label.Triggers>
+                              <DataTrigger TargetType="Label" Binding="{Binding Price}" Value="0">
+                                <Setter Property="IsVisible" Value="False"/>
+                              </DataTrigger>
+                            </Label.Triggers>
+                          </Label>
+                          <Button Grid.Column="2" Text="+" Clicked="AddToCart_Clicked" CommandParameter="{Binding}" />
+                        </Grid>
+                      </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                  </CollectionView>
+                </VerticalStackLayout>
+              </toolkit:Expander.Content>
+
+
+            </toolkit:Expander>
+          </Frame>
+        </DataTemplate>
+      </CollectionView.ItemTemplate>
+    </CollectionView>
+
+    <!-- FAB dentro del mismo Grid -->
+    <Button Grid.RowSpan="2"
+            Text="🧾 Carrito (0)" x:Name="FabCart"
+            BackgroundColor="{AppThemeBinding Light=#521739, Dark=#D5B2C2}"
+            TextColor="White" CornerRadius="20" Padding="16,10"
+            Clicked="OpenCart_Clicked"
+            HorizontalOptions="End" VerticalOptions="End"
+            Margin="16"/>
+  </Grid>
+</ContentPage>

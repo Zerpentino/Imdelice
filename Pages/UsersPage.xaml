@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Class="Imdeliceapp.Pages.UsersPage"
+    Title="Usuarios"
+    BackgroundColor="{AppThemeBinding Light=White, Dark=Black}"
+    Shell.NavBarIsVisible="True"
+    Shell.BackgroundColor="{StaticResource BrandPrimary}"
+    Shell.ForegroundColor="{StaticResource BrandOnPrimary}"
+    Shell.TitleColor="{StaticResource BrandOnPrimary}">
+
+  <Grid RowDefinitions="Auto,*">
+    <SearchBar x:Name="SearchBox"
+               Placeholder="Buscar por nombre o correo..."
+               Margin="12"
+               TextChanged="SearchBox_TextChanged" />
+
+    <RefreshView x:Name="UsersRefresh"
+             Grid.Row="1"
+             IsRefreshing="{Binding IsRefreshing}"
+             Refreshing="UsersRefresh_Refreshing">
+  <CollectionView x:Name="UsersCV"
+                  ItemsSource="{Binding Users}"
+                  SelectionMode="None"
+                  Margin="12">
+    <CollectionView.EmptyView>
+      <VerticalStackLayout Padding="32" Spacing="8"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center">
+        <Label Text="{Binding EmptyMessage}"
+               FontAttributes="Bold"
+               Opacity="0.9"
+               TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+        <Button Text="Reintentar"
+                Clicked="Retry_Clicked"
+                Margin="0,8,0,0"/>
+      </VerticalStackLayout>
+    </CollectionView.EmptyView>
+
+      <CollectionView.ItemTemplate>
+        <DataTemplate>
+          <SwipeView>
+  <!-- Desliza de IZQUIERDA→DERECHA para Editar -->
+  <SwipeView.LeftItems>
+    <SwipeItems Mode="Reveal" SwipeBehaviorOnInvoked="Close">
+      <SwipeItem Text="Editar"
+                 BackgroundColor="#4CAF50"
+                 Invoked="EditSwipe_Invoked" />
+    </SwipeItems>
+  </SwipeView.LeftItems>
+
+  <!-- Desliza de DERECHA→IZQUIERDA para Eliminar -->
+  <SwipeView.RightItems>
+    <SwipeItems Mode="Reveal" SwipeBehaviorOnInvoked="Close">
+      <SwipeItem Text="Eliminar"
+                 BackgroundColor="#E53935"
+                 Invoked="DeleteSwipe_Invoked" />
+    </SwipeItems>
+  </SwipeView.RightItems>
+
+  <!-- Tu celda -->
+  <Grid Padding="12" ColumnDefinitions="Auto,*,Auto"
+        BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E1E1E}"
+        Margin="0,6">
+        
+                  
+              <!-- Avatar simple: inicial del nombre -->
+              <Border BackgroundColor="{AppThemeBinding Light=#EEE, Dark=#333}"
+                      WidthRequest="36" HeightRequest="36"
+                      StrokeThickness="0"
+                      StrokeShape="{RoundRectangle CornerRadius=18}">
+                <Label Text="{Binding Initials}"
+                       HorizontalTextAlignment="Center"
+                       VerticalTextAlignment="Center"
+                       FontAttributes="Bold"
+                       TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+              </Border>
+
+              <VerticalStackLayout Grid.Column="1" Spacing="2" Padding="10,0,0,0">
+                <Label Text="{Binding name}" FontAttributes="Bold"
+                       TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+                <HorizontalStackLayout Spacing="8">
+                  <Label Text="{Binding email}" FontSize="12"
+                         TextColor="{AppThemeBinding Light=#666, Dark=#CCC}"/>
+                  <Border StrokeThickness="0"
+                          BackgroundColor="{AppThemeBinding Light=#F1E9F1, Dark=#2B1D29}"
+                          StrokeShape="{RoundRectangle CornerRadius=8}"
+                          Padding="6,2">
+                    <Label Text="{Binding role}"
+                           FontSize="11"
+                           TextColor="{AppThemeBinding Light=#894164, Dark=#D5B2C2}"/>
+                  </Border>
+                </HorizontalStackLayout>
+              </VerticalStackLayout>
+
+              <!-- Activo/Inactivo (futuro toggle con API) -->
+              <Label Grid.Column="2"
+                     Text="{Binding active, StringFormat='{}{0:Activo;Inactivo}'}"
+                     FontSize="12"
+                     VerticalTextAlignment="Center"
+                     TextColor="{AppThemeBinding Light=#666, Dark=#CCC}"/>
+            </Grid>
+          </SwipeView>
+        </DataTemplate>
+      </CollectionView.ItemTemplate>
+    </CollectionView>
+    </RefreshView>
+
+    <!-- FAB Crear -->
+    <Button Grid.RowSpan="2"
+            Text="+"
+            Clicked="AddUser_Clicked"
+            CornerRadius="28"
+            WidthRequest="56" HeightRequest="56"
+            BackgroundColor="{AppThemeBinding Light=#894164, Dark=#894164}"
+            TextColor="White"
+            HorizontalOptions="End" VerticalOptions="End"
+            Margin="16"/>
+  </Grid>
+</ContentPage>

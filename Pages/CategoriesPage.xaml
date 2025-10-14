@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentPage
+  xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+  x:Class="Imdeliceapp.Pages.CategoriesPage"
+  Title="Categorías"
+  BackgroundColor="{AppThemeBinding Light=White, Dark=Black}"
+  Shell.NavBarIsVisible="True"
+  Shell.BackgroundColor="{StaticResource BrandPrimary}"
+  Shell.ForegroundColor="{StaticResource BrandOnPrimary}"
+  Shell.TitleColor="{StaticResource BrandOnPrimary}">
+
+  <Grid RowDefinitions="Auto,*">
+    <SearchBar x:Name="SearchBox"
+               Placeholder="Buscar categoría..."
+               Margin="12"
+               TextChanged="SearchBox_TextChanged"/>
+
+    <RefreshView x:Name="CatRefresh"
+                 Grid.Row="1"
+                 IsRefreshing="{Binding IsRefreshing}"
+                 Refreshing="CatRefresh_Refreshing">
+      <CollectionView x:Name="CatsCV"
+                      ItemsSource="{Binding Categories}"
+                      SelectionMode="None"
+                      Margin="12"
+                      ItemSizingStrategy="MeasureFirstItem">
+        <CollectionView.EmptyView>
+          <VerticalStackLayout Padding="32"
+              Spacing="8"
+                               HorizontalOptions="Center"
+              VerticalOptions="Center">
+            <Label Text="{Binding EmptyMessage}"
+                   FontAttributes="Bold"
+                Opacity="0.9"
+                   TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+            <Button Text="Reintentar"
+                Clicked="Retry_Clicked"
+                Margin="0,8,0,0"/>
+          </VerticalStackLayout>
+        </CollectionView.EmptyView>
+
+        <CollectionView.ItemTemplate>
+
+          <DataTemplate>
+            <SwipeView>
+              <SwipeView.LeftItems>
+                <SwipeItems Mode="Reveal"
+                    SwipeBehaviorOnInvoked="Close">
+                  <SwipeItem Text="Eliminar (definitivo)"
+                             BackgroundColor="#E53935"
+                             Invoked="DeleteSwipe_Invoked"/>
+                </SwipeItems>
+              </SwipeView.LeftItems>
+              <SwipeView.RightItems>
+                <SwipeItems Mode="Reveal"
+                    SwipeBehaviorOnInvoked="Close">
+                  <SwipeItem Text="Editar"
+                             BackgroundColor="#4CAF50"
+                             Invoked="EditSwipe_Invoked"/>
+                </SwipeItems>
+              </SwipeView.RightItems>
+
+              <!-- fila -->
+              <Grid Padding="12"
+                    Margin="0,6"
+                    BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E1E1E}"
+                    RowDefinitions="Auto,Auto"
+                    ColumnDefinitions="*,64,96,64">
+                <!-- nombre (ocupa toda la fila superior) -->
+                <Label Grid.Row="0"
+                    Grid.ColumnSpan="4"
+                       Text="{Binding name}"
+                       FontAttributes="Bold"
+                       TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+
+                <!-- slug + chip COMBOS -->
+<!-- slug + chips -->
+<HorizontalStackLayout Grid.Row="1" Grid.Column="0" Spacing="8">
+  <!-- slug -->
+  <Label Text="{Binding slug}"
+         FontSize="12"
+         VerticalTextAlignment="Center"
+         TextColor="{AppThemeBinding Light=#666, Dark=#CCC}"/>
+
+  <!-- Chip INACTIVA (se oculta cuando isActive=True) -->
+  <Border StrokeThickness="0"
+          BackgroundColor="#FFE0B2"
+          Padding="6,2"
+          StrokeShape="{RoundRectangle CornerRadius=8}">
+    <Border.Triggers>
+      <DataTrigger TargetType="Border" Binding="{Binding isActive}" Value="True">
+        <Setter Property="IsVisible" Value="False"/>
+      </DataTrigger>
+    </Border.Triggers>
+    <Label Text="Inactiva" FontSize="11" TextColor="#E65100"/>
+  </Border>
+
+  <!-- Chip COMBOS (solo si isComboOnly=True) -->
+  <Border StrokeThickness="0"
+          BackgroundColor="#E3F2FD"
+          Padding="6,2"
+          StrokeShape="{RoundRectangle CornerRadius=8}">
+    <Border.Triggers>
+      <DataTrigger TargetType="Border" Binding="{Binding isComboOnly}" Value="False">
+        <Setter Property="IsVisible" Value="False"/>
+      </DataTrigger>
+    </Border.Triggers>
+    <Label Text="COMBOS" FontSize="11" TextColor="#1565C0"/>
+  </Border>
+</HorizontalStackLayout>
+
+            
+
+                <!-- posición (columna fija de 64) -->
+                <Label Grid.Row="1"
+                    Grid.Column="1"
+                       Text="{Binding position, StringFormat='Pos {0}'}"
+                       FontSize="12"
+                       HorizontalTextAlignment="End"
+                       VerticalTextAlignment="Center"
+                       TextColor="{AppThemeBinding Light=#666, Dark=#CCC}"/>
+
+                <!-- botón Entrar (columna 96) -->
+                <Button Grid.Row="1"
+                    Grid.Column="2"
+                        Text="Entrar"
+                        HeightRequest="36"
+                        Padding="10,6"
+                        Clicked="OpenProducts_Clicked"
+                        CommandParameter="{Binding .}"
+                        BackgroundColor="{AppThemeBinding Light=#894164, Dark=#894164}"
+                        TextColor="White"
+                        CornerRadius="8"
+                        HorizontalOptions="End"
+                        VerticalOptions="Center"/>
+
+                <!-- switch (columna 64) -->
+                <Switch Grid.Row="1"
+                    Grid.Column="3"
+                        HorizontalOptions="End"
+                        VerticalOptions="Center"
+                        IsToggled="{Binding isActive, Mode=TwoWay}"
+                        Toggled="ToggleActivo_Toggled"/>
+              </Grid>
+            </SwipeView>
+          </DataTemplate>
+        </CollectionView.ItemTemplate>
+        <CollectionView.Footer>
+  <!-- espacio para que la última fila no quede debajo del FAB -->
+  <Grid HeightRequest="104" /> 
+  <!-- si quieres por plataforma:
+  <Grid HeightRequest="{OnPlatform iOS=120, Android=104}" />
+  -->
+</CollectionView.Footer>
+
+
+      </CollectionView>
+    </RefreshView>
+
+    <!-- FAB Crear -->
+    <Button Grid.RowSpan="2"
+        Text="+"
+        Clicked="AddCategory_Clicked"
+        CornerRadius="28"
+        WidthRequest="56" HeightRequest="56"
+        BackgroundColor="{AppThemeBinding Light=#894164, Dark=#894164}"
+        TextColor="White"
+        HorizontalOptions="End" VerticalOptions="End"
+        Margin="16,16,16,28"/>
+
+  </Grid>
+</ContentPage>

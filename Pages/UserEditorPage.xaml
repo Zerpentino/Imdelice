@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Class="Imdeliceapp.Pages.UserEditorPage"
+    BackgroundColor="{AppThemeBinding Light=White, Dark=Black}"
+    Title="Usuario"
+    Shell.NavBarIsVisible="True"
+    Shell.BackgroundColor="{StaticResource BrandPrimary}"
+    Shell.ForegroundColor="{StaticResource BrandOnPrimary}"
+    Shell.TitleColor="{StaticResource BrandOnPrimary}">
+
+  <ContentPage.Resources>
+     <!-- Entradas compactas -->
+    <Style TargetType="Entry" x:Key="CompactEntry">
+      <Setter Property="HeightRequest" Value="44" />
+      <Setter Property="FontSize" Value="14" />
+      <Setter Property="ClearButtonVisibility" Value="WhileEditing" />
+    </Style>
+
+    <!-- (Opcional) Picker compacto para que todo quede parejo -->
+    <Style TargetType="Picker" x:Key="CompactPicker">
+      <Setter Property="HeightRequest" Value="44" />
+      <Setter Property="FontSize" Value="14" />
+    </Style>
+  </ContentPage.Resources>
+
+  <ScrollView>
+    <VerticalStackLayout Padding="20" Spacing="12">
+
+      <!-- Título -->
+      <Label x:Name="TitleLabel"
+             Text="Usuario"
+             FontSize="20"
+             FontAttributes="Bold"
+             TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+             <Label x:Name="HintEditGeneral"
+       Text="En edición: los campos vacíos no se actualizan. Cambia sólo lo que necesites."
+       FontSize="12"
+       Opacity="0.7"
+       IsVisible="False"
+       Margin="0,0,0,4"
+       TextColor="{AppThemeBinding Light=#555, Dark=#CCC}" />
+
+
+      <!-- Datos -->
+      <Label Text="Datos del usuario"
+             FontAttributes="Bold"
+             Margin="0,8,0,0"
+             TextColor="{AppThemeBinding Light=#333, Dark=#DDD}" />
+
+      <!-- Nombre -->
+<VerticalStackLayout Spacing="2">
+  <Border x:Name="BdrName" StrokeThickness="1"
+          Stroke="{AppThemeBinding Light=#DDDDDD, Dark=#444444}"
+          StrokeShape="{RoundRectangle CornerRadius=6}" Padding="8,0">
+    <Entry x:Name="TxtName"
+           Style="{StaticResource CompactEntry}"
+           Placeholder="Nombre completo"
+           Keyboard="Chat"
+           TextChanged="TxtName_TextChanged"/>
+  </Border>
+  <Label x:Name="ErrName" Text="Solo letras y espacios."
+         TextColor="Red" FontSize="12" IsVisible="False"/>
+</VerticalStackLayout>
+
+
+<!-- Correo -->
+<VerticalStackLayout Spacing="2">
+  <Border x:Name="BdrEmail" StrokeThickness="1"
+          Stroke="{AppThemeBinding Light=#DDDDDD, Dark=#444444}"
+          StrokeShape="{RoundRectangle CornerRadius=6}" Padding="8,0">
+    <Entry x:Name="TxtEmail"
+           Style="{StaticResource CompactEntry}"
+           Placeholder="Correo" Keyboard="Email"
+           TextChanged="TxtEmail_TextChanged"/>
+  </Border>
+  <Label x:Name="ErrEmail" Text="Correo inválido."
+         TextColor="Red" FontSize="12" IsVisible="False"/>
+</VerticalStackLayout>
+
+ 
+<!-- Aplica estilo compacto al Picker -->
+      <Picker x:Name="PkRole" Title="Rol" Style="{StaticResource CompactPicker}" ItemDisplayBinding="{Binding name}" />
+
+      <Label Text="Seguridad"
+             FontAttributes="Bold"
+             Margin="0,12,0,0"
+             TextColor="{AppThemeBinding Light=#333, Dark=#DDD}" />
+
+      <!-- Contraseña -->
+      <VerticalStackLayout Spacing="2">
+  <Border x:Name="BdrPwd" StrokeThickness="1"
+          Stroke="{AppThemeBinding Light=#DDDDDD, Dark=#444444}"
+          StrokeShape="{RoundRectangle CornerRadius=6}">
+    <Grid ColumnDefinitions="*,40" Margin="0" Padding="0">
+      <Entry x:Name="TxtPassword"
+             Style="{StaticResource CompactEntry}"
+             Grid.Column="0"
+             Placeholder="Contraseña"
+             IsPassword="True"
+             TextChanged="TxtPassword_TextChanged"/>
+      <ImageButton x:Name="BtnTogglePwd"
+                   Grid.Column="1" WidthRequest="28" HeightRequest="28"
+                   Padding="6" BackgroundColor="Transparent"
+                   Clicked="TogglePwd_Clicked"
+                   HorizontalOptions="End" VerticalOptions="Center"
+                   Source="ojo_cerrado.png"/>
+    </Grid>
+  </Border>
+  <Label x:Name="ErrPwd" Text="Mínimo 3 caracteres."
+         TextColor="Red" FontSize="12" IsVisible="False"/>
+</VerticalStackLayout>
+
+<!-- Confirmar contraseña -->
+<VerticalStackLayout Spacing="2">
+  <Border x:Name="BdrPwd2" StrokeThickness="1"
+          Stroke="{AppThemeBinding Light=#DDDDDD, Dark=#444444}"
+          StrokeShape="{RoundRectangle CornerRadius=6}">
+    <Grid ColumnDefinitions="*,40" Margin="0" Padding="0">
+      <Entry x:Name="TxtPasswordConfirm"
+             Style="{StaticResource CompactEntry}"
+             Grid.Column="0"
+             Placeholder="Confirmar contraseña"
+             IsPassword="True"
+             TextChanged="TxtPasswordConfirm_TextChanged"/>
+      <ImageButton x:Name="BtnTogglePwd2"
+                   Grid.Column="1" WidthRequest="28" HeightRequest="28"
+                   Padding="6" BackgroundColor="Transparent"
+                   Clicked="TogglePwd2_Clicked"
+                   HorizontalOptions="End" VerticalOptions="Center"
+                   Source="ojo_cerrado.png"/>
+    </Grid>
+  </Border>
+  <Label x:Name="ErrPwd2" Text="Las contraseñas no coinciden."
+         TextColor="Red" FontSize="12" IsVisible="False"/>
+</VerticalStackLayout>
+
+
+      <Label x:Name="HintEditPassword"
+             Text="En edición, deja ambas contraseñas vacías si no quieres cambiarla."
+             FontSize="12"
+             Opacity="0.7"
+             IsVisible="False"
+             Margin="0,0,0,4"
+             TextColor="{AppThemeBinding Light=#555, Dark=#CCC}" />
+
+     <!-- PIN -->
+<VerticalStackLayout Spacing="2">
+  <Border x:Name="BdrPin" StrokeThickness="1"
+          Stroke="{AppThemeBinding Light=#DDDDDD, Dark=#444444}"
+          StrokeShape="{RoundRectangle CornerRadius=6}" Padding="8,0">
+    <Entry x:Name="TxtPin"
+           Style="{StaticResource CompactEntry}"
+           Placeholder="PIN (4 dígitos)"
+           Keyboard="Numeric" MaxLength="4"
+           TextChanged="TxtPin_TextChanged" />
+  </Border>
+  <Label x:Name="ErrPin" Text="El PIN debe tener 4 dígitos."
+         TextColor="Red" FontSize="12" IsVisible="False"/>
+</VerticalStackLayout>
+
+
+      <!-- Botones -->
+      <HorizontalStackLayout Spacing="12" Margin="0,12,0,0">
+        <Button Text="Guardar"
+          x:Name="BtnGuardar"
+                Clicked="Guardar_Clicked"
+                Style="{StaticResource PrimaryButtonStyle}"/>
+        <Button Text="Cancelar"
+          x:Name="BtnCancelar"
+                Clicked="Cancelar_Clicked"/>
+      </HorizontalStackLayout>
+
+    </VerticalStackLayout>
+  </ScrollView>
+</ContentPage>

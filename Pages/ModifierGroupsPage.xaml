@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+  xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+  x:Class="Imdeliceapp.Pages.ModifierGroupsPage"
+  Title="Grupos de modificadores"
+  BackgroundColor="{AppThemeBinding Light=White, Dark=Black}"
+  Shell.NavBarIsVisible="True"
+  Shell.BackgroundColor="{StaticResource BrandPrimary}"
+  Shell.ForegroundColor="{StaticResource BrandOnPrimary}"
+  Shell.TitleColor="{StaticResource BrandOnPrimary}">
+
+  <Grid RowDefinitions="Auto,Auto,*">
+
+    <!-- ENCABEZADO: solo búsqueda -->
+    <Grid Grid.Row="0"
+        Margin="12,12,12,6">
+      <SearchBar x:Name="SearchBox"
+                 Placeholder="Buscar por nombre o descripción…"
+                 TextChanged="SearchBox_TextChanged"/>
+    </Grid>
+
+
+    <!-- Pull to refresh -->
+    <RefreshView x:Name="ProdRefresh"
+                 Grid.Row="2"
+                 IsRefreshing="{Binding IsRefreshing}"
+                 Refreshing="ProdRefresh_Refreshing">
+
+      <CollectionView x:Name="GroupsCV"
+                      ItemsSource="{Binding Groups}"
+                      SelectionMode="None"
+                      Margin="12,0,12,0"
+                       ItemSizingStrategy="MeasureFirstItem"
+                       ItemsUpdatingScrollMode="KeepScrollOffset">
+
+        <!-- Empty -->
+        <CollectionView.EmptyView>
+          <VerticalStackLayout Padding="32"
+              Spacing="8"
+              HorizontalOptions="Center"
+              VerticalOptions="Center">
+            <Label Text="No hay grupos que mostrar"
+                   FontAttributes="Bold"
+                   Opacity="0.9"
+                   TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+            <Button Text="Reintentar"
+                Clicked="ProdRefresh_Refreshing"/>
+          </VerticalStackLayout>
+        </CollectionView.EmptyView>
+
+        <CollectionView.ItemTemplate>
+          <DataTemplate>
+            <SwipeView>
+
+              <!-- Igual que Productos: borrar a la izquierda, editar a la derecha -->
+              <SwipeView.LeftItems>
+                <SwipeItems Mode="Reveal"
+                    SwipeBehaviorOnInvoked="Close">
+                  <SwipeItem Text="Borrar"
+                             BackgroundColor="#E53935"
+                             Invoked="Delete_Clicked"/>
+                </SwipeItems>
+              </SwipeView.LeftItems>
+
+              <SwipeView.RightItems>
+                <SwipeItems Mode="Reveal"
+                    SwipeBehaviorOnInvoked="Close">
+                  <SwipeItem Text="Editar"
+                             BackgroundColor="#4CAF50"
+                             Invoked="Edit_Clicked"/>
+                  <!-- <SwipeItem Text="Adjuntar"
+                             BackgroundColor="{StaticResource BrandPrimary}"
+                             Invoked="Attach_Clicked"/> -->
+                </SwipeItems>
+              </SwipeView.RightItems>
+
+              <!-- Tarjeta estilo Productos, SIN superposiciones -->
+              <!-- Tarjeta estilo Productos -->
+<Grid Padding="12"
+      ColumnSpacing="12"
+      ColumnDefinitions="Auto,*,Auto,96"
+      BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E1E1E}"
+      Margin="0,6">
+
+  <!-- Avatar -->
+  <Border WidthRequest="56" HeightRequest="56"
+          BackgroundColor="{AppThemeBinding Light=#EEE, Dark=#2A2A2A}"
+          StrokeThickness="0"
+          StrokeShape="{RoundRectangle CornerRadius=12}">
+    <Grid>
+      <Label Text="🧩" FontSize="24"
+             HorizontalOptions="Center" VerticalOptions="Center"/>
+    </Grid>
+  </Border>
+
+  <!-- Contenido -->
+  <VerticalStackLayout Grid.Column="1" Spacing="4">
+    <Label Text="{Binding name}"
+           FontAttributes="Bold"
+           LineBreakMode="TailTruncation"
+           TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+
+    <Label Text="{Binding description}"
+           FontSize="12"
+           LineBreakMode="WordWrap"
+           MaxLines="2"
+           TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"/>
+
+    <HorizontalStackLayout Spacing="8" Margin="0,2,0,0">
+      <Border StrokeThickness="0" BackgroundColor="#EEE" Padding="6,2"
+              StrokeShape="{RoundRectangle CornerRadius=8}">
+        <Label Text="{Binding minSelect, StringFormat='Min: {0}'}" FontSize="11"/>
+      </Border>
+
+      <Border StrokeThickness="0" BackgroundColor="#EEE" Padding="6,2"
+              StrokeShape="{RoundRectangle CornerRadius=8}">
+        <Border.Triggers>
+          <DataTrigger TargetType="Border" Binding="{Binding maxSelect}" Value="{x:Null}">
+            <Setter Property="IsVisible" Value="False"/>
+          </DataTrigger>
+        </Border.Triggers>
+        <Label Text="{Binding maxSelect, StringFormat='Max: {0}'}" FontSize="11"/>
+      </Border>
+
+      <Border StrokeThickness="0" BackgroundColor="#FFE9A3" Padding="6,2"
+              StrokeShape="{RoundRectangle CornerRadius=8}"
+              IsVisible="{Binding isRequired}">
+        <Label Text="Obligatorio" FontSize="11" TextColor="#6B5000"/>
+      </Border>
+
+      <Border StrokeThickness="0" BackgroundColor="#FAD7D7" Padding="6,2"
+              StrokeShape="{RoundRectangle CornerRadius=8}">
+        <Border.Triggers>
+          <DataTrigger TargetType="Border" Binding="{Binding isActive}" Value="True">
+            <Setter Property="IsVisible" Value="False"/>
+          </DataTrigger>
+        </Border.Triggers>
+        <Label Text="Inactivo" FontSize="11" TextColor="#B71C1C"/>
+      </Border>
+    </HorizontalStackLayout>
+  </VerticalStackLayout>
+
+  <!-- Switch de disponibilidad (como en Productos) -->
+  <Switch Grid.Column="2"
+          HorizontalOptions="End" VerticalOptions="Center"
+          IsToggled="{Binding isActive, Mode=TwoWay}"
+          Toggled="ToggleActivo_Toggled"/>
+  
+  <!-- Entrar -->
+  <Button Grid.Column="3"
+          Text="Entrar"
+          HeightRequest="36"
+          Padding="10,6"
+          Clicked="OpenLinkedProducts_Clicked"
+          CommandParameter="{Binding .}"
+          BackgroundColor="{AppThemeBinding Light=#894164, Dark=#894164}"
+          TextColor="White"
+          CornerRadius="8"
+          HorizontalOptions="End"
+          VerticalOptions="Center"/>
+</Grid>
+
+
+            </SwipeView>
+          </DataTemplate>
+        </CollectionView.ItemTemplate>
+
+        <!-- espacio para que la última fila no quede bajo el FAB -->
+        <CollectionView.Footer>
+          <Grid HeightRequest="{OnPlatform iOS=120, Android=104}"/>
+        </CollectionView.Footer>
+
+      </CollectionView>
+    </RefreshView>
+
+    <!-- FAB como en Productos -->
+    <Button Grid.RowSpan="3"
+            Text="+"
+            Clicked="New_Clicked"
+            CornerRadius="28"
+            WidthRequest="56"
+            HeightRequest="56"
+            BackgroundColor="{AppThemeBinding Light=#894164, Dark=#894164}"
+            TextColor="White"
+            HorizontalOptions="End"
+            VerticalOptions="End"
+            Margin="16,16,16,28"/>
+  </Grid>
+</ContentPage>

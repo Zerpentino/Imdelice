@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+       xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+       xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+       x:Class="Imdeliceapp.Pages.OptionsPage"
+       BackgroundColor="{AppThemeBinding Light=White, Dark=Black}">
+
+       <Grid Padding="24">
+              <VerticalStackLayout Spacing="16"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center">
+                     <Label Text="Opciones"
+                            FontAttributes="Bold"
+                            FontSize="20"
+                            HorizontalTextAlignment="Center"
+                            TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+
+                     <Label Text="(Mesero: Cerrar sesión · Admin: crear usuarios, disponibilidad del menú, etc.)"
+                            FontSize="12"
+                            Opacity="0.7"
+                            HorizontalTextAlignment="Center"
+                            TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+                     <!-- Solo admins -->
+                     <Button x:Name="BtnUsuarios"
+                             Text="Usuarios"
+                             Clicked="BtnUsuarios_Clicked"
+                             Style="{StaticResource PrimaryButtonStyle}"
+                             IsVisible="False"/>
+                     <Button x:Name="BtnRoles"
+                                   Text="Roles"
+                                   Clicked="OpenRoles_Clicked"
+                             Style="{StaticResource PrimaryButtonStyle}"/>
+                             <Button x:Name="BtnCategorias"
+                                   Text="Categorias"
+                                   Clicked="OpeCategorias_Clicked"
+                             Style="{StaticResource PrimaryButtonStyle}"/>
+                             <Button x:Name="BtnModifierGroups"
+        Text="Grupos de modificadores"
+        Clicked="OpenModifierGroups_Clicked"
+        Style="{StaticResource PrimaryButtonStyle}"
+        IsVisible="False"/>
+
+
+
+                     <Button x:Name="BtnMenu"
+                             Text="Editar menú"
+                             IsVisible="{Binding IsAdmin}"
+                             Clicked="EditarMenu_Clicked"
+                             Style="{StaticResource PrimaryButtonStyle}"/>
+
+
+                     <!-- Botón Cerrar sesión -->
+                     <Button x:Name="BtnLogout"
+                             Text="Cerrar sesión"
+                             Clicked="BtnLogout_Clicked"
+                             Style="{StaticResource PrimaryButtonStyle}"/>
+              </VerticalStackLayout>
+       </Grid>
+</ContentPage>

@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="Imdeliceapp.Pages.MenuSectionsPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="{Binding Titulo}"
+    BackgroundColor="{AppThemeBinding Light=White, Dark=Black}"
+    Shell.NavBarIsVisible="True"
+    Shell.BackgroundColor="{StaticResource BrandPrimary}"
+    Shell.ForegroundColor="{StaticResource BrandOnPrimary}"
+    Shell.TitleColor="{StaticResource BrandOnPrimary}">
+
+  <!-- Estilos -->
+  <ContentPage.Resources>
+    <Style x:Key="CompactEntry" TargetType="Entry">
+      <Setter Property="HeightRequest" Value="44"/>
+      <Setter Property="FontSize" Value="14"/>
+    </Style>
+
+    <Style x:Key="CardBorder" TargetType="Border">
+      <Setter Property="Stroke" Value="{AppThemeBinding Light=#E6E6E6, Dark=#333}"/>
+      <Setter Property="StrokeThickness" Value="1"/>
+      <Setter Property="Background" Value="{AppThemeBinding Light=#FFFFFF, Dark=#1E1E1E}"/>
+      <Setter Property="Padding" Value="12"/>
+      <Setter Property="Margin" Value="16,8,16,8"/>
+      <Setter Property="StrokeShape">
+        <Setter.Value><RoundRectangle CornerRadius="12"/></Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style x:Key="ChipButton" TargetType="Button">
+      <Setter Property="Padding" Value="12,6"/>
+      <Setter Property="CornerRadius" Value="10"/>
+      <Setter Property="FontSize" Value="13"/>
+      <!-- FIX: usar MinimumWidthRequest (no MinWidthRequest) -->
+      <Setter Property="MinimumWidthRequest" Value="88"/>
+      <Setter Property="HorizontalOptions" Value="Center"/>
+      <Setter Property="VerticalOptions" Value="Center"/>
+    </Style>
+
+    <Style x:Key="IconBtn" TargetType="ImageButton">
+      <Setter Property="BackgroundColor" Value="Transparent"/>
+      <Setter Property="WidthRequest" Value="26"/>
+      <Setter Property="HeightRequest" Value="26"/>
+      <Setter Property="Padding" Value="4"/>
+      <Setter Property="Aspect" Value="AspectFit"/>
+      <Setter Property="HorizontalOptions" Value="Center"/>
+      <Setter Property="VerticalOptions" Value="Center"/>
+      <!-- FIX: quitar TintColor (no existe en ImageButton en tu runtime) -->
+    </Style>
+
+    <Style x:Key="DangerIconBtn" TargetType="ImageButton" BasedOn="{StaticResource IconBtn}">
+      <!-- FIX: sin TintColor; usa icono rojo (delete.png) ya coloreado -->
+    </Style>
+  </ContentPage.Resources>
+
+  <Grid RowDefinitions="Auto,*,Auto" RowSpacing="0">
+
+    <!-- CREAR SECCIÓN -->
+    <Border Grid.Row="0" Style="{StaticResource CardBorder}" Margin="16,12,16,4">
+      <VerticalStackLayout Spacing="8">
+        <Entry x:Name="TxtName"
+               Style="{StaticResource CompactEntry}"
+               Placeholder="Nombre de sección (p. ej. BEBIDAS)"/>
+
+        <Grid ColumnDefinitions="90,*,Auto" ColumnSpacing="8">
+          <Entry Grid.Column="0"
+                 x:Name="TxtPos"
+                 Style="{StaticResource CompactEntry}"
+                 Placeholder="Pos"
+                 Keyboard="Numeric"/>
+
+          <Entry Grid.Column="1"
+                 x:Name="TxtCatId"
+                 Style="{StaticResource CompactEntry}"
+                 Placeholder="categoryId (opcional)"
+                 Keyboard="Numeric"/>
+
+          <Button Grid.Column="2"
+                  Text="Agregar"
+                  Style="{StaticResource ChipButton}"
+                  Clicked="Agregar_Clicked"/>
+        </Grid>
+      </VerticalStackLayout>
+    </Border>
+
+    <!-- LISTA -->
+    <CollectionView Grid.Row="1"
+                    x:Name="SectionsCV"
+                    SelectionMode="None"
+                    ItemSizingStrategy="MeasureAllItems"
+                  
+                    Margin="{OnPlatform Android='0,0,0,96', iOS='0,0,0,84', MacCatalyst='0,0,0,72', WinUI='0,0,0,72'}">
+      <CollectionView.ItemTemplate>
+        <DataTemplate>
+          <Border Style="{StaticResource CardBorder}">
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="12">
+              <VerticalStackLayout Spacing="2">
+                <Label Text="{Binding name}" FontAttributes="Bold"
+                       LineBreakMode="TailTruncation" MaxLines="1"
+                       TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+                <Label Text="{Binding position, StringFormat='Posición: {0}'}"
+                       FontSize="12" Opacity="0.7"
+                       TextColor="{AppThemeBinding Light=#555, Dark=#CCC}"/>
+                <Label Text="{Binding categoryId, StringFormat='categoryId: {0}'}"
+                       FontSize="12" Opacity="0.7"
+                       TextColor="{AppThemeBinding Light=#555, Dark=#CCC}"/>
+              </VerticalStackLayout>
+
+              <HorizontalStackLayout Grid.Column="1" Spacing="6" VerticalOptions="Center">
+                <ImageButton Source="up.png"   Style="{StaticResource IconBtn}" Clicked="Up_Clicked"/>
+                <ImageButton Source="down.png" Style="{StaticResource IconBtn}" Clicked="Down_Clicked"/>
+              </HorizontalStackLayout>
+
+              <Button Grid.Column="2" Text="Items"
+                      Style="{StaticResource ChipButton}"
+                      Clicked="Items_Clicked"/>
+
+              <ImageButton Grid.Column="3"
+                           Source="delete.png"
+                           Style="{StaticResource DangerIconBtn}"
+                           Clicked="Eliminar_Clicked"/>
+            </Grid>
+          </Border>
+        </DataTemplate>
+      </CollectionView.ItemTemplate>
+
+      <CollectionView.EmptyView>
+        <VerticalStackLayout Padding="32" Spacing="8"
+                             HorizontalOptions="Center"
+                             VerticalOptions="Center">
+          <Label Text="Sin secciones"
+                 FontAttributes="Bold"
+                 TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+        </VerticalStackLayout>
+      </CollectionView.EmptyView>
+    </CollectionView>
+
+    <!-- EDITAR SELECCIONADO -->
+    <Border Grid.Row="2"
+            Background="{AppThemeBinding Light=#FAFAFA, Dark=#171717}"
+            Stroke="{AppThemeBinding Light=#E6E6E6, Dark=#333}"
+            StrokeThickness="1"
+            StrokeShape="{RoundRectangle CornerRadius=0}"
+            Padding="{OnPlatform Android='16,8,16,24', iOS='16,8,16,14', MacCatalyst='16,8,16,12', WinUI='16,8,16,12'}">
+      <VerticalStackLayout Spacing="8">
+        <Entry x:Name="TxtEditName"
+               Style="{StaticResource CompactEntry}"
+               Placeholder="Nuevo nombre"/>
+
+        <Grid ColumnDefinitions="90,*,Auto" ColumnSpacing="8">
+          <Entry Grid.Column="0"
+                 x:Name="TxtEditPos"
+                 Style="{StaticResource CompactEntry}"
+                 Placeholder="Nueva pos"
+                 Keyboard="Numeric"/>
+
+          <Entry Grid.Column="1"
+                 x:Name="TxtEditCatId"
+                 Style="{StaticResource CompactEntry}"
+                 Placeholder="categoryId (opcional)"
+                 Keyboard="Numeric"/>
+
+          <Button Grid.Column="2"
+                  Text="Guardar"
+                  Style="{StaticResource ChipButton}"
+                  Clicked="Editar_Clicked"/>
+        </Grid>
+      </VerticalStackLayout>
+    </Border>
+
+  </Grid>
+</ContentPage>

@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+  xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+  x:Class="Imdeliceapp.Pages.ProductEditorPage"
+  Title="Producto"
+  BackgroundColor="{AppThemeBinding Light=White, Dark=Black}">
+
+  <ContentPage.Resources>
+    <Style TargetType="Entry"
+        x:Key="CompactEntry">
+      <Setter Property="HeightRequest"
+          Value="44"/>
+      <Setter Property="FontSize"
+          Value="14"/>
+      <Setter Property="ClearButtonVisibility"
+          Value="WhileEditing"/>
+    </Style>
+  </ContentPage.Resources>
+
+  <ScrollView>
+    <VerticalStackLayout Padding="20"
+        Spacing="12">
+      <Label x:Name="TitleLabel"
+          Text="Crear producto"
+          FontSize="20"
+          FontAttributes="Bold"
+             TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+      <Label x:Name="HintEdit"
+          Text="En edición: deja vacío lo que no quieras modificar."
+             FontSize="12"
+          Opacity="0.7"
+          IsVisible="False"
+             TextColor="{AppThemeBinding Light=#555, Dark=#CCC}"/>
+
+      <Picker x:Name="PkCategory"
+          Title="Categoría"
+          ItemDisplayBinding="{Binding name}"
+          SelectedIndexChanged="PkCategory_SelectedIndexChanged"/>
+      <Picker x:Name="PkType"
+              Title="Tipo (SIMPLE / VARIANTED / COMBO)"
+              SelectedIndexChanged="PkType_SelectedIndexChanged">
+        <Picker.Items>
+          <x:String>SIMPLE</x:String>
+          <x:String>VARIANTED</x:String>
+          <x:String>COMBO</x:String>   <!-- NUEVO -->
+          <!-- <x:String>COMBO</x:String> (luego) -->
+        </Picker.Items>
+      </Picker>
+
+
+      <Entry x:Name="TxtName"
+          Style="{StaticResource CompactEntry}"
+          Placeholder="Nombre"/>
+      <Entry x:Name="TxtSku"
+          Style="{StaticResource CompactEntry}"
+          Placeholder="SKU (opcional)"/>
+      <!-- NUEVO: imagen + acciones -->
+      <VerticalStackLayout Spacing="6">
+        <Border StrokeThickness="0"
+                Background="{AppThemeBinding Light=#F3F3F3, Dark=#222}"
+                StrokeShape="{RoundRectangle CornerRadius=8}">
+          <Image x:Name="ImgPreview"
+                 HeightRequest="160"
+                 Aspect="AspectFill"/>
+        </Border>
+
+        <HorizontalStackLayout Spacing="8">
+          <Button Text="Seleccionar foto"
+              Clicked="PickImage_Clicked"/>
+          <Button Text="Quitar imagen"
+              Clicked="RemoveImage_Clicked"/>
+        </HorizontalStackLayout>
+
+        <Label x:Name="LblImgHint"
+               Text="JPG/PNG hasta 5 MB."
+               FontSize="12"
+            Opacity="0.7"
+               TextColor="{AppThemeBinding Light=#555, Dark=#CCC}"/>
+      </VerticalStackLayout>
+
+      <Editor x:Name="TxtDesc"
+          Placeholder="Descripción (opcional)"
+          AutoSize="TextChanges"/>
+
+      <!-- SIMPLE / COMBO: Precio en MXN -->
+      <VerticalStackLayout x:Name="PanelSimple"
+          Spacing="2"
+          IsVisible="False">
+        <Border x:Name="BdrPrice"
+            StrokeThickness="1"
+                Stroke="{AppThemeBinding Light=#DDD, Dark=#444}"
+                StrokeShape="{RoundRectangle CornerRadius=6}"
+            Padding="8,0">
+          <Entry x:Name="TxtPrice"
+              Style="{StaticResource CompactEntry}"
+                 Placeholder="Precio (MXN, ej. 25.00)"
+              Keyboard="Numeric"/>
+        </Border>
+        <Label x:Name="ErrPrice"
+            Text="Precio inválido."
+            TextColor="Red"
+            FontSize="12"
+            IsVisible="False"/>
+      </VerticalStackLayout>
+
+      <!-- VARIANTED: variantes dinámicas -->
+      <VerticalStackLayout x:Name="PanelVariants"
+          Spacing="8"
+          IsVisible="False">
+        <Label Text="Variantes"
+            FontAttributes="Bold"
+               TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+        <VerticalStackLayout x:Name="VariantsHost"
+            Spacing="6"/>
+        <Button Text="Agregar variante"
+            Clicked="AddVariant_Clicked"/>
+      </VerticalStackLayout>
+      <!-- COMBO: piezas -->
+<VerticalStackLayout x:Name="PanelCombo" Spacing="8" IsVisible="False">
+  <Label Text="Piezas del combo" FontAttributes="Bold"
+         TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+  <VerticalStackLayout x:Name="ComboItemsHost" Spacing="6"/>
+  <Button Text="Agregar pieza" Clicked="AddComboItem_Clicked"/>
+  <Label FontSize="12" Opacity="0.7"
+         Text="Cada pieza requiere el ID del producto componente y cantidad (default 1)."
+         TextColor="{AppThemeBinding Light=#555, Dark=#CCC}"/>
+</VerticalStackLayout>
+
+
+      <HorizontalStackLayout Spacing="12"
+          Margin="0,12,0,0">
+        <Button x:Name="BtnGuardar"
+            Text="Guardar"
+            Clicked="Guardar_Clicked"
+            Style="{StaticResource PrimaryButtonStyle}"/>
+        <Button x:Name="BtnCancelar"
+            Text="Cancelar"
+            Clicked="Cancelar_Clicked"/>
+      </HorizontalStackLayout>
+    </VerticalStackLayout>
+  </ScrollView>
+</ContentPage>

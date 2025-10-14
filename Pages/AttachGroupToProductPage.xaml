@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Imdeliceapp.Pages.AttachGroupToProductPage"
+             Title="Adjuntar grupo"
+             BackgroundColor="{AppThemeBinding Light=White, Dark=Black}"
+   Shell.NavBarIsVisible="True"
+    Shell.BackgroundColor="{StaticResource BrandPrimary}"
+    Shell.ForegroundColor="{StaticResource BrandOnPrimary}"
+    Shell.TitleColor="{StaticResource BrandOnPrimary}">
+
+  <Grid RowDefinitions="Auto,Auto,*,Auto">
+
+    <!-- Encabezado -->
+    <Label x:Name="Hdr" Grid.Row="0" Margin="16,12" FontAttributes="Bold" />
+
+    <!-- Filtros -->
+    <Grid Grid.Row="1" ColumnDefinitions="*,Auto" Margin="16,0,16,8">
+      <SearchBar x:Name="SearchBox"
+                 Placeholder="Buscar producto…"
+                 SearchButtonPressed="SearchBox_SearchButtonPressed"
+                 TextChanged="SearchBox_TextChanged"
+                 Margin="0,0,8,0"/>
+      <Picker x:Name="CategoryPicker"
+              Grid.Column="1"
+              Title="Categoría"
+              WidthRequest="180"
+              ItemDisplayBinding="{Binding name}"
+              SelectedIndexChanged="CategoryPicker_SelectedIndexChanged"/>
+    </Grid>
+
+    <!-- Lista -->
+    <RefreshView Grid.Row="2"
+                 x:Name="ProdRefresh"
+                 IsRefreshing="{Binding IsRefreshing}"
+                 Refreshing="ProdRefresh_Refreshing">
+      <CollectionView x:Name="ProductsCV"
+                      ItemsSource="{Binding Products}"
+                      SelectionMode="None"
+                      Margin="16,0,16,0"
+                      ItemSizingStrategy="MeasureFirstItem">
+        <CollectionView.EmptyView>
+          <VerticalStackLayout Padding="32" Spacing="8"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center">
+            <Label Text="Sin resultados" FontAttributes="Bold" Opacity="0.9"/>
+          </VerticalStackLayout>
+        </CollectionView.EmptyView>
+
+        <CollectionView.ItemTemplate>
+          <DataTemplate>
+            <Grid Padding="12"
+                  Margin="0,6"
+                  ColumnDefinitions="*,Auto"
+                  BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E1E1E}">
+              <!-- contenido -->
+              <VerticalStackLayout Spacing="4">
+                <Label Text="{Binding name}" FontAttributes="Bold"
+                       TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+                <HorizontalStackLayout Spacing="8">
+                  <Border StrokeThickness="0" BackgroundColor="#EEE" Padding="6,2"
+                          StrokeShape="{RoundRectangle CornerRadius=8}">
+                    <Label Text="{Binding type}" FontSize="11"/>
+                  </Border>
+                  <Border StrokeThickness="0" BackgroundColor="#EEE" Padding="6,2"
+                          StrokeShape="{RoundRectangle CornerRadius=8}">
+                    <Label Text="{Binding priceCents, StringFormat='${0:F2}'}" FontSize="11">
+                      <Label.Triggers>
+                        <DataTrigger TargetType="Label" Binding="{Binding priceCents}" Value="{x:Null}">
+                          <Setter Property="Text" Value="—"/>
+                        </DataTrigger>
+                      </Label.Triggers>
+                    </Label>
+                  </Border>
+                  <Border StrokeThickness="0" BackgroundColor="#FAD7D7" Padding="6,2"
+                          StrokeShape="{RoundRectangle CornerRadius=8}">
+                    <Border.Triggers>
+                      <DataTrigger TargetType="Border" Binding="{Binding isActive}" Value="True">
+                        <Setter Property="IsVisible" Value="False"/>
+                      </DataTrigger>
+                    </Border.Triggers>
+                    <Label Text="Inactivo" FontSize="11" TextColor="#B71C1C"/>
+                  </Border>
+                </HorizontalStackLayout>
+              </VerticalStackLayout>
+
+              <!-- Adjuntar -->
+              <Button Grid.Column="1"
+                      Text="Adjuntar"
+                      HeightRequest="36"
+                      Padding="10,6"
+                      Clicked="AttachRow_Clicked"
+                      CommandParameter="{Binding .}"
+                      BackgroundColor="{AppThemeBinding Light=#894164, Dark=#894164}"
+                      TextColor="White"
+                      CornerRadius="8"
+                      HorizontalOptions="End"
+                      VerticalOptions="Center"/>
+            </Grid>
+          </DataTemplate>
+        </CollectionView.ItemTemplate>
+      </CollectionView>
+    </RefreshView>
+
+    <!-- Posición por defecto + Adjuntar manual (opcional) -->
+    <Grid Grid.Row="3" ColumnDefinitions="Auto,80,*,Auto" Padding="16,8,16,16">
+      <Label Text="Posición:" VerticalTextAlignment="Center"/>
+      <Entry x:Name="DefaultPosEntry" Grid.Column="1" Keyboard="Numeric" Placeholder="0"/>
+      <Label Grid.Column="2" Text="(se usa si no eliges otra)" FontSize="12" Opacity="0.6" VerticalTextAlignment="Center"/>
+      <!-- Si quieres conservar el adjuntar por ID, puedes dejar un botón aquí -->
+    </Grid>
+
+  </Grid>
+</ContentPage>

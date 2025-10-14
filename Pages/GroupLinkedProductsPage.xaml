@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+  xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+  x:Class="Imdeliceapp.Pages.GroupLinkedProductsPage"
+  Title="Productos vinculados"
+  BackgroundColor="{AppThemeBinding Light=White, Dark=Black}"
+   Shell.NavBarIsVisible="True"
+    Shell.BackgroundColor="{StaticResource BrandPrimary}"
+    Shell.ForegroundColor="{StaticResource BrandOnPrimary}"
+    Shell.TitleColor="{StaticResource BrandOnPrimary}">
+
+  <Grid RowDefinitions="Auto,*">
+    <SearchBar x:Name="SearchBox"
+               Placeholder="Buscar producto…"
+               Margin="12"
+               TextChanged="SearchBox_TextChanged"/>
+
+    <RefreshView x:Name="Refresh"
+                 Grid.Row="1"
+                 IsRefreshing="{Binding IsRefreshing}"
+                 Refreshing="Refresh_Refreshing">
+      <CollectionView x:Name="LinksCV"
+                      ItemsSource="{Binding Links}"
+                      SelectionMode="None"
+                      Margin="12">
+        <CollectionView.EmptyView>
+          <VerticalStackLayout Padding="32" Spacing="8" HorizontalOptions="Center" VerticalOptions="Center">
+            <Label Text="No hay productos vinculados"
+                   FontAttributes="Bold"
+                   TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+            <Button Text="Reintentar" Clicked="Refresh_Refreshing"/>
+          </VerticalStackLayout>
+        </CollectionView.EmptyView>
+
+        <CollectionView.ItemTemplate>
+          <DataTemplate>
+            <SwipeView>
+              <SwipeView.LeftItems>
+                <SwipeItems Mode="Reveal" SwipeBehaviorOnInvoked="Close">
+                  <SwipeItem Text="Desvincular" BackgroundColor="#E53935" Invoked="Detach_Clicked"/>
+                </SwipeItems>
+              </SwipeView.LeftItems>
+              <SwipeView.RightItems>
+                <SwipeItems Mode="Reveal" SwipeBehaviorOnInvoked="Close">
+                  <SwipeItem Text="Posición" BackgroundColor="#4CAF50" Invoked="EditPosition_Clicked"/>
+                </SwipeItems>
+              </SwipeView.RightItems>
+
+              <Grid Padding="12" ColumnDefinitions="*,Auto" BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E1E1E}" Margin="0,6">
+                <VerticalStackLayout Spacing="2">
+                  <Label Text="{Binding product.name}" FontAttributes="Bold"
+                         TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+                  <HorizontalStackLayout Spacing="8">
+                    <Border StrokeThickness="0" BackgroundColor="#E3F2FD" Padding="6,2" StrokeShape="{RoundRectangle CornerRadius=8}">
+                      <Label Text="{Binding product.type}" FontSize="11" TextColor="#1565C0"/>
+                    </Border>
+                    <Border StrokeThickness="0" BackgroundColor="#FFE0B2" Padding="6,2" StrokeShape="{RoundRectangle CornerRadius=8}">
+                      <Border.Triggers>
+                        <DataTrigger TargetType="Border" Binding="{Binding product.isActive}" Value="True">
+                          <Setter Property="IsVisible" Value="False"/>
+                        </DataTrigger>
+                      </Border.Triggers>
+                      <Label Text="Inactivo" FontSize="11" TextColor="#E65100"/>
+                    </Border>
+                  </HorizontalStackLayout>
+                  <Label FontSize="12" Text="{Binding position, StringFormat='Posición: {0}'}"
+                         TextColor="{AppThemeBinding Light=#666, Dark=#CCC}"/>
+                </VerticalStackLayout>
+
+                <Label Grid.Column="1"
+                       Text="{Binding product.priceCents, StringFormat='${0:F2}'}"
+                       IsVisible="{Binding product.priceCents}"
+                       VerticalTextAlignment="Center"/>
+              </Grid>
+            </SwipeView>
+          </DataTemplate>
+        </CollectionView.ItemTemplate>
+
+        <CollectionView.Footer>
+          <Grid HeightRequest="{OnPlatform iOS=120, Android=104}"/>
+        </CollectionView.Footer>
+      </CollectionView>
+    </RefreshView>
+
+    <!-- FAB Agregar -->
+    <Button Grid.RowSpan="2"
+            Text="+"
+            Clicked="AddLink_Clicked"
+            CornerRadius="28" WidthRequest="56" HeightRequest="56"
+            BackgroundColor="{AppThemeBinding Light=#894164, Dark=#894164}"
+            TextColor="White"
+            HorizontalOptions="End" VerticalOptions="End"
+            Margin="16,16,16,28"/>
+  </Grid>
+</ContentPage>

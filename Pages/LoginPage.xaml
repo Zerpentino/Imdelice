@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Imdeliceapp.Pages.LoginPage"
+             BackgroundColor="{AppThemeBinding Light=White, Dark=Black}"
+             NavigationPage.HasNavigationBar="False"
+             >
+   <Grid x:Name="mainGrid" RowDefinitions="*,Auto,Auto">
+    <ScrollView Grid.Row="0">
+        <VerticalStackLayout BackgroundColor="{AppThemeBinding Light=White, Dark=Black}" 
+              Padding="30" 
+              Spacing="25"
+               VerticalOptions="Start"
+
+                     MaximumWidthRequest="600">
+            
+            <!-- Logo -->
+            <Image Source="imdelice.png"
+                   HeightRequest="120"
+                   Aspect="AspectFit"
+                   HorizontalOptions="Center" />
+
+            <!-- Texto: Inicia sesión -->
+            <Label Text="Inicia sesión"
+                   FontSize="24"
+                   FontAttributes="Bold"
+                   TextColor="{AppThemeBinding Light=Black, Dark=White}"
+                   HorizontalOptions="Start" />
+
+            <!-- Campo ID del usuario -->
+<!-- Campo ID del usuario -->
+
+<Border
+    x:Name="frameCorreo"
+    Margin="0,0,0,12"
+    StrokeShape="{RoundRectangle CornerRadius=12}"
+    StrokeThickness="1"
+    Stroke="{AppThemeBinding Light=#DADADA, Dark=#444444}"
+    BackgroundColor="{AppThemeBinding Light=White, Dark=#262626}"
+    HeightRequest="56"
+    Padding="18,0">
+  <Border.Shadow>
+    <AppThemeBinding>
+      <AppThemeBinding.Light>
+        <Shadow Brush="#00000033" Offset="0,16" Radius="20" Opacity="0.5" />
+      </AppThemeBinding.Light>
+      <AppThemeBinding.Dark>
+        <Shadow Brush="#000000AA" Offset="0,8" Radius="24" Opacity="0.6" />
+      </AppThemeBinding.Dark>
+    </AppThemeBinding>
+  </Border.Shadow>
+
+  <Entry x:Name="entryCorreo"
+         Placeholder="Correo electrónico o Id de usuario"
+         BackgroundColor="Transparent"
+         TextColor="{AppThemeBinding Light=Black, Dark=White}"
+         PlaceholderColor="{AppThemeBinding Light=LightGray, Dark=LightGray}"
+         FontSize="17"
+         VerticalOptions="Fill"
+         VerticalTextAlignment="Center"
+         MinimumHeightRequest="44"
+         Text="{Binding dvcMail}"
+         TextChanged="EntryCorreo_TextChanged"/>
+</Border>
+       
+
+<Label x:Name="labelCorreoError"
+       Text="Este campo es obligatorio."
+       FontSize="12"
+       TextColor="Red"
+       IsVisible="False"
+       Margin="8,2,0,0" />
+<!-- Campo contraseña -->
+
+<Border
+    x:Name="frameContrasena"
+    Margin="0,0,0,12"
+    StrokeShape="{RoundRectangle CornerRadius=12}"
+    StrokeThickness="1"
+    Stroke="{AppThemeBinding Light=#DADADA, Dark=#444444}"
+    BackgroundColor="{AppThemeBinding Light=White, Dark=#262626}"
+    HeightRequest="56"
+    Padding="18,0">
+   <Border.Shadow>
+    <AppThemeBinding>
+      <AppThemeBinding.Light>
+        <Shadow Brush="#00000033" Offset="0,16" Radius="20" Opacity="0.5" />
+      </AppThemeBinding.Light>
+      <AppThemeBinding.Dark>
+        <Shadow Brush="#000000AA" Offset="0,8" Radius="24" Opacity="0.6" />
+      </AppThemeBinding.Dark>
+    </AppThemeBinding>
+  </Border.Shadow>
+
+    
+  <Grid ColumnDefinitions="*,Auto">
+    <Entry x:Name="entryContrasenia"
+           Placeholder="Contraseña"
+           BackgroundColor="Transparent"
+           TextColor="{AppThemeBinding Light=Black, Dark=White}"
+           PlaceholderColor="{AppThemeBinding Light=LightGray, Dark=LightGray}"
+           FontSize="17"
+           VerticalOptions="Fill"
+           VerticalTextAlignment="Center"
+           MinimumHeightRequest="44"
+           IsPassword="True"
+           Grid.Column="0"
+           Text="{Binding dvcContrasenia}"
+           TextChanged="EntryContrasenia_TextChanged"/>
+
+    <ImageButton Grid.Column="1"
+                 WidthRequest="28" HeightRequest="28"
+                 BackgroundColor="Transparent"
+                 Source="{AppThemeBinding Light=ojo_cerrado.png, Dark=ojo_cerrado_blanco.png}"
+                 Clicked="TogglePasswordVisibility_Clicked"/>
+  </Grid>
+</Border>
+
+ <Label x:Name="labelContraseniaError"
+       Text="Este campo es obligatorio."
+       FontSize="12"
+       TextColor="Red"
+       IsVisible="False"
+       Margin="8,2,0,0" />
+            <!-- Botón de inicio de sesión -->
+            <Button Text="Inicia Sesión"
+        Style="{StaticResource PrimaryButtonStyle}"
+        Clicked="btnIngresar_Clicked"
+        HorizontalOptions="Center"/>
+
+
+
+
+
+<Label 
+              Text="¿Olvidaste tu contraseña?"
+                     FontSize="14"
+                     HorizontalOptions="Center"
+                     TextColor="{AppThemeBinding Light=#521739, Dark=#D5B2C2}">
+              <Label.GestureRecognizers>
+                     <TapGestureRecognizer Tapped="OlvidasteContrasena_Tapped" />
+              </Label.GestureRecognizers>
+              </Label>
+           
+
+
+        </VerticalStackLayout>
+    </ScrollView>
+         <!-- Texto de contraseña olvidada -->
+            
+       <!-- Texto de ¿Tienes problemas para iniciar sesión? -->
+                <Label 
+                  Grid.Row="1"
+                  Text="¿Tienes problemas para iniciar sesión? Presiona aqui."
+                  HorizontalTextAlignment="Center"
+                      FontSize="14"
+                      
+                      HorizontalOptions="Center"
+                      Padding="20"
+                      VerticalOptions="End"
+                      TextColor="{AppThemeBinding Light=#521739, Dark=#D5B2C2}">
+                  <Label.GestureRecognizers>
+                      <TapGestureRecognizer Tapped="ProblemasIniciarSesion_Tapped" />
+                  </Label.GestureRecognizers>
+                  </Label>
+                   <Label
+      x:Name="LabelVersion"
+      Grid.Row="2"
+      TextColor="{AppThemeBinding Light=#888, Dark=#666}"
+      FontSize="12"
+      HorizontalTextAlignment="Center"
+      Padding="0,4" />
+    
+
+
+    <!-- FONDO BLANCO SEMITRANSPARENTE -->
+    <BoxView x:Name="overlay"
+        Grid.Row="0"
+         Grid.RowSpan="2"
+             BackgroundColor="{AppThemeBinding Light=White, Dark=Black}"
+             Opacity="0.9"
+             IsVisible="False"
+             InputTransparent="False"
+             />
+     <!-- Loader centrado, oculto por defecto -->
+        <ActivityIndicator 
+              Grid.Row="0"
+         Grid.RowSpan="2"
+              x:Name="loader"
+                           IsRunning="False"
+                           IsVisible="False"
+                           Color="{AppThemeBinding Light=#521739, Dark=#D5B2C2}"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center"
+                           WidthRequest="60"
+                           HeightRequest="60"/>
+    </Grid>
+</ContentPage>
