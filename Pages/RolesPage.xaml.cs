@@ -7,6 +7,8 @@ using Imdeliceapp.Model;
 using Microsoft.Maui.Storage;
 using Microsoft.Maui.Networking; // Connectivity
 using System.Threading.Tasks;     // TaskCanceledException
+using Imdeliceapp.Services; // Perms
+
 
 namespace Imdeliceapp.Pages;
 
@@ -19,6 +21,11 @@ public class RoleListItem
 
 public partial class RolesPage : ContentPage
 {
+    public bool CanRead   => Perms.RolesRead;
+public bool CanCreate => Perms.RolesCreate;
+public bool CanUpdate => Perms.RolesUpdate;
+public bool CanDelete => Perms.RolesDelete;
+
     static readonly JsonSerializerOptions _json = new() { PropertyNameCaseInsensitive = true };
 
     // Datos y binding
@@ -50,6 +57,20 @@ public partial class RolesPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+        // refresca bindings de visibilidad/habilitado
+    OnPropertyChanged(nameof(CanRead));
+    OnPropertyChanged(nameof(CanCreate));
+    OnPropertyChanged(nameof(CanUpdate));
+    OnPropertyChanged(nameof(CanDelete));
+
+        // Si no puede ni leer, sácalo de la página
+        if (!CanRead)
+        {
+            await DisplayAlert("Acceso restringido", "No tienes permiso para ver roles.", "OK");
+            await Shell.Current.GoToAsync("..");
+            return;
+        }
+    
         await CargarRolesAsync();
     }
 
@@ -178,16 +199,27 @@ public partial class RolesPage : ContentPage
     }
 
     private async void AddRole_Clicked(object sender, EventArgs e)
-        => await Shell.Current.GoToAsync($"{nameof(RoleEditorPage)}?mode=create");
+    {
+        if (!CanCreate)
+        {
+            await DisplayAlert("Acceso restringido", "No puedes crear roles.", "OK");
+            return;
+        }
+        await Shell.Current.GoToAsync($"{nameof(RoleEditorPage)}?mode=create");
+    }
 
     private async void EditSwipe_Invoked(object sender, EventArgs e)
     {
+            if (!CanUpdate) { await DisplayAlert("Acceso restringido", "No puedes editar roles.", "OK"); return; }
+
         if ((sender as SwipeItem)?.BindingContext is RoleListItem item)
             await Shell.Current.GoToAsync($"{nameof(RoleEditorPage)}?mode=edit&id={item.id}");
     }
 
     private async void DeleteSwipe_Invoked(object sender, EventArgs e)
     {
+            if (!CanDelete) { await DisplayAlert("Acceso restringido", "No puedes eliminar roles.", "OK"); return; }
+
         if ((sender as SwipeItem)?.BindingContext is not RoleListItem item) return;
 
         var ok = await DisplayAlert("Eliminar rol", $"¿Eliminar “{item.name}”?", "Sí", "Cancelar");

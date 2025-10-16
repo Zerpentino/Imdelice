@@ -146,6 +146,21 @@ public async Task ReplaceGroupOptionsAsync(int groupId, List<ModifierOptionDTO> 
 }
 
 
+public async Task SetOptionActiveAsync(int optionId, bool isActive)
+{
+    using var http = await NewAuthClientAsync();
+
+    var json = JsonSerializer.Serialize(new { isActive });
+    var req = new HttpRequestMessage(HttpMethod.Patch, $"/api/modifiers/modifier-options/{optionId}")
+    {
+        Content = new StringContent(json, Encoding.UTF8, "application/json")
+    };
+
+    var resp = await http.SendAsync(req);
+    var body = await resp.Content.ReadAsStringAsync();
+    if (!resp.IsSuccessStatusCode)
+        throw new HttpRequestException(body);
+}
 
 
 

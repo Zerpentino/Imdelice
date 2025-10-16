@@ -7,6 +7,9 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using System.Net.Http;
+using Imdeliceapp.Services; // ← Perms
+
 #if ANDROID            // ⬅️ solo Android
 using Imdeliceapp.Platforms.Android;
 using Android.Views;
@@ -39,7 +42,23 @@ public partial class App : Application
             Resources ??= new ResourceDictionary();
     if (!Resources.ContainsKey("BoolToIconConverter"))
         Resources.Add("BoolToIconConverter", new BoolToIconConverter());
-
+    try
+    {
+        var saved = Preferences.Default.Get("perms_json", "");
+        if (!string.IsNullOrWhiteSpace(saved))
+        {
+            var list = JsonSerializer.Deserialize<List<string>>(saved) ?? new();
+            Perms.Set(list);
+        }
+        else
+        {
+            Perms.Set(Array.Empty<string>());
+        }
+    }
+    catch
+    {
+        Perms.Set(Array.Empty<string>());
+    }
 
     }
 
@@ -68,12 +87,16 @@ public partial class App : Application
                     //                 #if ANDROID
                     //                 _ = EnviarTokenFCMAlBackend(); // ← Aquí la llamas (sin await si no estás en método async)
                     // #endif
+                    var baseUrl = Application.Current.Resources["urlbase"].ToString().TrimEnd('/');
+                    _ = Task.Run(() => SyncPermsFromServerAsync(baseUrl, token));
+                
                     return new AppShell();
                 }
 
                 System.Diagnostics.Debug.WriteLine("⚠️ Token expirado o inválido, limpiando sesión");
                 Preferences.Default.Clear();
                 SecureStorage.Remove("token");
+                Perms.Set(Array.Empty<string>()); // ← limpia permisos en memoria
             }
 
             System.Diagnostics.Debug.WriteLine("🔐 Mostrando LoginPage");
@@ -84,7 +107,35 @@ public partial class App : Application
             System.Diagnostics.Debug.WriteLine($"❌ ERROR en DecidePaginaInicial: {ex.Message}");
             return new NavigationPage(new LoginPage()); // fallback
         }
+    }static async Task SyncPermsFromServerAsync(string baseUrl, string token)
+{
+    try
+    {
+        using var http = new HttpClient { BaseAddress = new Uri(baseUrl), Timeout = TimeSpan.FromSeconds(15) };
+        http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var resp = await http.GetAsync("/api/auth/me");
+        if (!resp.IsSuccessStatusCode) return;
+
+        var body = await resp.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(body);
+
+        if (doc.RootElement.TryGetProperty("data", out var data) &&
+            data.TryGetProperty("permissions", out var arr) &&
+            arr.ValueKind == JsonValueKind.Array)
+        {
+            var perms = arr.EnumerateArray()
+                           .Select(x => x.GetString() ?? "")
+                           .Where(s => !string.IsNullOrWhiteSpace(s))
+                           .ToList();
+
+            Perms.Set(perms);
+            Preferences.Default.Set("perms_json", JsonSerializer.Serialize(perms));
+        }
     }
+    catch { /* ignora errores de red */ }
+}
+
     public class BoolToIconConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)

@@ -1,0 +1,11 @@
+bin/
+obj/
+**/bin/
+**/obj/
+**/*.ipa
+**/*.apk
+**/*.aab
+**/*.dSYM/
+**/*.app/
+.DS_Store
+obj

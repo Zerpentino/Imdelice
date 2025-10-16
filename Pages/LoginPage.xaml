@@ -5,6 +5,7 @@
              BackgroundColor="{AppThemeBinding Light=White, Dark=Black}"
              NavigationPage.HasNavigationBar="False"
              >
+             
    <Grid x:Name="mainGrid" RowDefinitions="*,Auto,Auto">
     <ScrollView Grid.Row="0">
         <VerticalStackLayout BackgroundColor="{AppThemeBinding Light=White, Dark=Black}" 

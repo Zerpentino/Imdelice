@@ -1,6 +1,12 @@
 using Microsoft.Maui.ApplicationModel; // MainThread
 using Microsoft.Maui.Storage;           // Preferences, SecureStorage
-
+using Imdeliceapp.Services; // ← Perms
+using System.Text.Json;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using Microsoft.Maui.ApplicationModel; // MainThread
+using Microsoft.Maui.Storage;
+using System;
 namespace Imdeliceapp.Pages;
 
 public partial class OptionsPage : ContentPage
@@ -9,45 +15,51 @@ public partial class OptionsPage : ContentPage
     {
         InitializeComponent();
     }
-   protected override void OnAppearing()
-{
-    base.OnAppearing();
-
-    var roleId = Preferences.Default.Get("roleId", 0);
-    var role = Preferences.Default.Get("role", string.Empty);
-    bool isAdmin = roleId == 1 || string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase);
-
-    BtnUsuarios.IsVisible = isAdmin;
-    BtnRoles.IsVisible = isAdmin;
-    BtnMenu.IsVisible = isAdmin;
-    BtnCategorias.IsVisible = isAdmin;
-    BtnModifierGroups.IsVisible = isAdmin; // <-- NUEVO
-}
-
-     private async void BtnUsuarios_Clicked(object sender, EventArgs e)
+    protected override void OnAppearing()
     {
+        base.OnAppearing();
+
+        // Visibilidad según permisos
+        BtnUsuarios.IsVisible = Perms.UsersRead;       // ver listado de usuarios
+        BtnRoles.IsVisible = Perms.RolesRead;       // ver listado de roles
+        BtnCategorias.IsVisible = Perms.CategoriesRead;  // ver categorías
+        BtnModifierGroups.IsVisible = Perms.ModifiersRead;   // ver grupos de modificadores
+        BtnMenu.IsVisible = Perms.MenuUpdate;      // editar/publicar menú
+    }
+
+    private async void BtnUsuarios_Clicked(object sender, EventArgs e)
+    {
+        if (!Perms.UsersRead) { await DisplayAlert("Acceso restringido", "No puedes ver usuarios.", "OK"); return; }
         // Navega dentro del mismo Tab (el TabBar no desaparece)
         await Shell.Current.GoToAsync(nameof(UsersPage));
     }
     private async void OpenRoles_Clicked(object sender, EventArgs e)
     {
+        if (!Perms.RolesRead) { await DisplayAlert("Acceso restringido", "No puedes ver roles.", "OK"); return; }
+
         // Navega dentro del mismo Tab (el TabBar no desaparece)
         await Shell.Current.GoToAsync(nameof(RolesPage));
     }
     private async void EditarMenu_Clicked(object sender, EventArgs e)
     {
+        if (!Perms.MenuUpdate) { await DisplayAlert("Acceso restringido", "No puedes editar el menú.", "OK"); return; }
+
         // Navega dentro del mismo Tab (el TabBar no desaparece)
-    await Shell.Current.GoToAsync(nameof(AdminMenuPage));
+        await Shell.Current.GoToAsync(nameof(AdminMenuPage));
     }
     private async void OpeCategorias_Clicked(object sender, EventArgs e)
     {
-          // Navega dentro del mismo Tab (el TabBar no desaparece)
-    await Shell.Current.GoToAsync(nameof(CategoriesPage));
+        if (!Perms.CategoriesRead) { await DisplayAlert("Acceso restringido", "No puedes ver categorías.", "OK"); return; }
+
+        // Navega dentro del mismo Tab (el TabBar no desaparece)
+        await Shell.Current.GoToAsync(nameof(CategoriesPage));
     }
     private async void OpenModifierGroups_Clicked(object sender, EventArgs e)
-{
-    await Shell.Current.GoToAsync(nameof(ModifierGroupsPage));
-}
+    {
+        if (!Perms.ModifiersRead) { await DisplayAlert("Acceso restringido","No puedes ver modificadores.","OK"); return; }
+
+        await Shell.Current.GoToAsync(nameof(ModifierGroupsPage));
+    }
 
 
     private async void BtnLogout_Clicked(object sender, EventArgs e)
@@ -62,6 +74,7 @@ public partial class OptionsPage : ContentPage
             // Limpia credenciales y sesión
             SecureStorage.Remove("token");
             Preferences.Default.Clear();
+            Perms.Set(Array.Empty<string>());
 
             // Reemplaza la raíz por LoginPage (como en DecidePaginaInicial)
             MainThread.BeginInvokeOnMainThread(() =>

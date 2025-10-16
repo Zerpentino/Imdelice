@@ -5,6 +5,8 @@ using System.Text.Json;
 using Imdeliceapp.Helpers;
 using Microsoft.Maui.Storage;
 using Microsoft.Maui.Networking; // Connectivity
+using Imdeliceapp.Services;
+using System.Globalization;  // arriba del archivo
 
 namespace Imdeliceapp.Pages;
 
@@ -25,13 +27,22 @@ class ApiEnvelope<T>
     public string? message { get; set; }
 }
 #endregion
+public class BoolActivoConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        => (value as bool? ?? false) ? "Activo" : "Inactivo";
 
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => throw new NotImplementedException();
+}
 public class UserListItem
 {
     public int id { get; set; }
     public string name { get; set; } = "";
     public string email { get; set; } = "";
     public string role { get; set; } = "";  // "Admin" | "Mesero"
+     public int roleId { get; set; }  
+
     public bool active { get; set; } = true; // (placeholder para futuro)
 
     public string Initials => string.Join("", (name ?? "")
@@ -42,6 +53,13 @@ public class UserListItem
 
 public partial class UsersPage : ContentPage
 {
+    public bool CanRead => Perms.UsersRead;
+    public bool CanCreate => Perms.UsersCreate;
+
+    public bool CanUpdate => Perms.UsersUpdate;
+
+    public bool CanDelete => Perms.UsersDelete;
+
     static readonly JsonSerializerOptions _json = new() { PropertyNameCaseInsensitive = true };
 
     public ObservableCollection<UserListItem> Users { get; } = new();
@@ -70,6 +88,18 @@ public partial class UsersPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+        OnPropertyChanged(nameof(CanRead));
+    OnPropertyChanged(nameof(CanCreate));
+    OnPropertyChanged(nameof(CanUpdate));
+    OnPropertyChanged(nameof(CanDelete));
+
+        if (!CanRead)
+        {
+            await DisplayAlert("Acceso restringido", "No tienes permiso para ver usuarios.", "OK");
+            await Shell.Current.GoToAsync("..");
+            return;
+        }
+    
         await CargarUsuariosAsync();
     }
 
@@ -168,6 +198,7 @@ public partial class UsersPage : ContentPage
                 name = u.name ?? "",
                 email = u.email ?? "",
                 role = RoleName(u),
+                roleId = u.roleId,      
                 active = true
             }).ToList();
 
@@ -191,7 +222,7 @@ public partial class UsersPage : ContentPage
             MostrarServidorNoDisponible();
             await ErrorHandler.MostrarErrorTecnico(ex, "Users – CargarUsuarios");
         }
-    
+
     }
 
     private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -210,17 +241,37 @@ public partial class UsersPage : ContentPage
 
     private async void AddUser_Clicked(object sender, EventArgs e)
     {
+        if (!CanCreate) { await DisplayAlert("Acceso restringido","No puedes crear usuarios.","OK"); return; }
+
         await Shell.Current.GoToAsync($"{nameof(UserEditorPage)}?mode=create");
     }
 
     private async void EditSwipe_Invoked(object sender, EventArgs e)
+{
+    if (!CanUpdate) { await DisplayAlert("Acceso restringido","No puedes editar usuarios.","OK"); return; }
+    if (!(Perms.UsersUpdate && Perms.UsersRead))
     {
-        if ((sender as SwipeItem)?.BindingContext is UserListItem item)
-            await Shell.Current.GoToAsync($"{nameof(UserEditorPage)}?mode=edit&id={item.id}");
+        await DisplayAlert("Acceso restringido",
+            "Para editar necesitas también permiso para ver usuarios (users.read).", "OK");
+        return;
     }
+
+    if ((sender as SwipeItem)?.BindingContext is UserListItem item)
+    {
+        var name  = Uri.EscapeDataString(item.name ?? "");
+        var email = Uri.EscapeDataString(item.email ?? "");
+        // roleId ya es int, no necesita escape
+        await Shell.Current.GoToAsync(
+            $"{nameof(UserEditorPage)}?mode=edit&id={item.id}&name={name}&email={email}&roleId={item.roleId}"
+        );
+    }
+}
+
 
     private async void DeleteSwipe_Invoked(object sender, EventArgs e)
     {
+            if (!CanDelete) { await DisplayAlert("Acceso restringido","No puedes eliminar usuarios.","OK"); return; }
+
         if ((sender as SwipeItem)?.BindingContext is not UserListItem item) return;
 
         var ok = await DisplayAlert("Eliminar usuario",
@@ -264,16 +315,16 @@ public partial class UsersPage : ContentPage
         }
     }
     private async void UsersRefresh_Refreshing(object sender, EventArgs e)
-{
-    try { await CargarUsuariosAsync(); }
-    finally { IsRefreshing = false; }
-}
+    {
+        try { await CargarUsuariosAsync(); }
+        finally { IsRefreshing = false; }
+    }
 
-private async void Retry_Clicked(object sender, EventArgs e)
-{
-    IsRefreshing = true;
-    await CargarUsuariosAsync();
-    IsRefreshing = false;
-}
+    private async void Retry_Clicked(object sender, EventArgs e)
+    {
+        IsRefreshing = true;
+        await CargarUsuariosAsync();
+        IsRefreshing = false;
+    }
 
 }

@@ -8,15 +8,24 @@ using Microsoft.Maui.Storage;
 using System.Text.RegularExpressions;
 using Microsoft.Maui.Networking;  // Connectivity
 using System.Threading.Tasks;      // TaskCanceledException
+using Imdeliceapp.Services;
 
 namespace Imdeliceapp.Pages;
 
 [QueryProperty(nameof(Mode), "mode")]
 [QueryProperty(nameof(UserId), "id")]
+[QueryProperty(nameof(PrefillName), "name")]     // <-- NUEVO
+[QueryProperty(nameof(PrefillEmail), "email")]   // <-- NUEVO
+[QueryProperty(nameof(PrefillRoleId), "roleId")] // <-- NUEVO
 public partial class UserEditorPage : ContentPage
 {
     public string? Mode { get; set; }   // "create" | "edit"
     public int UserId { get; set; }
+    // NUEVO: valores que llegan desde la lista
+    public string? PrefillName { get; set; }
+    public string? PrefillEmail { get; set; }
+    public int PrefillRoleId { get; set; }
+
     string? _origEmail, _origName;
     int _origRoleId;
 
@@ -187,24 +196,48 @@ public partial class UserEditorPage : ContentPage
         base.OnAppearing();
 
         var esEdicion = string.Equals(Mode, "edit", StringComparison.OrdinalIgnoreCase);
+        if (esEdicion && !Perms.UsersUpdate) { await DisplayAlert("Acceso restringido", "No puedes editar usuarios.", "OK"); return; }
+        if (!esEdicion && !Perms.UsersCreate) { await DisplayAlert("Acceso restringido", "No puedes crear usuarios.", "OK"); return; }
+
         TitleLabel.Text = esEdicion ? "Editar usuario" : "Crear usuario";
         HintEditPassword.IsVisible = esEdicion;
         HintEditGeneral.IsVisible = esEdicion;
 
-        TxtPassword.Placeholder = esEdicion ? "Nueva contraseña (opcional)" : "Contraseña";
-        TxtPasswordConfirm.Placeholder = esEdicion ? "Confirmar nueva contraseña (opcional)" : "Confirmar contraseña";
-        TxtPin.Placeholder = esEdicion ? "PIN (opcional, 4 dígitos)" : "PIN (4 dígitos)";
-
-        // iconos iniciales para contraseñas
         SetEye(BtnTogglePwd, _showPwd);
         SetEye(BtnTogglePwd2, _showPwd2);
 
-        await CargarRolesAsync();
+        if (Perms.RolesRead)
+        {
+            if (_roles.Count == 0) await CargarRolesAsync();
+            PkRole.IsEnabled = true;
+            PkRole.IsVisible = true;
+        }
+        else
+        {
+            PkRole.IsEnabled = false;
+            PkRole.IsVisible = false;
+        }
 
+        // === PREFILL desde la lista (sin llamar GET) ===
+        if (esEdicion && UserId > 0 && (!string.IsNullOrEmpty(PrefillEmail) || !string.IsNullOrEmpty(PrefillName)))
+        {
+            _origName = PrefillName ?? "";
+            _origEmail = PrefillEmail ?? "";
+            _origRoleId = PrefillRoleId;
 
-        if (esEdicion && UserId > 0)
+            TxtName.Text = _origName;
+            TxtEmail.Text = _origEmail;
+            if (Perms.RolesRead)
+                PkRole.SelectedItem = _roles.FirstOrDefault(r => r.id == _origRoleId);
+
+            return; // IMPORTANTÍSIMO: no intentes GET si ya hay datos
+        }
+
+        // Fallback solo si de verdad no llegaron datos y SÍ tienes permiso de ver
+        if (esEdicion && UserId > 0 && Perms.UsersRead)
             await CargarUsuarioAsync(UserId);
     }
+
 
     async Task CargarUsuarioAsync(int id)
     {
@@ -221,6 +254,17 @@ public partial class UserEditorPage : ContentPage
             using var http = NewAuthClient(baseUrl, token);
 
             var resp = await http.GetAsync($"/api/users/{id}");
+            if (resp.StatusCode == HttpStatusCode.NotFound || resp.StatusCode == HttpStatusCode.Forbidden)
+            {
+                var msg = resp.StatusCode == HttpStatusCode.NotFound
+                    ? $"El usuario #{id} no existe o no tienes permiso para verlo."
+                    : "No tienes permiso para ver este usuario (falta users.read).";
+
+                await DisplayAlert("No se puede cargar", msg, "OK");
+                // Nos quedamos en la pantalla para permitir edición parcial.
+                return;
+            }
+
             var body = await resp.Content.ReadAsStringAsync();
 
             if (!resp.IsSuccessStatusCode)
@@ -280,6 +324,8 @@ public partial class UserEditorPage : ContentPage
         var pin = TxtPin.Text?.Trim();
         // Validaciones password/confirm
         var esEdicion = string.Equals(Mode, "edit", StringComparison.OrdinalIgnoreCase);
+        if (esEdicion && !Perms.UsersUpdate) { await DisplayAlert("Acceso restringido", "No puedes editar usuarios.", "OK"); return; }
+        if (!esEdicion && !Perms.UsersCreate) { await DisplayAlert("Acceso restringido", "No puedes crear usuarios.", "OK"); return; }
         var selRole = PkRole.SelectedItem as RoleDTO;
 
         if (esEdicion)
@@ -322,7 +368,7 @@ public partial class UserEditorPage : ContentPage
         {
             if (string.IsNullOrWhiteSpace(name) ||
            string.IsNullOrWhiteSpace(email) ||
-           string.IsNullOrWhiteSpace(selRole?.name) )
+           string.IsNullOrWhiteSpace(selRole?.name))
             {
                 await DisplayAlert("Campos incompletos", "Llena nombre, correo y rol.", "OK");
                 return;
@@ -416,9 +462,14 @@ public partial class UserEditorPage : ContentPage
                                     : (name != _origName ? name : null);
 
                 int? sendRole = null;
-                var selId = (selRole?.id) ?? _origRoleId;
-                if (selRole != null && selId != _origRoleId)
-                    sendRole = selRole.id;
+                if (Perms.RolesRead) // sólo si puede ver/escoger roles
+                {
+                    selRole = PkRole.SelectedItem as RoleDTO;
+                    var selId = (selRole?.id) ?? _origRoleId;
+                    if (selRole != null && selId != _origRoleId)
+                        sendRole = selRole.id;
+                }
+
 
                 string? sendPwd = (!string.IsNullOrWhiteSpace(pwd) && pwd == pwd2 && pwd.Length >= 3) ? pwd : null;
                 string? sendPin = string.IsNullOrWhiteSpace(pin) ? null : pin; // ya validado si viene
@@ -457,15 +508,23 @@ public partial class UserEditorPage : ContentPage
             }
             else
             {
-                // crear: password/pin obligatorios y ya validados
+                selRole = Perms.RolesRead ? (PkRole.SelectedItem as RoleDTO) : null;
+                // si no puede ver roles, puedes forzar un rol por defecto, o impedir crear
+                if (selRole == null && Perms.RolesRead)
+                {
+                    await DisplayAlert("Rol", "Selecciona un rol.", "OK");
+                    return;
+                }
+
                 var payload = new
                 {
                     email,
                     name,
-                    roleId = selRole.id,
+                    roleId = selRole?.id, // será null si no hay RolesRead; el backend decide si lo acepta
                     password = pwd,
                     pinCode = pin
                 };
+
 
                 var json = JsonSerializer.Serialize(payload, _jsonWrite);
                 resp = await http.PostAsync("/api/users", new StringContent(json, System.Text.Encoding.UTF8, "application/json"));
@@ -505,6 +564,15 @@ public partial class UserEditorPage : ContentPage
                 await ErrorHandler.MostrarErrorUsuario(apiMsg);
                 return;
             }
+            if (resp.StatusCode == HttpStatusCode.Forbidden || resp.StatusCode == HttpStatusCode.NotFound)
+            {
+                await DisplayAlert("Permisos insuficientes",
+                    "No puedes ver los datos del usuario. Pide que te activen el permiso users.read. " +
+                    "Si no necesitas cambiar el rol, también puedes editar sin ver roles.", "OK");
+                await Shell.Current.GoToAsync("..");
+                return;
+            }
+
 
 
 

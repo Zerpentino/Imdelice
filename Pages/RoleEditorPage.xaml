@@ -65,6 +65,31 @@
                Text="Descripción demasiado larga."
                TextColor="Red" FontSize="12" IsVisible="False"/>
       </VerticalStackLayout>
+    <!-- Permisos -->
+<Label Text="Permisos" FontAttributes="Bold"
+       Margin="0,12,0,4"
+       TextColor="{AppThemeBinding Light=#333, Dark=#DDD}"/>
+
+<HorizontalStackLayout Spacing="8" Margin="0,0,0,4">
+  <Button Text="Todos" Clicked="SelectAllPerms_Clicked" />
+  <Button Text="Ninguno" Clicked="ClearAllPerms_Clicked" />
+</HorizontalStackLayout>
+
+<!-- Check-list de permisos -->
+<CollectionView x:Name="PermsCV"
+                ItemsSource="{Binding PermItems}"
+                SelectionMode="None">
+  <CollectionView.ItemTemplate>
+    <DataTemplate>
+      <Grid Padding="6" ColumnDefinitions="Auto,*">
+        <CheckBox IsChecked="{Binding selected}" />
+        <Label Grid.Column="1" Text="{Binding display}"
+               VerticalTextAlignment="Center"
+               TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+      </Grid>
+    </DataTemplate>
+  </CollectionView.ItemTemplate>
+</CollectionView>
 
       <!-- Botones -->
       <HorizontalStackLayout Spacing="12" Margin="0,12,0,0">

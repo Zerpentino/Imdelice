@@ -15,11 +15,7 @@
                             HorizontalTextAlignment="Center"
                             TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
 
-                     <Label Text="(Mesero: Cerrar sesión · Admin: crear usuarios, disponibilidad del menú, etc.)"
-                            FontSize="12"
-                            Opacity="0.7"
-                            HorizontalTextAlignment="Center"
-                            TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+
                      <!-- Solo admins -->
                      <Button x:Name="BtnUsuarios"
                              Text="Usuarios"
@@ -27,24 +23,26 @@
                              Style="{StaticResource PrimaryButtonStyle}"
                              IsVisible="False"/>
                      <Button x:Name="BtnRoles"
-                                   Text="Roles"
-                                   Clicked="OpenRoles_Clicked"
-                             Style="{StaticResource PrimaryButtonStyle}"/>
-                             <Button x:Name="BtnCategorias"
-                                   Text="Categorias"
-                                   Clicked="OpeCategorias_Clicked"
-                             Style="{StaticResource PrimaryButtonStyle}"/>
-                             <Button x:Name="BtnModifierGroups"
-        Text="Grupos de modificadores"
-        Clicked="OpenModifierGroups_Clicked"
-        Style="{StaticResource PrimaryButtonStyle}"
-        IsVisible="False"/>
+                             Text="Roles"
+                             Clicked="OpenRoles_Clicked"
+                             Style="{StaticResource PrimaryButtonStyle}"
+                             IsVisible="False"/>
+                     <Button x:Name="BtnCategorias"
+                             Text="Categorias"
+                             Clicked="OpeCategorias_Clicked"
+                             Style="{StaticResource PrimaryButtonStyle}"
+                             IsVisible="False"/>
+                     <Button x:Name="BtnModifierGroups"
+                             Text="Grupos de modificadores"
+                             Clicked="OpenModifierGroups_Clicked"
+                             Style="{StaticResource PrimaryButtonStyle}"
+                             IsVisible="False"/>
 
 
 
                      <Button x:Name="BtnMenu"
                              Text="Editar menú"
-                             IsVisible="{Binding IsAdmin}"
+                             IsVisible="False"
                              Clicked="EditarMenu_Clicked"
                              Style="{StaticResource PrimaryButtonStyle}"/>
 

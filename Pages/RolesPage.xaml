@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     x:Class="Imdeliceapp.Pages.RolesPage"
     Title="Roles"
+    x:Name="ThisPage"
     BackgroundColor="{AppThemeBinding Light=White, Dark=Black}"
     Shell.NavBarIsVisible="True"
     Shell.BackgroundColor="{StaticResource BrandPrimary}"
@@ -48,7 +49,8 @@
                 <SwipeItems Mode="Reveal" SwipeBehaviorOnInvoked="Close">
                   <SwipeItem Text="Eliminar"
                              BackgroundColor="#E53935"
-                             Invoked="DeleteSwipe_Invoked"/>
+                             Invoked="DeleteSwipe_Invoked"
+                             IsEnabled="{Binding Source={x:Reference ThisPage}, Path=CanDelete}" />
                 </SwipeItems>
               </SwipeView.LeftItems>
 
@@ -57,7 +59,8 @@
                 <SwipeItems Mode="Reveal" SwipeBehaviorOnInvoked="Close">
                   <SwipeItem Text="Editar"
                              BackgroundColor="#4CAF50"
-                             Invoked="EditSwipe_Invoked"/>
+                             Invoked="EditSwipe_Invoked"
+                             IsEnabled="{Binding Source={x:Reference ThisPage}, Path=CanUpdate}" />
                 </SwipeItems>
               </SwipeView.RightItems>
 
@@ -84,6 +87,7 @@
             BackgroundColor="{AppThemeBinding Light=#894164, Dark=#894164}"
             TextColor="White"
             HorizontalOptions="End" VerticalOptions="End"
-            Margin="16"/>
+            Margin="16"
+            IsVisible="{Binding Source={x:Reference ThisPage}, Path=CanCreate}"/>
   </Grid>
 </ContentPage>

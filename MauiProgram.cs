@@ -2,13 +2,17 @@
 using CommunityToolkit.Maui;
 using Microsoft.Maui.LifecycleEvents;
 using QuestPDF.Infrastructure;
-
+using Microsoft.Maui.Handlers;
+#if ANDROID
+using AndroidX.AppCompat.Widget;
+#endif
 
 
 namespace Imdeliceapp;
 
 public static class MauiProgram
 {
+	
 	public static MauiApp CreateMauiApp()
 	{
 #if IOS

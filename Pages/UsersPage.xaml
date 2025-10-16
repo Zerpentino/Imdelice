@@ -4,11 +4,22 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     x:Class="Imdeliceapp.Pages.UsersPage"
     Title="Usuarios"
+    xmlns:pages="clr-namespace:Imdeliceapp.Pages"
+
+     x:Name="ThisPage"
+
     BackgroundColor="{AppThemeBinding Light=White, Dark=Black}"
     Shell.NavBarIsVisible="True"
     Shell.BackgroundColor="{StaticResource BrandPrimary}"
     Shell.ForegroundColor="{StaticResource BrandOnPrimary}"
     Shell.TitleColor="{StaticResource BrandOnPrimary}">
+     <!-- Converter para mostrar Activo/Inactivo -->
+  <ContentPage.Resources>
+    <ResourceDictionary>
+      <pages:BoolActivoConverter x:Key="BoolActivoConverter" />
+    </ResourceDictionary>
+  </ContentPage.Resources>
+
 
   <Grid RowDefinitions="Auto,*">
     <SearchBar x:Name="SearchBox"
@@ -46,7 +57,8 @@
     <SwipeItems Mode="Reveal" SwipeBehaviorOnInvoked="Close">
       <SwipeItem Text="Editar"
                  BackgroundColor="#4CAF50"
-                 Invoked="EditSwipe_Invoked" />
+                 Invoked="EditSwipe_Invoked" 
+                 IsEnabled="{Binding Source={x:Reference ThisPage}, Path=CanUpdate}" />
     </SwipeItems>
   </SwipeView.LeftItems>
 
@@ -55,7 +67,8 @@
     <SwipeItems Mode="Reveal" SwipeBehaviorOnInvoked="Close">
       <SwipeItem Text="Eliminar"
                  BackgroundColor="#E53935"
-                 Invoked="DeleteSwipe_Invoked" />
+                 Invoked="DeleteSwipe_Invoked" 
+                  IsEnabled="{Binding Source={x:Reference ThisPage}, Path=CanDelete}"/>
     </SwipeItems>
   </SwipeView.RightItems>
 
@@ -95,11 +108,12 @@
               </VerticalStackLayout>
 
               <!-- Activo/Inactivo (futuro toggle con API) -->
-              <Label Grid.Column="2"
-                     Text="{Binding active, StringFormat='{}{0:Activo;Inactivo}'}"
-                     FontSize="12"
-                     VerticalTextAlignment="Center"
-                     TextColor="{AppThemeBinding Light=#666, Dark=#CCC}"/>
+             <Label Grid.Column="2"
+       Text="{Binding active, Converter={StaticResource BoolActivoConverter}}"
+       FontSize="12"
+       VerticalTextAlignment="Center"
+       TextColor="{AppThemeBinding Light=#666, Dark=#CCC}"/>
+
             </Grid>
           </SwipeView>
         </DataTemplate>
@@ -116,6 +130,7 @@
             BackgroundColor="{AppThemeBinding Light=#894164, Dark=#894164}"
             TextColor="White"
             HorizontalOptions="End" VerticalOptions="End"
-            Margin="16"/>
+            Margin="16"
+            IsVisible="{Binding Source={x:Reference ThisPage}, Path=CanCreate}"/>
   </Grid>
 </ContentPage>

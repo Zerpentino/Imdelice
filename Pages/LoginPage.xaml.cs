@@ -8,6 +8,9 @@ using Imdeliceapp.Model;
 using CommunityToolkit.Mvvm.Messaging;
 using Imdeliceapp.Helpers;
 using System.Net.Http;
+using Imdeliceapp.Services; // 👈 para Perms
+using System.Net.Http.Headers;
+
 using System.Net;
 using System.Text;
 using MauiFrame = Microsoft.Maui.Controls.Frame;
@@ -36,24 +39,77 @@ public partial class LoginPage : ContentPage
 
 bool EsPin(string s) => s?.Length == 4 && s.All(char.IsDigit);
 
+
+static List<string> TryGetPermsFromToken(string jwt)
+{
+    try
+    {
+        var parts = jwt.Split('.');
+        if (parts.Length < 2) return new();
+
+        // base64url -> base64
+        string payload = parts[1].Replace('-', '+').Replace('_', '/');
+        switch (payload.Length % 4) { case 2: payload += "=="; break; case 3: payload += "="; break; }
+
+        var json = Encoding.UTF8.GetString(Convert.FromBase64String(payload));
+        using var doc = JsonDocument.Parse(json);
+        var root = doc.RootElement;
+
+        if (root.TryGetProperty("perms", out var a) && a.ValueKind == JsonValueKind.Array)
+            return a.EnumerateArray()
+                    .Select(x => x.GetString() ?? "")
+                    .Where(s => !string.IsNullOrWhiteSpace(s))
+                    .ToList();
+
+        if (root.TryGetProperty("permissions", out var b) && b.ValueKind == JsonValueKind.Array)
+            return b.EnumerateArray()
+                    .Select(x => x.GetString() ?? "")
+                    .Where(s => !string.IsNullOrWhiteSpace(s))
+                    .ToList();
+
+        return new();
+    }
+    catch
+    {
+        return new();
+    }
+}
+
+    static async Task SyncPermsFromServerAsync(string baseUrl, string token)
+    {
+        try
+        {
+            using var http = new HttpClient { BaseAddress = new Uri(baseUrl), Timeout = TimeSpan.FromSeconds(60) };
+            http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var resp = await http.GetAsync("/api/auth/me");
+            if (!resp.IsSuccessStatusCode) return;
+
+            var body = await resp.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(body);
+            var perms = doc.RootElement
+                           .GetProperty("data")
+                           .GetProperty("permissions")
+                           .EnumerateArray()
+                           .Select(x => x.GetString() ?? "")
+                           .Where(s => !string.IsNullOrWhiteSpace(s))
+                           .ToList();
+
+            Perms.Set(perms);
+
+            // guarda por conveniencia (para precargar UI en próximos arranques)
+            Preferences.Default.Set("perms_json", JsonSerializer.Serialize(perms));
+        }
+        catch { /* ignora errores de red; ya tendrás los del token */ }
+    }
+
 async Task<LoginData> LoginConApiAsync(string entrada, string password)
 {
     string baseUrl = App.Current.Resources["urlbase"].ToString().TrimEnd('/');
     string path, url;
     object body;
-    string urlprueba = "http://172.20.14.24:3000/";
     
-        // ver si conecta a la IP local
-        using var httpPrueba = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
-    try
-    {
-        var respPrueba = await httpPrueba.GetAsync(urlprueba);
-        await DisplayAlert($"Prueba a {urlprueba}", $"Status: {respPrueba.StatusCode}", "OK");
-    }
-    catch (Exception ex)
-    {
-        await DisplayAlert("Prueba de conexión fallida", ex.Message, "OK");
-    }
+       
 
     if (EsCorreoValido(entrada))
         {
@@ -71,9 +127,9 @@ async Task<LoginData> LoginConApiAsync(string entrada, string password)
         }
 
     url = $"{baseUrl}/{path}";
-    await DisplayAlert("URL", url, "OK");
+    // await DisplayAlert("URL", url, "OK");
 
-    using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(20) };
+    using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
         http.DefaultRequestHeaders.Accept.ParseAdd("application/json");
 
 
@@ -82,7 +138,8 @@ async Task<LoginData> LoginConApiAsync(string entrada, string password)
 
     var resp = await http.PostAsync(url, content);
     var text = await resp.Content.ReadAsStringAsync();
-    var env  = System.Text.Json.JsonSerializer.Deserialize<ApiEnvelope<LoginData>>(text, _json);
+        var env = System.Text.Json.JsonSerializer.Deserialize<ApiEnvelope<LoginData>>(text, _json);
+    
 
     if (!resp.IsSuccessStatusCode)
         throw new InvalidOperationException(env?.message ?? "Credenciales inválidas");
@@ -95,6 +152,7 @@ async Task<LoginData> LoginConApiAsync(string entrada, string password)
 
     static async Task GuardarSesionAsync(LoginData d)
     {
+        
         await SecureStorage.SetAsync("token", d.token);
         Preferences.Default.Set("token", d.token);
         Preferences.Default.Set("logeado", true);
@@ -107,6 +165,14 @@ async Task<LoginData> LoginConApiAsync(string entrada, string password)
         Preferences.Default.Set("usuario_mail", d.user.email ?? "");
         Preferences.Default.Set("roleId", d.user.roleId);
         Preferences.Default.Set("role", d.user.role?.name ?? "");
+
+    var permsFromJwt = TryGetPermsFromToken(d.token); // ya es List<string>
+Perms.Set(permsFromJwt);
+Preferences.Default.Set("perms_json", JsonSerializer.Serialize(permsFromJwt));
+
+
+    
+        
     }
 
 	static bool SinInternet =>
@@ -199,6 +265,11 @@ SetError(frameContrasena, labelContraseniaError.IsVisible);
 
             var data = await LoginConApiAsync(entrada, contrasenia);
             await GuardarSesionAsync(data);
+            // Refresca desde el servidor (por si cambió algo en backend)
+var baseUrl = App.Current.Resources["urlbase"].ToString().TrimEnd('/');
+_ = SyncPermsFromServerAsync(baseUrl, data.token); // fire-and-forget está bien
+
+
 
             // ➜ Entrar a la app
             Application.Current.MainPage = new AppShell();

@@ -7,40 +7,51 @@
   Shell.NavBarIsVisible="True">
 
   <ContentPage.ToolbarItems>
-    <ToolbarItem Text="Guardar" Order="Primary" Priority="0" Clicked="Save_Clicked"/>
+    <ToolbarItem Text="Guardar"
+        Order="Primary"
+        Priority="0"
+        Clicked="Save_Clicked"/>
   </ContentPage.ToolbarItems>
 
   <ScrollView>
-    
-    <VerticalStackLayout Padding="16" Spacing="16">
-<!-- Debajo de <ScrollView> o al principio del Stack -->
-<ActivityIndicator x:Name="SavingSpinner"
-                   IsRunning="False"
-                   IsVisible="False"
-                   Margin="0,6"/>
+
+    <VerticalStackLayout Padding="16"
+        Spacing="16">
+      <!-- Debajo de <ScrollView> o al principio del Stack -->
+      <ActivityIndicator x:Name="SavingSpinner"
+                         IsRunning="False"
+                         IsVisible="False"
+                         Margin="0,6"/>
 
       <!-- ===== DATOS DEL GRUPO ===== -->
-      <Frame HasShadow="False" CornerRadius="12"
+      <Frame HasShadow="False"
+          CornerRadius="12"
              Padding="14"
              BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E1E1E}">
         <VerticalStackLayout Spacing="12">
 
-          <Label Text="Datos del grupo" FontAttributes="Bold"
+          <Label Text="Datos del grupo"
+              FontAttributes="Bold"
                  TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
 
           <!-- Nombre -->
           <VerticalStackLayout Spacing="4">
-            <Label Text="Nombre" FontSize="12"
+            <Label Text="Nombre"
+                FontSize="12"
                    TextColor="{AppThemeBinding Light=#555, Dark=#BBB}"/>
-            <Entry x:Name="NameEntry" Placeholder="p. ej. Tamaño"/>
+            <Entry x:Name="NameEntry"
+                Placeholder="p. ej. Tamaño"/>
           </VerticalStackLayout>
 
           <!-- Descripción -->
           <VerticalStackLayout Spacing="4">
-            <Label Text="Descripción" FontSize="12"
+            <Label Text="Descripción"
+                FontSize="12"
                    TextColor="{AppThemeBinding Light=#555, Dark=#BBB}"/>
-            <Editor x:Name="DescEntry" Placeholder="p. ej. Elige un tamaño"
-        AutoSize="TextChanges" MaxLength="140" />
+            <Editor x:Name="DescEntry"
+                Placeholder="p. ej. Elige un tamaño"
+                    AutoSize="TextChanges"
+                MaxLength="140"/>
 
           </VerticalStackLayout>
 
@@ -48,31 +59,45 @@
           <Grid ColumnDefinitions="*,*"
                 ColumnSpacing="12">
             <VerticalStackLayout Spacing="4">
-              <Label Text="Mín. selecciones" FontSize="12"
+              <Label Text="Mín. selecciones"
+                  FontSize="12"
                      TextColor="{AppThemeBinding Light=#555, Dark=#BBB}"/>
-              <Entry x:Name="MinEntry" Keyboard="Numeric"  Placeholder="0"/>
+              <Entry x:Name="MinEntry"
+                  Keyboard="Numeric"
+                  Placeholder="0"/>
             </VerticalStackLayout>
 
-            <VerticalStackLayout Spacing="4" Grid.Column="1">
-              <Label Text="Máx. selecciones" FontSize="12"
+            <VerticalStackLayout Spacing="4"
+                Grid.Column="1">
+              <Label Text="Máx. selecciones"
+                  FontSize="12"
                      TextColor="{AppThemeBinding Light=#555, Dark=#BBB}"/>
-              <Entry x:Name="MaxEntry" Keyboard="Numeric" Placeholder="vacío = sin tope"/>
+              <Entry x:Name="MaxEntry"
+                  Keyboard="Numeric"
+                  Placeholder="vacío = sin tope"/>
             </VerticalStackLayout>
           </Grid>
 
           <!-- Switches -->
-          <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+          <Grid ColumnDefinitions="*,*"
+              ColumnSpacing="12">
             <HorizontalStackLayout Spacing="10">
-              <Label Text="Obligatorio" VerticalTextAlignment="Center"
+              <Label Text="Obligatorio"
+                  VerticalTextAlignment="Center"
                      TextColor="{AppThemeBinding Light=#333, Dark=#CCC}"/>
-             <Switch x:Name="ReqSwitch" HeightRequest="32" />
+              <Switch x:Name="ReqSwitch"
+                  HeightRequest="32"/>
 
             </HorizontalStackLayout>
 
-            <HorizontalStackLayout Spacing="10" Grid.Column="1">
-              <Label Text="Activo" VerticalTextAlignment="Center"
+            <HorizontalStackLayout Spacing="10"
+                Grid.Column="1">
+              <Label Text="Activo"
+                  VerticalTextAlignment="Center"
                      TextColor="{AppThemeBinding Light=#333, Dark=#CCC}"/>
-              <Switch x:Name="ActiveSwitch" HeightRequest="32" IsToggled="True" />
+              <Switch x:Name="ActiveSwitch"
+                  HeightRequest="32"
+                  />
 
             </HorizontalStackLayout>
           </Grid>
@@ -81,34 +106,44 @@
       </Frame>
 
       <!-- ===== AVANZADO ===== -->
-      <Frame HasShadow="False" CornerRadius="12"
+      <Frame HasShadow="False"
+          CornerRadius="12"
              Padding="14"
              BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E1E1E}">
         <VerticalStackLayout Spacing="12">
-          <Label Text="Avanzado" FontAttributes="Bold"
+          <Label Text="Avanzado"
+              FontAttributes="Bold"
                  TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
 
           <Grid ColumnDefinitions="*,*"
                 ColumnSpacing="12">
             <VerticalStackLayout Spacing="4">
-              <Label Text="Posición" FontSize="12"
+              <Label Text="Posición"
+                  FontSize="12"
                      TextColor="{AppThemeBinding Light=#555, Dark=#BBB}"/>
-              <Entry x:Name="PositionEntry" Keyboard="Numeric" Placeholder="0"/>
+              <Entry x:Name="PositionEntry"
+                  Keyboard="Numeric"
+                  Placeholder="0"/>
             </VerticalStackLayout>
 
-            <VerticalStackLayout Spacing="4" Grid.Column="1">
-  <Label Text="Categoría (opcional)" FontSize="12"
-         TextColor="{AppThemeBinding Light=#555, Dark=#BBB}"/>
-  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
-    <Picker x:Name="CategoryPicker"
-            ItemsSource="{Binding Categories}"
-            ItemDisplayBinding="{Binding name}"
-            Title="vacío = ninguna"
-            SelectedIndexChanged="CategoryPicker_SelectedIndexChanged"/>
-    <Button Grid.Column="1" Text="✕" Padding="10,6"
-            Clicked="ClearCategory_Clicked"/>
-  </Grid>
-</VerticalStackLayout>
+            <VerticalStackLayout Spacing="4"
+                Grid.Column="1">
+              <Label Text="Categoría (opcional)"
+                  FontSize="12"
+                     TextColor="{AppThemeBinding Light=#555, Dark=#BBB}"/>
+              <Grid ColumnDefinitions="*,Auto"
+                  ColumnSpacing="6">
+                <Picker x:Name="CategoryPicker"
+                        ItemsSource="{Binding Categories}"
+                        ItemDisplayBinding="{Binding name}"
+                        Title="vacío = ninguna"
+                        SelectedIndexChanged="CategoryPicker_SelectedIndexChanged"/>
+                <Button Grid.Column="1"
+                    Text="✕"
+                    Padding="10,6"
+                        Clicked="ClearCategory_Clicked"/>
+              </Grid>
+            </VerticalStackLayout>
 
           </Grid>
         </VerticalStackLayout>
@@ -116,15 +151,18 @@
 
       <!-- ===== OPCIONES ===== -->
       <VerticalStackLayout Spacing="8">
-        <Label Text="Opciones" FontAttributes="Bold"
+        <Label Text="Opciones"
+            FontAttributes="Bold"
                TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
 
         <CollectionView x:Name="OptsCV"
                         ItemsSource="{Binding Options}"
                         SelectionMode="None">
           <CollectionView.EmptyView>
-            <VerticalStackLayout Padding="16" Spacing="4"
-                                 HorizontalOptions="Center" VerticalOptions="Center">
+            <VerticalStackLayout Padding="16"
+                Spacing="4"
+                                 HorizontalOptions="Center"
+                VerticalOptions="Center">
               <Label Text="Sin opciones aún"
                      TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"/>
             </VerticalStackLayout>
@@ -133,21 +171,28 @@
           <CollectionView.ItemTemplate>
             <DataTemplate>
               <!-- Tarjeta de opción -->
-              <Frame HasShadow="False" CornerRadius="12" Padding="12"
+              <Frame HasShadow="False"
+                  CornerRadius="12"
+                  Padding="12"
                      BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E1E1E}"
                      Margin="0,6">
                 <VerticalStackLayout Spacing="10">
 
                   <!-- Nombre + Precio -->
-                  <Grid ColumnDefinitions="*,120" ColumnSpacing="12">
+                  <Grid ColumnDefinitions="*,120"
+                      ColumnSpacing="12">
                     <VerticalStackLayout Spacing="4">
-                      <Label Text="Nombre" FontSize="12"
+                      <Label Text="Nombre"
+                          FontSize="12"
                              TextColor="{AppThemeBinding Light=#555, Dark=#BBB}"/>
-                      <Entry Text="{Binding name}" Placeholder="Nombre de opción"/>
+                      <Entry Text="{Binding name}"
+                          Placeholder="Nombre de opción"/>
                     </VerticalStackLayout>
 
-                    <VerticalStackLayout Spacing="4" Grid.Column="1">
-                      <Label Text="Precio (centavos)" FontSize="12"
+                    <VerticalStackLayout Spacing="4"
+                        Grid.Column="1">
+                      <Label Text="Precio (centavos)"
+                          FontSize="12"
                              TextColor="{AppThemeBinding Light=#555, Dark=#BBB}"/>
                       <Entry Text="{Binding priceExtraCents}"
                              Keyboard="Numeric"
@@ -156,42 +201,58 @@
                   </Grid>
 
                   <!-- Default / Activo + acciones (limpio y alineado) -->
-<Grid ColumnDefinitions="120,120,*,Auto,Auto,Auto" ColumnSpacing="12">
+                  <Grid ColumnDefinitions="120,120,*,Auto,Auto,Auto"
+                      ColumnSpacing="12">
 
-  <!-- Default -->
-  <VerticalStackLayout Grid.Column="0" Spacing="4" VerticalOptions="Center">
-    <Label Text="Default"
-           FontSize="12"
-           TextColor="{AppThemeBinding Light=#555, Dark=#BBB}"/>
-    <Switch IsToggled="{Binding isDefault}"
-            Toggled="Default_Toggled"
-            HorizontalOptions="Start"/>
-  </VerticalStackLayout>
+                    <!-- Default -->
+                    <VerticalStackLayout Grid.Column="0"
+                        Spacing="4"
+                        VerticalOptions="Center">
+                      <Label Text="Default"
+                             FontSize="12"
+                             TextColor="{AppThemeBinding Light=#555, Dark=#BBB}"/>
+                      <Switch IsToggled="{Binding isDefault}"
+                              Toggled="Default_Toggled"
+                              HorizontalOptions="Start"/>
+                    </VerticalStackLayout>
 
-  <!-- Activo -->
-  <VerticalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Center">
-    <Label Text="Activo"
-           FontSize="12"
-           TextColor="{AppThemeBinding Light=#555, Dark=#BBB}"/>
-    <Switch IsToggled="{Binding isActive}"
-            HorizontalOptions="Start"/>
-  </VerticalStackLayout>
+                    <!-- Activo -->
+                    <VerticalStackLayout Grid.Column="1"
+                        Spacing="4"
+                        VerticalOptions="Center">
+                      <Label Text="Activo"
+                             FontSize="12"
+                             TextColor="{AppThemeBinding Light=#555, Dark=#BBB}"/>
+                      <Switch IsToggled="{Binding isActive, Mode=TwoWay}"
+                              Toggled="OptionActive_Toggled"
+                              HorizontalOptions="Start"/>
 
-  <!-- Espaciador flexible -->
-  <Grid Grid.Column="2"/>
+                    </VerticalStackLayout>
 
-  <!-- Acciones -->
-  <Button Grid.Column="3" Text="↑" Padding="10,8"
-          MinimumHeightRequest="40" WidthRequest="44"
-          Clicked="MoveUp_Clicked"/>
-  <Button Grid.Column="4" Text="↓" Padding="10,8"
-          MinimumHeightRequest="40" WidthRequest="44"
-          Clicked="MoveDown_Clicked"/>
-  <Button Grid.Column="5" Text="✕" Padding="10,8"
-          MinimumHeightRequest="40" WidthRequest="44"
-          Clicked="RemoveOption_Clicked"/>
+                    <!-- Espaciador flexible -->
+                    <Grid Grid.Column="2"/>
 
-</Grid>
+                    <!-- Acciones -->
+                    <Button Grid.Column="3"
+                        Text="↑"
+                        Padding="10,8"
+                            MinimumHeightRequest="40"
+                        WidthRequest="44"
+                            Clicked="MoveUp_Clicked"/>
+                    <Button Grid.Column="4"
+                        Text="↓"
+                        Padding="10,8"
+                            MinimumHeightRequest="40"
+                        WidthRequest="44"
+                            Clicked="MoveDown_Clicked"/>
+                    <Button Grid.Column="5"
+                        Text="✕"
+                        Padding="10,8"
+                            MinimumHeightRequest="40"
+                        WidthRequest="44"
+                            Clicked="RemoveOption_Clicked"/>
+
+                  </Grid>
 
 
 
@@ -201,16 +262,18 @@
           </CollectionView.ItemTemplate>
         </CollectionView>
 
-        <Button Text="Agregar opción" Clicked="AddOption_Clicked"/>
+        <Button Text="Agregar opción"
+            Clicked="AddOption_Clicked"/>
       </VerticalStackLayout>
 
       <!-- Botón guardar alternativo (además del Toolbar) -->
-      <Button Text="Guardar" Clicked="Save_Clicked"/>
+      <Button Text="Guardar"
+          Clicked="Save_Clicked"/>
 
       <!-- Espacio inferior para no chocar con la barra -->
       <Grid HeightRequest="12"/>
     </VerticalStackLayout>
-    
+
   </ScrollView>
 
 

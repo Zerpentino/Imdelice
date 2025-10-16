@@ -8,6 +8,13 @@ using Microsoft.Maui.Networking;   // Connectivity
 using System.Threading.Tasks;       // TaskCanceledException
 using Imdeliceapp.Helpers;
 using Imdeliceapp.Model;
+using Imdeliceapp.Services;
+using CommunityToolkit.Mvvm.Messaging;
+using System.Collections.ObjectModel;   // <-- para ObservableCollection
+using System.Linq;                      // <-- Select/Where/ToHashSet/etc.
+using System.Text;                      // <-- Encoding.UTF8
+using System.Collections.Generic;       // <-- HashSet, List (por si el IDE lo pide)
+
 
 namespace Imdeliceapp.Pages;
 
@@ -19,6 +26,30 @@ public partial class RoleEditorPage : ContentPage
     public int RoleId { get; set; }
 
     string? _origName, _origDesc;
+    // Antes: class PermItem
+    public class PermItem
+    {
+        public string code { get; set; } = "";
+        public string display { get; set; } = "";
+        public bool selected { get; set; }
+    }
+public class RoleDetailDTO
+{
+    public int id { get; set; }
+    public string? name { get; set; }
+    public string? description { get; set; }
+    public List<PermCodeDTO>? permissions { get; set; }
+}
+
+public class PermCodeDTO
+{
+    public int id { get; set; }
+    public string code { get; set; } = "";
+}
+
+
+
+private HashSet<string> _origPerms = new(StringComparer.OrdinalIgnoreCase);
 
     static readonly JsonSerializerOptions _json = new() { PropertyNameCaseInsensitive = true };
     static readonly JsonSerializerOptions _jsonWrite = new()
@@ -26,8 +57,40 @@ public partial class RoleEditorPage : ContentPage
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         PropertyNameCaseInsensitive = true
     };
+    static readonly (string code, string display)[] ALL_PERMS = new[] {
+    ("users.read", "Usuarios: Ver"),
+    ("users.create", "Usuarios: Crear"),
+    ("users.update", "Usuarios: Editar"),
+    ("users.delete", "Usuarios: Eliminar"),
+    ("roles.read", "Roles: Ver"),
+    ("roles.create", "Roles: Crear"),
+    ("roles.update", "Roles: Editar"),
+    ("roles.delete", "Roles: Eliminar"),
+    ("categories.read", "Categorías: Ver"),
+    ("categories.create", "Categorías: Crear"),
+    ("categories.update", "Categorías: Editar"),
+    ("categories.delete", "Categorías: Eliminar"),
+    ("modifiers.read", "Modificadores: Ver"),
+    ("modifiers.create", "Modificadores: Crear"),
+    ("modifiers.update", "Modificadores: Editar"),
+    ("modifiers.delete", "Modificadores: Eliminar"),
+    ("menu.update", "Menú: Publicar/Actualizar"),
+};
 
-    public RoleEditorPage() => InitializeComponent();
+public ObservableCollection<PermItem> PermItems { get; } = new();
+    
+
+    public RoleEditorPage()
+{
+    InitializeComponent();
+    // llena el checklist con todo apagado
+    PermItems.Clear();
+    foreach (var (code, display) in ALL_PERMS)
+        PermItems.Add(new PermItem { code = code, display = display, selected = false });
+
+    BindingContext = this;
+}
+
 
     // ===== Helpers comunes =====
     void SetSaving(bool v)
@@ -76,6 +139,18 @@ public partial class RoleEditorPage : ContentPage
             l.IsVisible = false;
         }
     }
+    private void SelectAllPerms_Clicked(object sender, EventArgs e)
+{
+    foreach (var p in PermItems) p.selected = true;
+    PermsCV.ItemsSource = null; PermsCV.ItemsSource = PermItems; // refresco rápido
+}
+private void ClearAllPerms_Clicked(object sender, EventArgs e)
+{
+    foreach (var p in PermItems) p.selected = false;
+    PermsCV.ItemsSource = null; PermsCV.ItemsSource = PermItems;
+}
+
+
 
     string ExtraerMensajeApi(string body)
     {
@@ -100,7 +175,14 @@ public partial class RoleEditorPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
-
+        if (string.Equals(Mode, "edit", StringComparison.OrdinalIgnoreCase) && !Perms.RolesUpdate ||
+                string.Equals(Mode, "create", StringComparison.OrdinalIgnoreCase) && !Perms.RolesCreate)
+        {
+            await DisplayAlert("Acceso restringido", "No tienes permisos para esta acción.", "OK");
+            await Shell.Current.GoToAsync("..");
+            return;
+        }
+    
         var esEdicion = string.Equals(Mode, "edit", StringComparison.OrdinalIgnoreCase);
         TitleLabel.Text = esEdicion ? "Editar rol" : "Crear rol";
         HintEditGeneral.IsVisible = esEdicion;
@@ -138,15 +220,30 @@ public partial class RoleEditorPage : ContentPage
                 return;
             }
 
-            var env = JsonSerializer.Deserialize<ApiEnvelope<RoleDTO>>(body, _json);
-            if (env?.data is RoleDTO r)
+            var env = JsonSerializer.Deserialize<ApiEnvelope<RoleDetailDTO>>(body, _json);
+            if (env?.data is RoleDetailDTO r)
             {
                 _origName = r.name ?? "";
                 _origDesc = r.description ?? "";
 
                 TxtName.Text = _origName;
                 TxtDesc.Text = _origDesc;
+
+                var codes = (r.permissions ?? new List<PermCodeDTO>())
+                            .Select(p => p.code)
+                            .Where(c => !string.IsNullOrWhiteSpace(c))
+                            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+                _origPerms = codes;
+
+                foreach (var item in PermItems)
+                    item.selected = codes.Contains(item.code);
+
+                PermsCV.ItemsSource = null; PermsCV.ItemsSource = PermItems;
             }
+
+
+
+
         }
         catch (Exception ex)
         {
@@ -186,6 +283,9 @@ public partial class RoleEditorPage : ContentPage
     private async void Guardar_Clicked(object sender, EventArgs e)
     {
         var esEdicion = string.Equals(Mode, "edit", StringComparison.OrdinalIgnoreCase);
+        if (esEdicion && !Perms.RolesUpdate) { await DisplayAlert("Acceso restringido","No puedes editar roles.","OK"); return; }
+        if (!esEdicion && !Perms.RolesCreate) { await DisplayAlert("Acceso restringido", "No puedes crear roles.", "OK"); return; }
+
         var name = TxtName.Text?.Trim();
         var desc = TxtDesc.Text?.Trim();
 
@@ -227,7 +327,8 @@ public partial class RoleEditorPage : ContentPage
                 return;
             }
         }
-
+        var permissionCodes = PermItems.Where(p => p.selected).Select(p => p.code).ToList();
+        if (permissionCodes.Count == 0) { await DisplayAlert("Permisos", "Selecciona al menos un permiso.", "OK"); return; }
         if (!BtnGuardar.IsEnabled) return;
         SetSaving(true);
 
@@ -251,21 +352,30 @@ public partial class RoleEditorPage : ContentPage
 
             HttpResponseMessage resp;
             string body;
+            
 
             if (esEdicion && RoleId > 0)
             {
                 // Enviar sólo lo que realmente cambió y no está vacío
                 string? sendName = string.IsNullOrWhiteSpace(name) ? null : (name != _origName ? name : null);
                 string? sendDesc = string.IsNullOrWhiteSpace(desc) ? null : (desc != _origDesc ? desc : null);
-
-                var hayCambios = sendName != null || sendDesc != null;
+                var newPerms = permissionCodes.ToHashSet(StringComparer.OrdinalIgnoreCase);
+                bool permsChanged = !_origPerms.SetEquals(newPerms);
+    
+                var hayCambios = sendName != null || sendDesc != null || permsChanged;
                 if (!hayCambios)
                 {
                     await DisplayAlert("Sin cambios", "No hay cambios por guardar.", "OK");
                     return;
                 }
 
-                var payload = new { name = sendName, description = sendDesc };
+                 var payload = new
+                    {
+                        name = sendName,                                  // sólo si cambió
+                        description = sendDesc,                           // sólo si cambió
+                        permissionCodes = permissionCodes                 // SIEMPRE manda el set completo
+                    };
+            
                 var json = JsonSerializer.Serialize(payload, _jsonWrite);
 
                 resp = await http.PutAsync($"/api/roles/{RoleId}",
@@ -280,7 +390,13 @@ public partial class RoleEditorPage : ContentPage
             }
             else
             {
-                var payload = new { name, description = string.IsNullOrWhiteSpace(desc) ? null : desc };
+                var payload = new
+                {
+                    name,
+                    description = string.IsNullOrWhiteSpace(desc) ? null : desc,
+                    permissionCodes = permissionCodes
+                };
+            
                 var json = JsonSerializer.Serialize(payload, _jsonWrite);
 
                 resp = await http.PostAsync("/api/roles",
@@ -303,7 +419,21 @@ public partial class RoleEditorPage : ContentPage
                 }
 
                 var apiMsg = ExtraerMensajeApi(body);
-
+                if (resp.StatusCode == HttpStatusCode.Forbidden)
+                {
+                    // backend ejemplo:
+                    // { "error": { "code":403, "details": { "required":[...], "have":[...] } }, "message": "Prohibido: falta permiso" }
+                    try
+                    {
+                        using var doc = JsonDocument.Parse(body);
+                        var required = doc.RootElement.GetProperty("error").GetProperty("details").GetProperty("required")
+                                          .EnumerateArray().Select(x => x.GetString()).Where(s => !string.IsNullOrWhiteSpace(s));
+                        await DisplayAlert("Permiso faltante", $"Requiere: {string.Join(", ", required)}", "OK");
+                    }
+                    catch { /* sin parseo */ }
+                    return;
+                }
+            
                 // 409: nombre duplicado
                 if (resp.StatusCode == HttpStatusCode.Conflict && EsMensajeRolDuplicado(apiMsg))
                 {
@@ -311,6 +441,7 @@ public partial class RoleEditorPage : ContentPage
                     await DisplayAlert("Nombre duplicado", "Ese nombre de rol ya existe. Usa otro diferente.", "OK");
                     return;
                 }
+
 
                 await ErrorHandler.MostrarErrorUsuario(apiMsg);
                 return;
