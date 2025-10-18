@@ -4,6 +4,7 @@
   xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
   x:Class="Imdeliceapp.Pages.CategoriesPage"
   Title="Categorías"
+   x:Name="Page"  
   BackgroundColor="{AppThemeBinding Light=White, Dark=Black}"
   Shell.NavBarIsVisible="True"
   Shell.BackgroundColor="{StaticResource BrandPrimary}"
@@ -49,7 +50,9 @@
                     SwipeBehaviorOnInvoked="Close">
                   <SwipeItem Text="Eliminar (definitivo)"
                              BackgroundColor="#E53935"
-                             Invoked="DeleteSwipe_Invoked"/>
+                             Invoked="DeleteSwipe_Invoked"
+                             IsEnabled="{Binding Source={x:Reference Page}, Path=CanDelete}"
+                             IsVisible="{Binding Source={x:Reference Page}, Path=CanDelete}" />
                 </SwipeItems>
               </SwipeView.LeftItems>
               <SwipeView.RightItems>
@@ -57,7 +60,9 @@
                     SwipeBehaviorOnInvoked="Close">
                   <SwipeItem Text="Editar"
                              BackgroundColor="#4CAF50"
-                             Invoked="EditSwipe_Invoked"/>
+                             Invoked="EditSwipe_Invoked"
+                              IsEnabled="{Binding Source={x:Reference Page}, Path=CanUpdate}"
+                             IsVisible="{Binding Source={x:Reference Page}, Path=CanUpdate}" />
                 </SwipeItems>
               </SwipeView.RightItems>
 
@@ -141,7 +146,9 @@
                         HorizontalOptions="End"
                         VerticalOptions="Center"
                         IsToggled="{Binding isActive, Mode=TwoWay}"
-                        Toggled="ToggleActivo_Toggled"/>
+                        IsEnabled="{Binding Source={x:Reference Page}, Path=CanUpdate}"
+                        Toggled="ToggleActivo_Toggled"
+                        />
               </Grid>
             </SwipeView>
           </DataTemplate>
@@ -167,7 +174,8 @@
         BackgroundColor="{AppThemeBinding Light=#894164, Dark=#894164}"
         TextColor="White"
         HorizontalOptions="End" VerticalOptions="End"
-        Margin="16,16,16,28"/>
+        Margin="16,16,16,28"
+        IsVisible="{Binding Source={x:Reference Page}, Path=CanCreate}" />
 
   </Grid>
 </ContentPage>

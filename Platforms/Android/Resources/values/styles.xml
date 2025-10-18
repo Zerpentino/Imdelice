@@ -3,12 +3,20 @@
   <!-- Tema principal de la app -->
   <style name="MainTheme" parent="MainTheme.Base" />
 
+  <style name="Widget.Imdelice.BottomNavigationView" parent="Widget.MaterialComponents.BottomNavigationView">
+    <item name="itemTextAppearanceActive">@style/TextAppearance.MaterialComponents.Body2</item>
+    <item name="itemTextAppearanceInactive">@style/TextAppearance.MaterialComponents.Body2</item>
+  </style>
+
   <!-- Debe heredar de MaterialComponents -->
   <style name="MainTheme.Base" parent="Theme.MaterialComponents.DayNight.NoActionBar">
     <!-- Requeridos por MAUI -->
     <item name="android:windowBackground">@drawable/maui_splash</item>
     <item name="android:windowIsTranslucent">false</item>
     <item name="android:windowDisablePreview">true</item>
+
+    <!-- Forzar estilos Material para el BottomNavigation -->
+    <item name="bottomNavigationStyle">@style/Widget.Imdelice.BottomNavigationView</item>
 
     <!-- (Opcional) Colores base para evitar warnings -->
     <item name="colorPrimary">#6200EE</item>

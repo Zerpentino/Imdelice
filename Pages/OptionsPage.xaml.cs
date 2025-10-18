@@ -24,7 +24,7 @@ public partial class OptionsPage : ContentPage
         BtnRoles.IsVisible = Perms.RolesRead;       // ver listado de roles
         BtnCategorias.IsVisible = Perms.CategoriesRead;  // ver categorías
         BtnModifierGroups.IsVisible = Perms.ModifiersRead;   // ver grupos de modificadores
-        BtnMenu.IsVisible = Perms.MenuUpdate;      // editar/publicar menú
+        BtnMenu.IsVisible = Perms.MenusRead;      // editar/publicar menú
     }
 
     private async void BtnUsuarios_Clicked(object sender, EventArgs e)
@@ -42,7 +42,7 @@ public partial class OptionsPage : ContentPage
     }
     private async void EditarMenu_Clicked(object sender, EventArgs e)
     {
-        if (!Perms.MenuUpdate) { await DisplayAlert("Acceso restringido", "No puedes editar el menú.", "OK"); return; }
+        if (!Perms.MenusRead) { await DisplayAlert("Acceso restringido", "No puedes editar el menú.", "OK"); return; }
 
         // Navega dentro del mismo Tab (el TabBar no desaparece)
         await Shell.Current.GoToAsync(nameof(AdminMenuPage));

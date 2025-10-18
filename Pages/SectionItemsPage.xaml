@@ -1,114 +1,149 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage
-    x:Class="Imdeliceapp.Pages.SectionItemsPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Class="Imdeliceapp.Pages.SectionItemsPage"
+    x:Name="Page"
     Title="{Binding Titulo}"
-    BackgroundColor="{AppThemeBinding Light=White, Dark=Black}">
+    BackgroundColor="{AppThemeBinding Light=White, Dark=Black}"
+    Shell.NavBarIsVisible="True">
 
-  <!-- Estilos reutilizados -->
-  <ContentPage.Resources>
-    <Style x:Key="ChipButton" TargetType="Button">
-      <Setter Property="Padding" Value="12,6"/>
-      <Setter Property="CornerRadius" Value="10"/>
-      <Setter Property="FontSize" Value="13"/>
-      <Setter Property="MinimumWidthRequest" Value="96"/>
-    </Style>
+  <Grid RowDefinitions="Auto,*">
 
-    <Style x:Key="IconBtn" TargetType="ImageButton">
-      <Setter Property="BackgroundColor" Value="Transparent"/>
-      <Setter Property="WidthRequest" Value="26"/>
-      <Setter Property="HeightRequest" Value="26"/>
-      <Setter Property="Padding" Value="4"/>
-      <Setter Property="Aspect" Value="AspectFit"/>
-      <Setter Property="HorizontalOptions" Value="Center"/>
-      <Setter Property="VerticalOptions" Value="Center"/>
-    </Style>
+    <Grid Grid.Row="0"
+          Margin="12,12,12,6">
+      <SearchBar x:Name="SearchBox"
+                 Placeholder="Buscar ítem…"
+                 TextChanged="SearchBox_TextChanged"/>
+    </Grid>
 
-    <Style x:Key="DangerIconBtn" TargetType="ImageButton" BasedOn="{StaticResource IconBtn}" />
-    <Style x:Key="CardBorder" TargetType="Border">
-      <Setter Property="Stroke" Value="{AppThemeBinding Light=#E6E6E6, Dark=#333}"/>
-      <Setter Property="StrokeThickness" Value="1"/>
-      <Setter Property="Background" Value="{AppThemeBinding Light=#FFFFFF, Dark=#1E1E1E}"/>
-      <Setter Property="Padding" Value="12"/>
-      <Setter Property="Margin" Value="16,8,16,8"/>
-      <Setter Property="StrokeShape">
-        <Setter.Value><RoundRectangle CornerRadius="12"/></Setter.Value>
-      </Setter>
-    </Style>
-  </ContentPage.Resources>
+    <RefreshView Grid.Row="1"
+                 x:Name="Refresh"
+                 Refreshing="Refresh_Refreshing">
+      <CollectionView x:Name="ItemsCV"
+                      Margin="12,0,12,0"
+                      SelectionMode="None"
+                      ItemsUpdatingScrollMode="KeepScrollOffset"
+                      ItemSizingStrategy="MeasureFirstItem">
 
-  <Grid RowDefinitions="Auto,*" RowSpacing="0">
+        <CollectionView.EmptyView>
+          <VerticalStackLayout Padding="32"
+                               Spacing="8"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center">
+            <Label Text="Sin ítems"
+                   FontAttributes="Bold"
+                   TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+          </VerticalStackLayout>
+        </CollectionView.EmptyView>
 
-    <!-- Acciones -->
-    <HorizontalStackLayout Margin="16,12,16,4" Spacing="8">
-      <Button Text="Agregar ítem"
-              Style="{StaticResource ChipButton}"
-              Clicked="AgregarItem_Clicked"/>
-      <Button Text="Refrescar"
-              Style="{StaticResource ChipButton}"
-              Clicked="Refrescar_Clicked"/>
-    </HorizontalStackLayout>
+        <CollectionView.ItemTemplate>
+          <DataTemplate>
+            <SwipeView>
+              <SwipeView.LeftItems>
+                <SwipeItems Mode="Reveal" SwipeBehaviorOnInvoked="Close">
+                  <SwipeItem Text="Eliminar"
+                             BackgroundColor="#E53935"
+                             Invoked="Delete_Clicked"
+                             IsVisible="{Binding Source={x:Reference Page}, Path=CanDelete}"
+                             IsEnabled="{Binding Source={x:Reference Page}, Path=CanDelete}"/>
+                </SwipeItems>
+              </SwipeView.LeftItems>
 
-    <!-- Lista -->
-    <CollectionView Grid.Row="1"
-                    x:Name="ItemsCV"
-                    SelectionMode="None"
-                    ItemSizingStrategy="MeasureAllItems"
-                    Margin="{OnPlatform Android='0,0,0,96', iOS='0,0,0,84', MacCatalyst='0,0,0,72', WinUI='0,0,0,72'}">
-      <CollectionView.ItemTemplate>
-        <DataTemplate>
-          <Border Style="{StaticResource CardBorder}">
-            <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="10">
+              <SwipeView.RightItems>
+                <SwipeItems Mode="Reveal" SwipeBehaviorOnInvoked="Close">
+                  <SwipeItem Text="Editar"
+                             BackgroundColor="#4CAF50"
+                             Invoked="Edit_Clicked"
+                             IsVisible="{Binding Source={x:Reference Page}, Path=CanUpdate}"
+                             IsEnabled="{Binding Source={x:Reference Page}, Path=CanUpdate}"/>
+                </SwipeItems>
+              </SwipeView.RightItems>
 
-              <!-- Info -->
-              <VerticalStackLayout Spacing="2">
-                <Label Text="{Binding displayNameOrProduct}"
-                       FontAttributes="Bold"
-                       LineBreakMode="TailTruncation"
-                       MaxLines="2"
-                       TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
-                <HorizontalStackLayout Spacing="10">
-                  <Label Text="{Binding priceLabel}"
-                         FontSize="12" Opacity="0.8"
-                         TextColor="{AppThemeBinding Light=#555, Dark=#CCC}"/>
-                  <Label Text="{Binding position, StringFormat='Pos: {0}'}"
-                         FontSize="12" Opacity="0.8"
-                         TextColor="{AppThemeBinding Light=#555, Dark=#CCC}"/>
-                  <Label Text="{Binding isFeatured, StringFormat='Destacado: {0}'}"
-                         FontSize="12" Opacity="0.8"
-                         TextColor="{AppThemeBinding Light=#555, Dark=#CCC}"/>
-                </HorizontalStackLayout>
-              </VerticalStackLayout>
+              <Grid Padding="14"
+                    Margin="0,6"
+                    ColumnSpacing="12"
+                    ColumnDefinitions="*,Auto"
+                    BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E1E1E}">
 
-              <!-- Acciones -->
-              <ImageButton Grid.Column="1"
-                           Source="edit.png"
-                           Style="{StaticResource IconBtn}"
-                           Clicked="Editar_Clicked"/>
-              <ImageButton Grid.Column="2"
-                           Source="up.png"
-                           Style="{StaticResource IconBtn}"
-                           Clicked="MoverArriba_Clicked"/>
-              <ImageButton Grid.Column="3"
-                           Source="delete.png"
-                           Style="{StaticResource DangerIconBtn}"
-                           Clicked="Eliminar_Clicked"/>
-            </Grid>
-          </Border>
-        </DataTemplate>
-      </CollectionView.ItemTemplate>
+                <VerticalStackLayout Spacing="4">
+                  <Label Text="{Binding Title}" FontAttributes="Bold"
+                         LineBreakMode="TailTruncation"
+                         MaxLines="2"
+                         TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
 
-      <CollectionView.EmptyView>
-        <VerticalStackLayout Padding="32" Spacing="8"
-                             HorizontalOptions="Center"
-                             VerticalOptions="Center">
-          <Label Text="Sin ítems"
-                 FontAttributes="Bold"
-                 TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
-        </VerticalStackLayout>
-      </CollectionView.EmptyView>
-    </CollectionView>
+                  <HorizontalStackLayout Spacing="6">
+                    <Border BackgroundColor="#EEE" StrokeThickness="0" Padding="6,2"
+                            StrokeShape="{RoundRectangle CornerRadius=8}">
+                      <Label Text="{Binding TypeBadge}" FontSize="11"/>
+                    </Border>
+                    <Border BackgroundColor="#E6F4EA" StrokeThickness="0" Padding="6,2"
+                            StrokeShape="{RoundRectangle CornerRadius=8}"
+                            IsVisible="{Binding HasCustomPrice}">
+                      <Label Text="{Binding PriceLabel}" FontSize="11" TextColor="#1B5E20"/>
+                    </Border>
+                    <Border BackgroundColor="#FAD7D7" StrokeThickness="0" Padding="6,2"
+                            StrokeShape="{RoundRectangle CornerRadius=8}"
+                            IsVisible="{Binding IsInactiveBadgeVisible}">
+                      <Label Text="Inactivo" FontSize="11" TextColor="#B71C1C"/>
+                    </Border>
+                    <Border BackgroundColor="#FFF3CD" StrokeThickness="0" Padding="6,2"
+                            StrokeShape="{RoundRectangle CornerRadius=8}"
+                            IsVisible="{Binding IsFeatured}">
+                      <Label Text="Destacado" FontSize="11" TextColor="#8A6D3B"/>
+                    </Border>
+                    <Border BackgroundColor="#EEE" StrokeThickness="0" Padding="6,2"
+                            StrokeShape="{RoundRectangle CornerRadius=8}">
+                      <Label Text="{Binding PositionLabel}" FontSize="11"/>
+                    </Border>
+                  </HorizontalStackLayout>
+
+                  <Label Text="{Binding ReferenceLabel}"
+                         FontSize="12"
+                         TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"/>
+                </VerticalStackLayout>
+
+                <Switch Grid.Column="1"
+                        VerticalOptions="Center"
+                        IsEnabled="{Binding Source={x:Reference Page}, Path=CanUpdate}"
+                        IsToggled="{Binding isActive}"
+                        Toggled="ToggleActivo_Toggled"/>
+              </Grid>
+            </SwipeView>
+          </DataTemplate>
+        </CollectionView.ItemTemplate>
+
+        <CollectionView.Footer>
+          <Grid HeightRequest="120"/>
+        </CollectionView.Footer>
+      </CollectionView>
+    </RefreshView>
+
+    <Button Grid.RowSpan="2"
+            Text="+"
+            Clicked="New_Clicked"
+            CornerRadius="28"
+            WidthRequest="56"
+            HeightRequest="56"
+            BackgroundColor="{AppThemeBinding Light=#894164, Dark=#894164}"
+            TextColor="White"
+            HorizontalOptions="End"
+            VerticalOptions="End"
+            Margin="16,16,16,32"
+            IsVisible="{Binding Source={x:Reference Page}, Path=CanCreate}"/>
+
+    <Button Grid.RowSpan="2"
+            Text="🗑"
+            Clicked="TrashFab_Clicked"
+            CornerRadius="24"
+            WidthRequest="48"
+            HeightRequest="48"
+            BackgroundColor="{AppThemeBinding Light=#4A4A4A, Dark=#222}"
+            TextColor="White"
+            HorizontalOptions="End"
+            VerticalOptions="End"
+            Margin="16,16,84,32"
+            IsVisible="{Binding Source={x:Reference Page}, Path=ShowTrashFab}"/>
 
   </Grid>
 </ContentPage>

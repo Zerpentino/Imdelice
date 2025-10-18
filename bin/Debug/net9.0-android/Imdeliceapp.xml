@@ -4,6 +4,12 @@
         <name>Imdeliceapp</name>
     </assembly>
     <members>
+        <member name="T:Imdeliceapp.Controls.LoginShadowBorder">
+            <summary>
+            Border especializado para el login; permite aplicar la sombra intensa
+            sin afectar otros <Border/> de la app.
+            </summary>
+        </member>
         <member name="M:Imdeliceapp.Helpers.AuthHelper.TokenExpirado">
             <summary>
             Verifica si el token ha expirado usando la fecha almacenada en Preferences["expiracion"]

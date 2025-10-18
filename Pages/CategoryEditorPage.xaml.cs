@@ -6,6 +6,7 @@ using Imdeliceapp.Helpers;
 using Microsoft.Maui.Networking;
 using Microsoft.Maui.Storage;
 using System.Text;
+using Imdeliceapp.Services;
 
 
 
@@ -24,8 +25,8 @@ public partial class CategoryEditorPage : ContentPage
     bool ParseBoolFlag(string? v)
     => !string.IsNullOrWhiteSpace(v) &&
        (v == "1" || v.Equals("true", StringComparison.OrdinalIgnoreCase));
-public string? InitIsComboOnly { get; set; }
-bool _origIsCombo;     // ← NUEVO
+    public string? InitIsComboOnly { get; set; }
+    bool _origIsCombo;     // ← NUEVO
 
     public string? Mode { get; set; }   // create | edit
     public int CategoryId { get; set; }
@@ -35,25 +36,25 @@ bool _origIsCombo;     // ← NUEVO
     public string? InitActive { get; set; }
 
     static string? MapFriendlyMessage(HttpStatusCode status, string? body, bool cambiandoNombre, bool cambiandoSlug)
-{
-    var b = (body ?? "").ToLowerInvariant();
-
-    bool esDuplicado =
-        status == HttpStatusCode.Conflict ||
-        b.Contains("p2002") ||
-        b.Contains("unique constraint failed") ||
-        b.Contains("category_slug_key") ||
-        b.Contains("category_name_key") ||         // <- nombre
-        (b.Contains("constraint") && (b.Contains("slug") || b.Contains("name")));
-
-    if (esDuplicado)
     {
-        if (cambiandoNombre) return "Ya existe una categoría con ese nombre.";
-        if (cambiandoSlug)   return "Ya existe una categoría con ese slug.";
-        return "Ya existe esa categoría.";
+        var b = (body ?? "").ToLowerInvariant();
+
+        bool esDuplicado =
+            status == HttpStatusCode.Conflict ||
+            b.Contains("p2002") ||
+            b.Contains("unique constraint failed") ||
+            b.Contains("category_slug_key") ||
+            b.Contains("category_name_key") ||         // <- nombre
+            (b.Contains("constraint") && (b.Contains("slug") || b.Contains("name")));
+
+        if (esDuplicado)
+        {
+            if (cambiandoNombre) return "Ya existe una categoría con ese nombre.";
+            if (cambiandoSlug) return "Ya existe una categoría con ese slug.";
+            return "Ya existe esa categoría.";
+        }
+        return null;
     }
-    return null;
-}
 
 
     // originales (para PATCH parcial)
@@ -79,6 +80,13 @@ bool _origIsCombo;     // ← NUEVO
 
         if (esEdicion && CategoryId > 0)
         {
+            if (!Perms.CategoriesUpdate)
+            {
+                await DisplayAlert("Acceso restringido", "No puedes editar categorías.", "OK");
+                await Shell.Current.GoToAsync("..");
+                return;
+            }
+
             if (!string.IsNullOrWhiteSpace(InitName))
             {
                 // Pre-cargar desde los parámetros (sin ir al backend)
@@ -86,13 +94,13 @@ bool _origIsCombo;     // ← NUEVO
                 _origSlug = InitSlug ?? "";
                 _origPos = int.TryParse(InitPosition, out var p) ? p : (int?)null;
                 _origActive = ParseBoolFlag(InitActive);
-        _origIsCombo = ParseBoolFlag(InitIsComboOnly);
+                _origIsCombo = ParseBoolFlag(InitIsComboOnly);
 
                 TxtName.Text = _origName;
                 TxtSlug.Text = _origSlug;
                 TxtPosition.Text = _origPos?.ToString();
-                SwActive.IsToggled   = _origActive;
-        SwIsCombo.IsToggled  = _origIsCombo;
+                SwActive.IsToggled = _origActive;
+                SwIsCombo.IsToggled = _origIsCombo;
             }
             else
             {
@@ -101,6 +109,16 @@ bool _origIsCombo;     // ← NUEVO
                 // await CargarAsync(CategoryId);
             }
         }
+        else
+        {
+            if (!Perms.CategoriesCreate)
+            {
+                await DisplayAlert("Acceso restringido", "No puedes crear categorías.", "OK");
+                await Shell.Current.GoToAsync("..");
+                return;
+            }
+        }
+    
     }
 
 
@@ -208,6 +226,12 @@ bool _origIsCombo;     // ← NUEVO
     async void Guardar_Clicked(object sender, EventArgs e)
     {
         var esEdicion = string.Equals(Mode, "edit", StringComparison.OrdinalIgnoreCase);
+        if (esEdicion && !Perms.CategoriesUpdate)
+    { await DisplayAlert("Acceso restringido", "No puedes editar categorías.", "OK"); return; }
+
+if (!esEdicion && !Perms.CategoriesCreate)
+    { await DisplayAlert("Acceso restringido", "No puedes crear categorías.", "OK"); return; }
+
         var name = TxtName.Text?.Trim();
         var slug = (TxtSlug.Text?.Trim() ?? "");
         var posOk = int.TryParse(TxtPosition.Text?.Trim() ?? "", out var position);
@@ -258,13 +282,20 @@ bool _origIsCombo;     // ← NUEVO
                 await DisplayAlert($"Payload (PATCH /api/categories/{CategoryId})", json, "OK");
 
                 resp = await http.PatchAsync($"/api/categories/{CategoryId}", new StringContent(json, System.Text.Encoding.UTF8, "application/json"));
+                if (resp.StatusCode == HttpStatusCode.Forbidden)
+{
+    await DisplayAlert("Acceso restringido", "No tienes permiso para esta acción.", "OK");
+    return;
+}
+
+
                 body = await resp.Content.ReadAsStringAsync();
                 // 👀 Muestra status y cuerpo de respuesta
-await DisplayAlert(
-    "Respuesta PATCH",
-    $"Status: {(int)resp.StatusCode} {resp.StatusCode}\n\nBody:\n{body}",
-    "OK"
-);
+                await DisplayAlert(
+                    "Respuesta PATCH",
+                    $"Status: {(int)resp.StatusCode} {resp.StatusCode}\n\nBody:\n{body}",
+                    "OK"
+                );
             }
             else
             {
@@ -285,6 +316,13 @@ await DisplayAlert(
 
                 resp = await http.PostAsync("/api/categories",
                     new StringContent(json, Encoding.UTF8, "application/json"));
+                    if (resp.StatusCode == HttpStatusCode.Forbidden)
+{
+    await DisplayAlert("Acceso restringido", "No tienes permiso para esta acción.", "OK");
+    return;
+}
+
+
 
                 body = await resp.Content.ReadAsStringAsync();
 
@@ -311,35 +349,35 @@ await DisplayAlert(
 
 
             if (!resp.IsSuccessStatusCode)
-{
-    if (resp.StatusCode == HttpStatusCode.Unauthorized)
-    { await AuthHelper.VerificarYRedirigirSiExpirado(this); return; }
+            {
+                if (resp.StatusCode == HttpStatusCode.Unauthorized)
+                { await AuthHelper.VerificarYRedirigirSiExpirado(this); return; }
 
-    if (resp.StatusCode is HttpStatusCode.ServiceUnavailable or HttpStatusCode.GatewayTimeout)
-    { await ServidorNoDisponible("timeout"); return; }
+                if (resp.StatusCode is HttpStatusCode.ServiceUnavailable or HttpStatusCode.GatewayTimeout)
+                { await ServidorNoDisponible("timeout"); return; }
 
-    // ¿qué campos cambiaron?
-    bool cambiandoNombre = !string.IsNullOrWhiteSpace(name) && name != _origName;
-    bool cambiandoSlug   = !string.IsNullOrWhiteSpace(slug) && slug != _origSlug;
+                // ¿qué campos cambiaron?
+                bool cambiandoNombre = !string.IsNullOrWhiteSpace(name) && name != _origName;
+                bool cambiandoSlug = !string.IsNullOrWhiteSpace(slug) && slug != _origSlug;
 
-    // Intentar mensaje amigable
-    var friendly = MapFriendlyMessage(resp.StatusCode, body, cambiandoNombre, cambiandoSlug);
-    if (friendly != null)
-    {
-        if (cambiandoNombre) SetError(BdrName, ErrName, true, friendly);
-        if (cambiandoSlug)   SetError(BdrSlug, ErrSlug, true, friendly);
-        await DisplayAlert("Aviso", friendly, "OK");
-        if (cambiandoNombre) TxtName.Focus();
-        return;
-    }
+                // Intentar mensaje amigable
+                var friendly = MapFriendlyMessage(resp.StatusCode, body, cambiandoNombre, cambiandoSlug);
+                if (friendly != null)
+                {
+                    if (cambiandoNombre) SetError(BdrName, ErrName, true, friendly);
+                    if (cambiandoSlug) SetError(BdrSlug, ErrSlug, true, friendly);
+                    await DisplayAlert("Aviso", friendly, "OK");
+                    if (cambiandoNombre) TxtName.Focus();
+                    return;
+                }
 
-    // Fallback a tu envoltura habitual
-    var envErr = JsonSerializer.Deserialize<ApiEnvelope<object>>(body, _json);
-    var msg = envErr?.message ?? (envErr?.error as string) ?? envErr?.error?.ToString() ?? body;
+                // Fallback a tu envoltura habitual
+                var envErr = JsonSerializer.Deserialize<ApiEnvelope<object>>(body, _json);
+                var msg = envErr?.message ?? (envErr?.error as string) ?? envErr?.error?.ToString() ?? body;
 
-    await ErrorHandler.MostrarErrorUsuario(string.IsNullOrWhiteSpace(msg) ? "Error al guardar." : msg);
-    return;
-}
+                await ErrorHandler.MostrarErrorUsuario(string.IsNullOrWhiteSpace(msg) ? "Error al guardar." : msg);
+                return;
+            }
 
 
             await DisplayAlert("Listo", "Cambios guardados.", "OK");

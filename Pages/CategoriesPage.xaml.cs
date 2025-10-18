@@ -10,6 +10,8 @@ using System.Linq; // <-- importante
 using System.IO; // para IOException en IsTransient
 using Microsoft.Maui.ApplicationModel; // para MainThread
 using System.ComponentModel;
+using Imdeliceapp.Services;
+
 
 namespace Imdeliceapp.Pages;
 
@@ -22,7 +24,7 @@ class CategoryDTO
     public int? parentId { get; set; }
     public int position { get; set; }
     public bool isActive { get; set; }
-        public bool isComboOnly { get; set; }
+    public bool isComboOnly { get; set; }
 
 }
 class ApiEnvelopeCategoria<T>
@@ -81,6 +83,11 @@ public class CategoryListItem : INotifyPropertyChanged
 
 public partial class CategoriesPage : ContentPage
 {
+    public bool CanRead => Perms.CategoriesRead;
+    public bool CanCreate => Perms.CategoriesCreate;
+    public bool CanUpdate => Perms.CategoriesUpdate;
+    public bool CanDelete => Perms.CategoriesDelete;
+
     static readonly JsonSerializerOptions _json = new() { PropertyNameCaseInsensitive = true };
     public ObservableCollection<CategoryListItem> Categories { get; } = new();
     List<CategoryListItem> _all = new();
@@ -100,6 +107,18 @@ public partial class CategoriesPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+        OnPropertyChanged(nameof(CanRead));
+        OnPropertyChanged(nameof(CanCreate));
+        OnPropertyChanged(nameof(CanUpdate));
+        OnPropertyChanged(nameof(CanDelete));
+        if (!CanRead)
+        {
+            await DisplayAlert("Acceso restringido", "No tienes permiso para ver categorías.", "OK");
+            await Shell.Current.GoToAsync("..");
+            return;
+        }
+
+
         await CargarCategoriasAsync();
     }
 
@@ -119,17 +138,17 @@ public partial class CategoriesPage : ContentPage
         return cli;
     }
     async Task<HttpClient> EnsureHttpAsync()
-{
-    var baseUrl = Application.Current.Resources["urlbase"].ToString().TrimEnd('/');
-    var token = await GetTokenAsync() ?? "";
+    {
+        var baseUrl = Application.Current.Resources["urlbase"].ToString().TrimEnd('/');
+        var token = await GetTokenAsync() ?? "";
 
-    if (_http == null)
-        _http = NewAuthClient(baseUrl, token);
-    else
-        _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        if (_http == null)
+            _http = NewAuthClient(baseUrl, token);
+        else
+            _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-    return _http;
-}
+        return _http;
+    }
     bool _silenceSwitch;   // <<--- NUEVO: silencia Toggled
     bool _loading;
     static IEnumerable<CategoryListItem> OrderCats(IEnumerable<CategoryListItem> src) =>
@@ -154,32 +173,32 @@ public partial class CategoriesPage : ContentPage
     }
     /// mueve 'item' a su lugar correcto en _all y en la UI sin reconstruir todo
     void MoveKeepingSort(CategoryListItem item)
-{
-    _silenceSwitch = true;
-
-    // --- Lista de trabajo (_all) ---
-    var oldAll = _all.IndexOf(item);
-    if (oldAll >= 0)
     {
-        _all.RemoveAt(oldAll);
-        var newAll = FindInsertIndex(_all, item); // <- ahora con la lista ya sin el ítem
-        // clamp por si acaso (defensivo)
-        if (newAll < 0) newAll = 0;
-        if (newAll > _all.Count) newAll = _all.Count;
-        _all.Insert(newAll, item);
+        _silenceSwitch = true;
+
+        // --- Lista de trabajo (_all) ---
+        var oldAll = _all.IndexOf(item);
+        if (oldAll >= 0)
+        {
+            _all.RemoveAt(oldAll);
+            var newAll = FindInsertIndex(_all, item); // <- ahora con la lista ya sin el ítem
+                                                      // clamp por si acaso (defensivo)
+            if (newAll < 0) newAll = 0;
+            if (newAll > _all.Count) newAll = _all.Count;
+            _all.Insert(newAll, item);
+        }
+
+        // --- Lista bindeada (Categories) ---
+        var oldUi = Categories.IndexOf(item);
+        if (oldUi >= 0)
+        {
+            var targetUi = FindInsertIndex(Categories, item);
+            if (targetUi > oldUi) targetUi--;  // porque Move no quita antes
+            if (targetUi != oldUi) Categories.Move(oldUi, targetUi);
+        }
+
+        _silenceSwitch = false;
     }
-
-    // --- Lista bindeada (Categories) ---
-    var oldUi = Categories.IndexOf(item);
-if (oldUi >= 0)
-{
-    var targetUi = FindInsertIndex(Categories, item);
-    if (targetUi > oldUi) targetUi--;  // porque Move no quita antes
-    if (targetUi != oldUi) Categories.Move(oldUi, targetUi);
-}
-
-    _silenceSwitch = false;
-}
 
 
     void Reload(IEnumerable<CategoryListItem> src)
@@ -224,8 +243,15 @@ if (oldUi >= 0)
             }
 
             // var baseUrl = Application.Current.Resources["urlbase"].ToString().TrimEnd('/');
-           var http = await EnsureHttpAsync();
-var resp = await http.GetAsync("/api/categories", HttpCompletionOption.ResponseHeadersRead);
+            var http = await EnsureHttpAsync();
+            var resp = await http.GetAsync("/api/categories", HttpCompletionOption.ResponseHeadersRead);
+            if (resp.StatusCode == HttpStatusCode.Forbidden)
+            {
+                await DisplayAlert("Acceso restringido", "No tienes permiso para ver categorías.", "OK");
+                await Shell.Current.GoToAsync("..");
+                return;
+            }
+
 
             var body = await resp.Content.ReadAsStringAsync();
 
@@ -252,7 +278,7 @@ var resp = await http.GetAsync("/api/categories", HttpCompletionOption.ResponseH
                     slug = c.slug ?? "",
                     position = c.position,
                     isActive = c.isActive,
-       isComboOnly = c.isComboOnly 
+                    isComboOnly = c.isComboOnly
                 })
                 .OrderByDescending(c => c.isActive)
                 .ThenBy(c => c.position)
@@ -285,47 +311,47 @@ var resp = await http.GetAsync("/api/categories", HttpCompletionOption.ResponseH
             _loading = false;
         }
     }
-HttpRequestMessage BuildPatch(string url, object payload)
-{
-    var req = new HttpRequestMessage(new HttpMethod("PATCH"), url)
+    HttpRequestMessage BuildPatch(string url, object payload)
     {
-        Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json"),
-        Version = HttpVersion.Version11,
-        VersionPolicy = HttpVersionPolicy.RequestVersionOrLower
-    };
-    req.Headers.ConnectionClose = true; // evita reusar socket
-    return req;
-}
-
-static bool IsTransient(HttpRequestException ex)
-{
-    var m = ex.Message?.ToLowerInvariant() ?? "";
-    return m.Contains("unexpected end of stream")
-        || m.Contains("socket closed")
-        || m.Contains("reset")
-        || ex.InnerException is IOException;
-}
-
-async Task<HttpResponseMessage> SendWithOneRetryAsync(Func<HttpRequestMessage> makeRequest)
-{
-    for (int attempt = 1; attempt <= 2; attempt++)
-    {
-        try
+        var req = new HttpRequestMessage(new HttpMethod("PATCH"), url)
         {
-            var http = await EnsureHttpAsync();
-            using var req = makeRequest();
-            return await http.SendAsync(req);
-        }
-        catch (HttpRequestException ex) when (attempt == 1 && IsTransient(ex))
-        {
-            // cae a un nuevo intento re-creando el cliente por si el pool quedó corrupto
-            _http?.Dispose(); _http = null;
-            await Task.Delay(150);
-            continue;
-        }
+            Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json"),
+            Version = HttpVersion.Version11,
+            VersionPolicy = HttpVersionPolicy.RequestVersionOrLower
+        };
+        req.Headers.ConnectionClose = true; // evita reusar socket
+        return req;
     }
-    throw new HttpRequestException("Fallo al reintentar.");
-}
+
+    static bool IsTransient(HttpRequestException ex)
+    {
+        var m = ex.Message?.ToLowerInvariant() ?? "";
+        return m.Contains("unexpected end of stream")
+            || m.Contains("socket closed")
+            || m.Contains("reset")
+            || ex.InnerException is IOException;
+    }
+
+    async Task<HttpResponseMessage> SendWithOneRetryAsync(Func<HttpRequestMessage> makeRequest)
+    {
+        for (int attempt = 1; attempt <= 2; attempt++)
+        {
+            try
+            {
+                var http = await EnsureHttpAsync();
+                using var req = makeRequest();
+                return await http.SendAsync(req);
+            }
+            catch (HttpRequestException ex) when (attempt == 1 && IsTransient(ex))
+            {
+                // cae a un nuevo intento re-creando el cliente por si el pool quedó corrupto
+                _http?.Dispose(); _http = null;
+                await Task.Delay(150);
+                continue;
+            }
+        }
+        throw new HttpRequestException("Fallo al reintentar.");
+    }
 
     void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
     {
@@ -340,20 +366,26 @@ async Task<HttpResponseMessage> SendWithOneRetryAsync(Func<HttpRequestMessage> m
     }
 
     async void AddCategory_Clicked(object sender, EventArgs e)
-        => await Shell.Current.GoToAsync($"{nameof(CategoryEditorPage)}?mode=create");
+    {
+        if (!CanCreate) { await DisplayAlert("Acceso restringido", "No puedes crear categorías.", "OK"); return; }
+        await Shell.Current.GoToAsync($"{nameof(CategoryEditorPage)}?mode=create");
+    }
 
     async void EditSwipe_Invoked(object sender, EventArgs e)
     {
+        if (!CanUpdate) { await DisplayAlert("Acceso restringido", "No puedes editar categorías.", "OK"); return; }
+
+
         if ((sender as SwipeItem)?.BindingContext is CategoryListItem item)
         {
-           var url = $"{nameof(CategoryEditorPage)}?mode=edit" +
-          $"&id={item.id}" +
-          $"&name={Uri.EscapeDataString(item.name)}" +
-          $"&slug={Uri.EscapeDataString(item.slug)}" +
-          $"&position={item.position}" +
-          $"&isActive={(item.isActive ? "1" : "0")}" +
-          $"&isComboOnly={(item.isComboOnly ? "1" : "0")}";   // <—
-await Shell.Current.GoToAsync(url);
+            var url = $"{nameof(CategoryEditorPage)}?mode=edit" +
+           $"&id={item.id}" +
+           $"&name={Uri.EscapeDataString(item.name)}" +
+           $"&slug={Uri.EscapeDataString(item.slug)}" +
+           $"&position={item.position}" +
+           $"&isActive={(item.isActive ? "1" : "0")}" +
+           $"&isComboOnly={(item.isComboOnly ? "1" : "0")}";   // <—
+            await Shell.Current.GoToAsync(url);
 
 
         }
@@ -362,6 +394,8 @@ await Shell.Current.GoToAsync(url);
     // 💥 eliminar definitivo
     async void DeleteSwipe_Invoked(object sender, EventArgs e)
     {
+        if (!CanDelete) { await DisplayAlert("Acceso restringido", "No puedes eliminar categorías.", "OK"); return; }
+
         if ((sender as SwipeItem)?.BindingContext is not CategoryListItem item) return;
         var ok = await DisplayAlert("Eliminar definitivamente",
             $"Esta acción no se puede deshacer.\n\n¿Eliminar “{item.name}”?", "Sí, eliminar", "Cancelar");
@@ -373,11 +407,15 @@ await Shell.Current.GoToAsync(url);
             if (string.IsNullOrWhiteSpace(token))
             { await AuthHelper.VerificarYRedirigirSiExpirado(this); return; }
 
-        var http = await EnsureHttpAsync(); // <- reutilizado
+            var http = await EnsureHttpAsync(); // <- reutilizado
 
-        var resp = await http.DeleteAsync($"/api/categories/{item.id}?hard=true");
+            var resp = await http.DeleteAsync($"/api/categories/{item.id}?hard=true");
             var body = await resp.Content.ReadAsStringAsync();
-
+            if (resp.StatusCode == HttpStatusCode.Forbidden)
+            {
+                await DisplayAlert("Acceso restringido", "No tienes permiso para eliminar categorías.", "OK");
+                return;
+            }
             if (!resp.IsSuccessStatusCode)
             {
                 if (resp.StatusCode == HttpStatusCode.Unauthorized)
@@ -398,12 +436,26 @@ await Shell.Current.GoToAsync(url);
     // 🔀 activar/inactivar con PATCH, reordenando la lista
     async void ToggleActivo_Toggled(object sender, ToggledEventArgs e)
     {
+
+
+
         if (_silenceSwitch) return;
         if (sender is not Switch sw) return;
+
         if (sw.BindingContext is not CategoryListItem item) return;
 
         var nuevo = e.Value;
         var anterior = item.isActive;
+        if (!CanUpdate)
+        {
+            _silenceSwitch = true;
+            sw.IsToggled = anterior;   // vuelve al estado anterior
+            _silenceSwitch = false;
+
+            await DisplayAlert("Acceso restringido", "No puedes actualizar categorías.", "OK");
+            return;
+        }
+
 
         // Evitar doble PATCH por el mismo id
         if (_busyToggles.Contains(item.id))
@@ -437,7 +489,16 @@ await Shell.Current.GoToAsync(url);
             //             var json = JsonSerializer.Serialize(new { isActive = nuevo });
 
             var resp = await SendWithOneRetryAsync(() => BuildPatch($"/api/categories/{item.id}", new { isActive = nuevo }));
-
+            if (resp.StatusCode == HttpStatusCode.Forbidden)
+            {
+                _silenceSwitch = true;
+                item.isActive = anterior;
+                sw.IsToggled = anterior;
+                _silenceSwitch = false;
+                MoveKeepingSort(item);
+                await DisplayAlert("Acceso restringido", "No tienes permiso para actualizar categorías.", "OK");
+                return;
+            }
 
             if (!resp.IsSuccessStatusCode)
             {
@@ -485,16 +546,16 @@ await Shell.Current.GoToAsync(url);
 
     // Si conservas el botón "Entrar":
     // CategoriesPage.xaml.cs
-async void OpenProducts_Clicked(object sender, EventArgs e)
-{
-    if ((sender as Button)?.CommandParameter is CategoryListItem item)
+    async void OpenProducts_Clicked(object sender, EventArgs e)
     {
-        var slug = item.slug ?? "";
-        var comboOnly = item.isComboOnly ? "1" : "0";
-        await Shell.Current.GoToAsync(
-            $"{nameof(ProductsPage)}?categorySlug={Uri.EscapeDataString(slug)}&comboOnly={comboOnly}"
-        );
+        if ((sender as Button)?.CommandParameter is CategoryListItem item)
+        {
+            var slug = item.slug ?? "";
+            var comboOnly = item.isComboOnly ? "1" : "0";
+            await Shell.Current.GoToAsync(
+                $"{nameof(ProductsPage)}?categorySlug={Uri.EscapeDataString(slug)}&comboOnly={comboOnly}"
+            );
+        }
     }
-}
 
 }

@@ -74,7 +74,12 @@ private HashSet<string> _origPerms = new(StringComparer.OrdinalIgnoreCase);
     ("modifiers.create", "Modificadores: Crear"),
     ("modifiers.update", "Modificadores: Editar"),
     ("modifiers.delete", "Modificadores: Eliminar"),
-    ("menu.update", "Menú: Publicar/Actualizar"),
+    ("menu.read", "Menús: Ver"),
+    ("menu.create", "Menús: Crear"),
+    ("menu.update", "Menús: Editar"),
+    ("menu.delete", "Menús: Eliminar")
+ 
+
 };
 
 public ObservableCollection<PermItem> PermItems { get; } = new();

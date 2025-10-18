@@ -165,6 +165,26 @@ public partial class GroupEditorPage : ContentPage
     {
         base.OnAppearing();
         Title = GroupId > 0 ? "Editar grupo" : "Crear grupo";
+        // puertas de permisos
+        if (GroupId > 0)
+        {
+            if (!Perms.ModifiersUpdate)
+            {
+                await DisplayAlert("Acceso restringido", "No puedes editar grupos de modificadores.", "OK");
+                await Shell.Current.GoToAsync("..");
+                return;
+            }
+        }
+        else
+        {
+            if (!Perms.ModifiersCreate)
+            {
+                await DisplayAlert("Acceso restringido", "No puedes crear grupos de modificadores.", "OK");
+                await Shell.Current.GoToAsync("..");
+                return;
+            }
+        }
+    
         await LoadCategoriesAsync();
 
 
@@ -327,6 +347,13 @@ public partial class GroupEditorPage : ContentPage
 
     async void Save_Clicked(object s, EventArgs e)
     {
+         if (GroupId == 0 && !Perms.ModifiersCreate)
+    { await DisplayAlert("Acceso restringido", "No puedes crear grupos de modificadores.", "OK"); return; }
+
+    if (GroupId > 0 && !Perms.ModifiersUpdate)
+    { await DisplayAlert("Acceso restringido", "No puedes editar grupos de modificadores.", "OK"); return; }
+
+
         if (_isSaving) return;
         SetSaving(true);
         try
@@ -444,10 +471,18 @@ public partial class GroupEditorPage : ContentPage
         // Si todavía no existe en DB (creación), solo cambia localmente.
         if (opt.id <= 0)
         {
+            if (GroupId == 0 && !Perms.ModifiersCreate) { (sender as Switch)!.IsToggled = !e.Value; return; }
+        if (GroupId > 0 && !Perms.ModifiersUpdate) { (sender as Switch)!.IsToggled = !e.Value; return; }
             opt.isActive = e.Value;
             MarkDirty();
             return;
         }
+        if (!Perms.ModifiersUpdate)
+    {
+        (sender as Switch)!.IsToggled = opt.isActive;   // revertir
+        await DisplayAlert("Acceso restringido", "No puedes actualizar opciones.", "OK");
+        return;
+    }
 
         var nuevo = e.Value;
         var anterior = opt.isActive;

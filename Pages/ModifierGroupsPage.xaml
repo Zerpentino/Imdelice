@@ -3,6 +3,7 @@
   xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
   xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
   x:Class="Imdeliceapp.Pages.ModifierGroupsPage"
+  x:Name="Page"
   Title="Grupos de modificadores"
   BackgroundColor="{AppThemeBinding Light=White, Dark=Black}"
   Shell.NavBarIsVisible="True"
@@ -59,7 +60,9 @@
                     SwipeBehaviorOnInvoked="Close">
                   <SwipeItem Text="Borrar"
                              BackgroundColor="#E53935"
-                             Invoked="Delete_Clicked"/>
+                             Invoked="Delete_Clicked"
+                             IsVisible="{Binding Source={x:Reference Page}, Path=CanDelete}"
+                             IsEnabled="{Binding Source={x:Reference Page}, Path=CanDelete}"/>
                 </SwipeItems>
               </SwipeView.LeftItems>
 
@@ -68,7 +71,9 @@
                     SwipeBehaviorOnInvoked="Close">
                   <SwipeItem Text="Editar"
                              BackgroundColor="#4CAF50"
-                             Invoked="Edit_Clicked"/>
+                             Invoked="Edit_Clicked"
+                              IsEnabled="{Binding Source={x:Reference Page}, Path=CanUpdate}"
+                             IsVisible="{Binding Source={x:Reference Page}, Path=CanUpdate}" />
                   <!-- <SwipeItem Text="Adjuntar"
                              BackgroundColor="{StaticResource BrandPrimary}"
                              Invoked="Attach_Clicked"/> -->
@@ -145,6 +150,7 @@
   <Switch Grid.Column="2"
           HorizontalOptions="End" VerticalOptions="Center"
           IsToggled="{Binding isActive, Mode=TwoWay}"
+          IsEnabled="{Binding Source={x:Reference Page}, Path=CanUpdate}"
           Toggled="ToggleActivo_Toggled"/>
   
   <!-- Entrar -->
@@ -175,16 +181,17 @@
     </RefreshView>
 
     <!-- FAB como en Productos -->
-    <Button Grid.RowSpan="3"
-            Text="+"
-            Clicked="New_Clicked"
-            CornerRadius="28"
-            WidthRequest="56"
-            HeightRequest="56"
-            BackgroundColor="{AppThemeBinding Light=#894164, Dark=#894164}"
-            TextColor="White"
-            HorizontalOptions="End"
-            VerticalOptions="End"
-            Margin="16,16,16,28"/>
+  <Button Grid.RowSpan="3"
+        Text="+"
+        Clicked="New_Clicked"
+        CornerRadius="28"
+        WidthRequest="56"
+        HeightRequest="56"
+        BackgroundColor="{AppThemeBinding Light=#894164, Dark=#894164}"
+        TextColor="White"
+        HorizontalOptions="End"
+        VerticalOptions="End"
+        Margin="16,16,16,28"
+        IsVisible="{Binding Source={x:Reference Page}, Path=CanCreate}" />
   </Grid>
 </ContentPage>

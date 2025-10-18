@@ -50,7 +50,9 @@
                   <SwipeItem Text="Eliminar"
                              BackgroundColor="#E53935"
                              Invoked="DeleteSwipe_Invoked"
-                             IsEnabled="{Binding Source={x:Reference ThisPage}, Path=CanDelete}" />
+                             IsEnabled="{Binding Source={x:Reference ThisPage}, Path=CanDelete}" 
+                             IsVisible="{Binding Source={x:Reference ThisPage}, Path=CanDelete}"/>
+                             
                 </SwipeItems>
               </SwipeView.LeftItems>
 
@@ -60,6 +62,7 @@
                   <SwipeItem Text="Editar"
                              BackgroundColor="#4CAF50"
                              Invoked="EditSwipe_Invoked"
+                              IsVisible="{Binding Source={x:Reference ThisPage}, Path=CanUpdate}"
                              IsEnabled="{Binding Source={x:Reference ThisPage}, Path=CanUpdate}" />
                 </SwipeItems>
               </SwipeView.RightItems>

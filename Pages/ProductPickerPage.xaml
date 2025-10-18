@@ -3,7 +3,14 @@
     x:Class="Imdeliceapp.Pages.ProductPickerPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    Title="Elegir producto">
+    Title="Elegir referencia">
+
+  <ContentPage.ToolbarItems>
+    <ToolbarItem Text="Cerrar"
+                 Order="Primary"
+                 Priority="0"
+                 Clicked="Cancel_Clicked"/>
+  </ContentPage.ToolbarItems>
 
   <Grid RowDefinitions="Auto,*" Padding="12">
     <SearchBar x:Name="Search" Placeholder="Buscar..." TextChanged="Search_TextChanged"/>
@@ -20,5 +27,11 @@
         </DataTemplate>
       </CollectionView.ItemTemplate>
     </CollectionView>
+    <ActivityIndicator x:Name="LoadingIndicator"
+                       Grid.RowSpan="2"
+                       IsVisible="False"
+                       IsRunning="False"
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center"/>
   </Grid>
 </ContentPage>

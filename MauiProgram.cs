@@ -16,8 +16,11 @@ public static class MauiProgram
 	public static MauiApp CreateMauiApp()
 	{
 #if IOS
-		Imdeliceapp.Platforms.iOS.EntryNoBorder.Init();
-		Imdeliceapp.Platforms.iOS.BorderShadowFix.Init();   // ⬅️ nuevo
+			Imdeliceapp.Platforms.iOS.EntryNoBorder.Init();
+			Imdeliceapp.Platforms.iOS.BorderShadowFix.Init();   // ⬅️ nuevo
+#endif
+#if ANDROID
+			Imdeliceapp.Platforms.Android.BorderShadowFix.Init();
 #endif
 
 		var builder = MauiApp.CreateBuilder();

@@ -1,69 +1,53 @@
+using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Net;
-using System.Net.Http.Headers;
-using System.Text.Json;
-using Microsoft.Maui.Storage;
-using Microsoft.Maui.Networking;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using Imdeliceapp.Helpers;
+using Imdeliceapp.Services;
 using Microsoft.Maui.Controls;
-using System.Text;
-using Imdeliceapp.Model;
-using System.Net.Http;       // por si no estaba
-using System.Net.Http.Json;  // <- aquí vive JsonContent
+using Microsoft.Maui.Networking;
+using Microsoft.Maui.Storage;
+using System.Linq;
 
 namespace Imdeliceapp.Pages;
 
 [QueryProperty(nameof(MenuId), "menuId")]
+[QueryProperty(nameof(MenuName), "menuName")]
 [QueryProperty(nameof(SectionId), "sectionId")]
 [QueryProperty(nameof(SectionName), "sectionName")]
 public partial class SectionItemsPage : ContentPage
 {
+    readonly MenusApi _menusApi = new();
+
     public int MenuId { get; set; }
+    public string? MenuName { get; set; }
     public int SectionId { get; set; }
     public string? SectionName { get; set; }
-    public string Titulo => $"Ítems – {SectionName}";
-
-    #region DTOs
-    class ApiEnvelope<T> { public object? error { get; set; } public T? data { get; set; } public string? message { get; set; } }
-
-    class ProductBasicDTO { public int id { get; set; } public string name { get; set; } = ""; public string type { get; set; } = ""; public int? priceCents { get; set; } public bool isActive { get; set; } public string? imageUrl { get; set; } }
-
-    class MenuItemDTO
+    public string Titulo
     {
-        public int id { get; set; }
-        public int sectionId { get; set; }
-        public int productId { get; set; }
-        public string? displayName { get; set; }
-        public int? displayPriceCents { get; set; } // null = usar product.priceCents / regla
-        public int position { get; set; }
-        public bool isFeatured { get; set; }
-        public ProductBasicDTO product { get; set; } = new();
-        // helpers UI
-        public string displayNameOrProduct => string.IsNullOrWhiteSpace(displayName) ? product?.name ?? "" : displayName!;
-        public string priceLabel => displayPriceCents.HasValue ? CentsToMoney(displayPriceCents.Value)
-                                  : product?.type == "SIMPLE" || product?.type == "COMBO"
-                                    ? CentsToMoney(product?.priceCents ?? 0)
-                                    : "Desde…";
+        get
+        {
+            var menu = string.IsNullOrWhiteSpace(MenuName) ? "Menú" : MenuName;
+            var section = string.IsNullOrWhiteSpace(SectionName) ? "Ítems" : SectionName;
+            return $"{menu} · {section}";
+        }
     }
 
-    class MenuPublicDTO
-    {
-        public int id { get; set; }
-        public string name { get; set; } = "";
-        public bool isActive { get; set; }
-        public List<SectionDTO> sections { get; set; } = new();
-    }
-    class SectionDTO
-    {
-        public int id { get; set; }
-        public string name { get; set; } = "";
-        public int position { get; set; }
-        public List<MenuItemDTO> items { get; set; } = new();
-    }
-    #endregion
+    public bool CanRead => Perms.MenusRead;
+    public bool CanCreate => Perms.MenusUpdate;
+    public bool CanUpdate => Perms.MenusUpdate;
+    public bool CanDelete => Perms.MenusDelete;
+    public bool ShowTrashFab => (CanUpdate || CanDelete) && _trash.Count > 0;
 
-    static readonly JsonSerializerOptions _json = new() { PropertyNameCaseInsensitive = true };
-    readonly ObservableCollection<MenuItemDTO> _items = new();
+    readonly ObservableCollection<MenuItemVm> _items = new();
+    readonly List<MenuItemVm> _all = new();
+    readonly List<MenuItemVm> _trash = new();
+
+    bool _silenceSwitch;
+    readonly HashSet<int> _busyToggles = new();
 
     public SectionItemsPage()
     {
@@ -75,158 +59,317 @@ public partial class SectionItemsPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
-        await CargarItemsAsync();
-    }
 
-    #region helpers
-    static string CentsToMoney(int cents) => (cents / 100.0m).ToString("$0.00");
-    static async Task<string?> GetTokenAsync()
-    {
-        var s = await SecureStorage.GetAsync("token");
-        if (!string.IsNullOrWhiteSpace(s)) return s;
-        var p = Preferences.Default.Get("token", string.Empty);
-        return string.IsNullOrWhiteSpace(p) ? null : p;
-    }
-    HttpClient NewAuthClient(string baseUrl, string token)
-    {
-        var cli = new HttpClient { BaseAddress = new Uri(baseUrl), Timeout = TimeSpan.FromSeconds(20) };
-        cli.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return cli;
-    }
-    #endregion
+        OnPropertyChanged(nameof(CanRead));
+        OnPropertyChanged(nameof(CanCreate));
+        OnPropertyChanged(nameof(CanUpdate));
+        OnPropertyChanged(nameof(CanDelete));
+        OnPropertyChanged(nameof(Titulo));
 
-    async Task CargarItemsAsync()
-    {
-        try
+        if (!CanRead)
         {
-            _items.Clear();
-
-            var token = await GetTokenAsync(); if (string.IsNullOrWhiteSpace(token)) { await AuthHelper.VerificarYRedirigirSiExpirado(this); return; }
-            var baseUrl = Application.Current.Resources["urlbase"].ToString().TrimEnd('/');
-            using var http = NewAuthClient(baseUrl, token);
-
-            var resp = await http.GetAsync($"/api/menus/{MenuId}/public");
-            var body = await resp.Content.ReadAsStringAsync();
-            if (!resp.IsSuccessStatusCode) { await ErrorHandler.MostrarErrorUsuario(ErrorHandler.ObtenerMensajeHttp(resp, body)); return; }
-
-            var env = JsonSerializer.Deserialize<ApiEnvelope<MenuPublicDTO>>(body, _json);
-            var sec = env?.data?.sections?.FirstOrDefault(s => s.id == SectionId);
-            foreach (var it in sec?.items ?? new()) _items.Add(it);
+            await DisplayAlert("Acceso restringido", "No tienes permiso para ver ítems.", "OK");
+            await Shell.Current.GoToAsync("..");
+            return;
         }
-        catch (Exception ex) { await ErrorHandler.MostrarErrorTecnico(ex, "Items – Cargar"); }
+
+        await CargarTodoAsync();
     }
 
-    async void Refrescar_Clicked(object sender, EventArgs e) => await CargarItemsAsync();
-
-    // Agregar: abrimos selector de producto y luego preguntamos datos opcionales
-    async void AgregarItem_Clicked(object sender, EventArgs e)
+    async Task CargarTodoAsync()
     {
-        var prod = await ProductPickerPage.PickAsync(Navigation);
-        if (prod is null) return;
-
-        var dispName = await DisplayPromptAsync("Nombre a mostrar", "Deja vacío para usar el del producto.", initialValue: prod.name);
-        var dispPriceStr = await DisplayPromptAsync("Precio a mostrar", "En centavos (o vacío para usar el normal).", keyboard: Keyboard.Numeric);
-
-        int? dispPrice = null;
-        if (int.TryParse(dispPriceStr, out var cents) && cents >= 0) dispPrice = cents;
-
         try
         {
-            var token = await GetTokenAsync(); if (string.IsNullOrWhiteSpace(token)) { await AuthHelper.VerificarYRedirigirSiExpirado(this); return; }
-            var baseUrl = Application.Current.Resources["urlbase"].ToString().TrimEnd('/');
-            using var http = NewAuthClient(baseUrl, token);
-
-            var payload = JsonContent.Create(new
+            if (Connectivity.Current.NetworkAccess != NetworkAccess.Internet)
             {
-                sectionId = SectionId,
-                productId = prod.id,
-                displayName = string.IsNullOrWhiteSpace(dispName) ? null : dispName,
-                displayPriceCents = dispPrice,
-                position = 0,
-                isFeatured = false
-            });
-
-            var resp = await http.PostAsync("/api/menus/items", payload);
-            var body = await resp.Content.ReadAsStringAsync();
-            if (!resp.IsSuccessStatusCode) { await ErrorHandler.MostrarErrorUsuario(ErrorHandler.ObtenerMensajeHttp(resp, body)); return; }
-
-            await CargarItemsAsync();
-        }
-        catch (Exception ex) { await ErrorHandler.MostrarErrorTecnico(ex, "Items – Agregar"); }
-    }
-
-    async void Editar_Clicked(object sender, EventArgs e)
-    {
-        if ((sender as ImageButton)?.BindingContext is not MenuItemDTO it) return;
-
-        var newName = await DisplayPromptAsync("Nombre a mostrar", "(vacío = usar producto)", initialValue: it.displayName ?? "");
-        var newPriceStr = await DisplayPromptAsync("Precio a mostrar (centavos)", "(vacío = usar normal)", keyboard: Keyboard.Numeric,
-            initialValue: it.displayPriceCents?.ToString() ?? "");
-        var newPosStr = await DisplayPromptAsync("Posición", "Número entero (0 = arriba)", keyboard: Keyboard.Numeric,
-            initialValue: it.position.ToString());
-        var wantFeatured = await DisplayAlert("Destacar", "¿Marcar como destacado?", "Sí", "No");
-
-        int? newPrice = null; if (int.TryParse(newPriceStr, out var cents)) newPrice = cents >= 0 ? cents : null;
-        int pos = it.position; if (int.TryParse(newPosStr, out var p)) pos = Math.Max(0, p);
-
-        try
-        {
-            var token = await GetTokenAsync(); if (string.IsNullOrWhiteSpace(token)) { await AuthHelper.VerificarYRedirigirSiExpirado(this); return; }
-            var baseUrl = Application.Current.Resources["urlbase"].ToString().TrimEnd('/');
-            using var http = NewAuthClient(baseUrl, token);
-
-            var resp = await http.PatchAsync($"/api/menus/items/{it.id}",
-                JsonContent.Create(new
-                {
-                    displayName = string.IsNullOrWhiteSpace(newName) ? null : newName,
-                    displayPriceCents = newPrice,
-                    position = pos,
-                    isFeatured = wantFeatured
-                }));
-            var body = await resp.Content.ReadAsStringAsync();
-            if (!resp.IsSuccessStatusCode) { await ErrorHandler.MostrarErrorUsuario(ErrorHandler.ObtenerMensajeHttp(resp, body)); return; }
-
-            await CargarItemsAsync();
-        }
-        catch (Exception ex) { await ErrorHandler.MostrarErrorTecnico(ex, "Items – Editar"); }
-    }
-
-    async void MoverArriba_Clicked(object sender, EventArgs e)
-    {
-        if ((sender as ImageButton)?.BindingContext is not MenuItemDTO it) return;
-        try
-        {
-            var token = await GetTokenAsync(); if (string.IsNullOrWhiteSpace(token)) { await AuthHelper.VerificarYRedirigirSiExpirado(this); return; }
-            var baseUrl = Application.Current.Resources["urlbase"].ToString().TrimEnd('/');
-            using var http = NewAuthClient(baseUrl, token);
-            var resp = await http.PatchAsync($"/api/menus/items/{it.id}", JsonContent.Create(new { position = Math.Max(0, it.position - 1) }));
-            var body = await resp.Content.ReadAsStringAsync();
-            if (!resp.IsSuccessStatusCode) { await ErrorHandler.MostrarErrorUsuario(ErrorHandler.ObtenerMensajeHttp(resp, body)); return; }
-            await CargarItemsAsync();
-        }
-        catch (Exception ex) { await ErrorHandler.MostrarErrorTecnico(ex, "Items – Reordenar"); }
-    }
-
-    async void Eliminar_Clicked(object sender, EventArgs e)
-    {
-        if ((sender as ImageButton)?.BindingContext is not MenuItemDTO it) return;
-        var ok = await DisplayAlert("Eliminar ítem", $"¿Quitar “{it.displayNameOrProduct}” de la sección?", "Sí", "Cancelar");
-        if (!ok) return;
-
-        try
-        {
-            var token = await GetTokenAsync(); if (string.IsNullOrWhiteSpace(token)) { await AuthHelper.VerificarYRedirigirSiExpirado(this); return; }
-            var baseUrl = Application.Current.Resources["urlbase"].ToString().TrimEnd('/');
-            using var http = NewAuthClient(baseUrl, token);
-            var resp = await http.DeleteAsync($"/api/menus/items/{it.id}");
-            if (!resp.IsSuccessStatusCode)
-            {
-                var body = await resp.Content.ReadAsStringAsync();
-                await ErrorHandler.MostrarErrorUsuario(ErrorHandler.ObtenerMensajeHttp(resp, body));
+                await ErrorHandler.MostrarErrorUsuario("Sin conexión a Internet.");
                 return;
             }
-            await CargarItemsAsync();
+
+            var activos = await _menusApi.GetSectionItemsAsync(SectionId);
+            var eliminados = await _menusApi.GetSectionItemsTrashAsync(SectionId);
+
+            _all.Clear();
+            foreach (var dto in activos)
+                _all.Add(MenuItemVm.From(dto));
+
+            _trash.Clear();
+            foreach (var dto in eliminados)
+                _trash.Add(MenuItemVm.From(dto));
+
+            ApplyFilter(SearchBox?.Text);
+            OnPropertyChanged(nameof(ShowTrashFab));
         }
-        catch (Exception ex) { await ErrorHandler.MostrarErrorTecnico(ex, "Items – Eliminar"); }
+        catch (HttpRequestException ex)
+        {
+            await ErrorHandler.MostrarErrorUsuario(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandler.MostrarErrorTecnico(ex, "Ítems – Cargar");
+        }
+    }
+
+    void ApplyFilter(string? query)
+    {
+        query = (query ?? string.Empty).Trim().ToLowerInvariant();
+        _items.Clear();
+
+        IEnumerable<MenuItemVm> src = _all;
+        if (!string.IsNullOrEmpty(query))
+        {
+            src = src.Where(i =>
+                (i.Title ?? string.Empty).ToLowerInvariant().Contains(query) ||
+                i.TypeBadge.ToLowerInvariant().Contains(query) ||
+                i.ReferenceLabel.ToLowerInvariant().Contains(query));
+        }
+
+        foreach (var item in src.OrderBy(i => i.position).ThenBy(i => i.Title, StringComparer.CurrentCultureIgnoreCase))
+            _items.Add(item);
+    }
+
+    void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
+        => ApplyFilter(e.NewTextValue);
+
+    async void Refresh_Refreshing(object sender, EventArgs e)
+    {
+        try
+        {
+            await CargarTodoAsync();
+        }
+        finally
+        {
+            if (sender is RefreshView rv)
+                rv.IsRefreshing = false;
+        }
+    }
+
+    async void New_Clicked(object sender, EventArgs e)
+    {
+        if (!CanCreate)
+        {
+            await DisplayAlert("Acceso restringido", "No puedes crear ítems.", "OK");
+            return;
+        }
+
+        var route = $"{nameof(MenuItemEditorPage)}?mode=create" +
+                    $"&menuId={MenuId}" +
+                    $"&menuName={Uri.EscapeDataString(MenuName ?? string.Empty)}" +
+                    $"&sectionId={SectionId}" +
+                    $"&sectionName={Uri.EscapeDataString(SectionName ?? string.Empty)}";
+        await Shell.Current.GoToAsync(route);
+    }
+
+    async void Edit_Clicked(object sender, EventArgs e)
+    {
+        if (!CanUpdate)
+        {
+            await DisplayAlert("Acceso restringido", "No puedes editar ítems.", "OK");
+            return;
+        }
+
+        if ((sender as SwipeItem)?.BindingContext is not MenuItemVm vm) return;
+
+        var route = $"{nameof(MenuItemEditorPage)}?mode=edit" +
+            $"&itemId={vm.id}" +
+            $"&menuId={MenuId}" +
+            $"&menuName={Uri.EscapeDataString(MenuName ?? string.Empty)}" +
+            $"&sectionId={SectionId}" +
+            $"&sectionName={Uri.EscapeDataString(SectionName ?? string.Empty)}" +
+            $"&refType={Uri.EscapeDataString(vm.refType)}" +
+            $"&refId={vm.refId}" +
+            $"&displayName={Uri.EscapeDataString(vm.displayName ?? string.Empty)}" +
+            $"&displayPriceCents={(vm.displayPriceCents?.ToString() ?? string.Empty)}" +
+            $"&position={vm.position}" +
+            $"&isFeatured={vm.isFeatured}" +
+            $"&isActive={vm.isActive}";
+
+        await Shell.Current.GoToAsync(route);
+    }
+
+    async void Delete_Clicked(object sender, EventArgs e)
+    {
+        if (!CanDelete)
+        {
+            await DisplayAlert("Acceso restringido", "No puedes eliminar ítems.", "OK");
+            return;
+        }
+
+        if ((sender as SwipeItem)?.BindingContext is not MenuItemVm vm) return;
+
+        var confirm = await DisplayAlert("Enviar a papelera", $"¿Enviar “{vm.Title}” a la papelera?", "Sí", "Cancelar");
+        if (!confirm) return;
+
+        await ExecuteDeleteAsync(vm.id, hard: false);
+    }
+
+    async Task ExecuteDeleteAsync(int id, bool hard)
+    {
+        try
+        {
+            if (hard)
+                await _menusApi.DeleteMenuItemHardAsync(id);
+            else
+                await _menusApi.ArchiveMenuItemAsync(id);
+
+            await CargarTodoAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            await ErrorHandler.MostrarErrorUsuario(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandler.MostrarErrorTecnico(ex, hard ? "Ítems – Eliminar definitivo" : "Ítems – Eliminar");
+        }
+    }
+
+    async void ToggleActivo_Toggled(object sender, ToggledEventArgs e)
+    {
+        if (_silenceSwitch) return;
+        if (sender is not Switch sw || sw.BindingContext is not MenuItemVm vm) return;
+
+        if (!CanUpdate)
+        {
+            _silenceSwitch = true;
+            sw.IsToggled = vm.isActive;
+            _silenceSwitch = false;
+            return;
+        }
+
+        if (_busyToggles.Contains(vm.id))
+        {
+            _silenceSwitch = true;
+            sw.IsToggled = vm.isActive;
+            _silenceSwitch = false;
+            return;
+        }
+
+        var nuevo = e.Value;
+        var anterior = vm.isActive;
+        vm.isActive = nuevo;
+        _busyToggles.Add(vm.id);
+
+        try
+        {
+            await _menusApi.UpdateMenuItemAsync(vm.id, new MenusApi.MenuItemUpdateDto { isActive = nuevo });
+        }
+        catch (Exception ex)
+        {
+            _silenceSwitch = true;
+            vm.isActive = anterior;
+            sw.IsToggled = anterior;
+            _silenceSwitch = false;
+            await ErrorHandler.MostrarErrorUsuario(ex.Message);
+        }
+        finally
+        {
+            _busyToggles.Remove(vm.id);
+        }
+    }
+
+    async void TrashFab_Clicked(object sender, EventArgs e)
+    {
+        if (_trash.Count == 0) return;
+
+        var options = _trash
+            .Select(i => $"{i.Title} • {i.TrashDisplay}")
+            .ToArray();
+
+        var choice = await DisplayActionSheet("Papelera", "Cerrar", null, options);
+        if (string.IsNullOrWhiteSpace(choice) || choice == "Cerrar") return;
+
+        var index = Array.IndexOf(options, choice);
+        if (index < 0) return;
+        var selected = _trash[index];
+
+        var actions = new List<string>();
+        if (CanUpdate) actions.Add("Restaurar");
+        if (CanDelete) actions.Add("Eliminar definitivamente");
+
+        if (actions.Count == 0)
+        {
+            await DisplayAlert("Papelera", "No tienes permisos para administrar la papelera.", "OK");
+            return;
+        }
+
+        var action = await DisplayActionSheet(selected.Title ?? "Ítem", "Cancelar", null, actions.ToArray());
+        if (string.IsNullOrWhiteSpace(action) || action == "Cancelar") return;
+
+        if (action == "Restaurar")
+        {
+            await RestoreAsync(selected.id);
+        }
+        else if (action == "Eliminar definitivamente")
+        {
+            await ExecuteDeleteAsync(selected.id, hard: true);
+        }
+    }
+
+    async Task RestoreAsync(int id)
+    {
+        try
+        {
+            await _menusApi.RestoreMenuItemAsync(id);
+            await CargarTodoAsync();
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandler.MostrarErrorTecnico(ex, "Ítems – Restaurar");
+        }
+    }
+
+    class MenuItemVm : INotifyPropertyChanged
+    {
+        public int id { get; set; }
+        public int sectionId { get; set; }
+        public string refType { get; set; } = string.Empty;
+        public int refId { get; set; }
+        public string? displayName { get; set; }
+        public int? displayPriceCents { get; set; }
+        public int position { get; set; }
+        bool _isActive;
+        public bool isActive
+        {
+            get => _isActive;
+            set { if (_isActive == value) return; _isActive = value; OnPropertyChanged(); }
+        }
+        public bool isFeatured { get; set; }
+        public DateTime? deletedAt { get; set; }
+
+        public string Title => string.IsNullOrWhiteSpace(displayName) ? $"{refType} #{refId}" : displayName!;
+        public string TypeBadge => refType switch
+        {
+            "PRODUCT" => "Producto",
+            "VARIANT" => "Variante",
+            "COMBO" => "Combo",
+            "OPTION" => "Opción",
+            _ => refType
+        };
+        public string PriceLabel => displayPriceCents.HasValue ? (displayPriceCents.Value / 100.0m).ToString("$0.00") : "Precio base";
+        public bool HasCustomPrice => displayPriceCents.HasValue;
+        public string ReferenceLabel => $"{refType} · ID {refId}";
+        public string PositionLabel => $"Pos {position}";
+        public bool IsFeatured => isFeatured;
+        public bool IsInactiveBadgeVisible => !isActive;
+        public string TrashDisplay => deletedAt?.ToLocalTime().ToString("dd MMM yyyy HH:mm") ?? "";
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+        void OnPropertyChanged([CallerMemberName] string? name = null)
+            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+
+        public static MenuItemVm From(MenusApi.MenuItemDto dto) => new()
+        {
+            id = dto.id,
+            sectionId = dto.sectionId,
+            refType = dto.refType,
+            refId = dto.refId,
+            displayName = dto.displayName,
+            displayPriceCents = dto.displayPriceCents,
+            position = dto.position,
+            isFeatured = dto.isFeatured,
+            isActive = dto.isActive,
+            deletedAt = dto.deletedAt
+        };
     }
 }

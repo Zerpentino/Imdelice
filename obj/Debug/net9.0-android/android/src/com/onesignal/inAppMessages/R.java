@@ -1386,7 +1386,7 @@ public final class R {
 		public static final int Widget_AppCompat_Toolbar_Button_Navigation = 0x7f110340;
 		public static final int Widget_Compat_NotificationActionContainer = 0x7f110341;
 		public static final int Widget_Compat_NotificationActionText = 0x7f110342;
-		public static final int Widget_Support_CoordinatorLayout = 0x7f110477;
+		public static final int Widget_Support_CoordinatorLayout = 0x7f110478;
 	}
 	public static final class styleable {
 		public static final int[] ActionBar = new int[] { 0x7f03004d, 0x7f030054, 0x7f030055, 0x7f030146, 0x7f030147, 0x7f030148, 0x7f030149, 0x7f03014a, 0x7f03014b, 0x7f030174, 0x7f03018b, 0x7f03018c, 0x7f0301ac, 0x7f030234, 0x7f03023c, 0x7f030242, 0x7f030243, 0x7f030247, 0x7f03025a, 0x7f030271, 0x7f0302ef, 0x7f030376, 0x7f0303af, 0x7f0303b7, 0x7f0303b8, 0x7f03043f, 0x7f030443, 0x7f0304ce, 0x7f0304dc };

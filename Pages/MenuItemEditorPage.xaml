@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+  xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+  x:Class="Imdeliceapp.Pages.MenuItemEditorPage"
+  Title="Ítem del menú"
+  Shell.NavBarIsVisible="True">
+
+  <ContentPage.ToolbarItems>
+    <ToolbarItem Text="Guardar"
+                 Order="Primary"
+                 Priority="0"
+                 Clicked="Save_Clicked"/>
+  </ContentPage.ToolbarItems>
+
+  <ScrollView>
+    <VerticalStackLayout Padding="16"
+                         Spacing="18">
+
+      <ActivityIndicator x:Name="BusyIndicator"
+                         IsVisible="False"
+                         IsRunning="False"/>
+
+      <Frame Padding="16"
+             HasShadow="False"
+             CornerRadius="12"
+             BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E1E1E}">
+        <VerticalStackLayout Spacing="16">
+          <Label x:Name="HeaderLabel"
+                 Text="Nuevo ítem"
+                 FontAttributes="Bold"
+                 FontSize="18"
+                 TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+
+          <Label x:Name="InfoLabel"
+                 FontSize="13"
+                 TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"/>
+
+          <VerticalStackLayout Spacing="8">
+            <Label Text="Tipo de referencia"
+                   FontSize="12"
+                   TextColor="{AppThemeBinding Light=#555, Dark=#BBB}"/>
+            <Picker x:Name="RefTypePicker"
+                    SelectedIndexChanged="RefTypePicker_SelectedIndexChanged">
+              <Picker.Items>
+                <x:String>PRODUCT</x:String>
+                <x:String>VARIANT</x:String>
+                <x:String>COMBO</x:String>
+                <x:String>OPTION</x:String>
+              </Picker.Items>
+            </Picker>
+          </VerticalStackLayout>
+
+          <VerticalStackLayout Spacing="6">
+            <Label Text="Referencia seleccionada"
+                   FontSize="12"
+                   TextColor="{AppThemeBinding Light=#555, Dark=#BBB}"/>
+            <Label x:Name="SelectedRefLabel"
+                   Text="Ninguna"
+                   FontSize="14"
+                   TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+            <Button Text="Seleccionar"
+                    x:Name="SelectRefButton"
+                    Clicked="SelectReference_Clicked"
+                    Padding="14,8"
+                    CornerRadius="10"/>
+            <Button Text="✕"
+                    x:Name="ClearRefButton"
+                    Padding="12,6"
+                    CornerRadius="10"
+                    Clicked="ClearReference_Clicked"
+                    IsVisible="False"/>
+          </VerticalStackLayout>
+
+          <VerticalStackLayout Spacing="6">
+            <Label Text="Nombre a mostrar"
+                   FontSize="12"
+                   TextColor="{AppThemeBinding Light=#555, Dark=#BBB}"/>
+            <Entry x:Name="DisplayNameEntry"
+                   Placeholder="Opcional"/>
+          </VerticalStackLayout>
+
+          <Grid ColumnDefinitions="*,*"
+                ColumnSpacing="12">
+            <VerticalStackLayout Spacing="6">
+              <Label Text="Precio a mostrar"
+                     FontSize="12"
+                     TextColor="{AppThemeBinding Light=#555, Dark=#BBB}"/>
+              <Entry x:Name="PriceEntry"
+                     Placeholder="(centavos o vacío)"
+                     Keyboard="Numeric"/>
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Grid.Column="1"
+                                 Spacing="6">
+              <Label Text="Posición"
+                     FontSize="12"
+                     TextColor="{AppThemeBinding Light=#555, Dark=#BBB}"/>
+              <Entry x:Name="PositionEntry"
+                     Placeholder="0"
+                     Keyboard="Numeric"/>
+            </VerticalStackLayout>
+          </Grid>
+
+          <HorizontalStackLayout Spacing="12">
+            <Label Text="Destacado"
+                   VerticalTextAlignment="Center"
+                   TextColor="{AppThemeBinding Light=#333, Dark=#CCC}"/>
+            <Switch x:Name="FeaturedSwitch"/>
+          </HorizontalStackLayout>
+
+          <HorizontalStackLayout Spacing="12">
+            <Label Text="Activo"
+                   VerticalTextAlignment="Center"
+                   TextColor="{AppThemeBinding Light=#333, Dark=#CCC}"/>
+            <Switch x:Name="ActiveSwitch"/>
+          </HorizontalStackLayout>
+
+        </VerticalStackLayout>
+      </Frame>
+
+    </VerticalStackLayout>
+  </ScrollView>
+</ContentPage>

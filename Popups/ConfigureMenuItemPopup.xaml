@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<toolkit:Popup xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+               xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+               xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+               x:Class="Imdeliceapp.Popups.ConfigureMenuItemPopup"
+               CanBeDismissedByTappingOutsideOfPopup="False">
+  <Border Stroke="{AppThemeBinding Light=#DDDDDD, Dark=#333333}"
+          StrokeShape="{RoundRectangle CornerRadius=24}"
+          BackgroundColor="{AppThemeBinding Light=White, Dark=#181818}"
+          Padding="0">
+    <ScrollView>
+      <VerticalStackLayout Spacing="16" Padding="20" WidthRequest="360">
+      <Grid ColumnDefinitions="*,Auto">
+        <VerticalStackLayout Spacing="4">
+          <Label Text="{Binding Title}"
+                 FontAttributes="Bold"
+                 FontSize="20"
+                 LineBreakMode="TailTruncation"/>
+          <Label Text="{Binding Subtitle}"
+                 FontSize="13"
+                 TextColor="{AppThemeBinding Light=#777, Dark=#AAA}"
+                 LineBreakMode="TailTruncation"
+                 MaxLines="2"
+                 IsVisible="{Binding HasSubtitle}"/>
+        </VerticalStackLayout>
+        <Button Grid.Column="1"
+                Text="✕"
+                FontSize="16"
+                WidthRequest="32"
+                HeightRequest="32"
+                Padding="0"
+                BackgroundColor="Transparent"
+                Clicked="CloseButton_Clicked"/>
+      </Grid>
+
+      <Label Text="{Binding Description}"
+             FontSize="13"
+             TextColor="{AppThemeBinding Light=#666, Dark=#A0A0A0}"
+             IsVisible="{Binding HasDescription}"
+             LineBreakMode="WordWrap"/>
+
+      <VerticalStackLayout Spacing="8"
+                           IsVisible="{Binding HasVariants}">
+        <Label Text="Presentación"
+               FontAttributes="Bold"
+               FontSize="14"/>
+        <CollectionView ItemsSource="{Binding Variants}"
+                        SelectionMode="Single"
+                        SelectedItem="{Binding SelectedVariant}">
+          <CollectionView.ItemsLayout>
+            <LinearItemsLayout Orientation="Vertical" ItemSpacing="8"/>
+          </CollectionView.ItemsLayout>
+          <CollectionView.ItemTemplate>
+            <DataTemplate>
+              <Border StrokeThickness="1"
+                      Stroke="{AppThemeBinding Light=#E0E0E0, Dark=#333}"
+                      BackgroundColor="{Binding BackgroundColor}"
+                      StrokeShape="{RoundRectangle CornerRadius=12}">
+                <Grid ColumnDefinitions="*,Auto"
+                      Padding="14,12">
+                  <VerticalStackLayout Spacing="2">
+                    <Label Text="{Binding DisplayName}"
+                           FontAttributes="Bold"
+                           LineBreakMode="TailTruncation"/>
+                    <Label Text="{Binding Description}"
+                           FontSize="12"
+                           TextColor="{AppThemeBinding Light=#777, Dark=#AAA}"
+                           IsVisible="{Binding HasDescription}"
+                           LineBreakMode="TailTruncation"
+                           MaxLines="2"/>
+                  </VerticalStackLayout>
+                  <Label Grid.Column="1"
+                         Text="{Binding PriceLabel}"
+                         FontAttributes="Bold"
+                         VerticalOptions="Center"/>
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </CollectionView.ItemTemplate>
+        </CollectionView>
+      </VerticalStackLayout>
+
+      <CollectionView ItemsSource="{Binding ModifierGroups}"
+                      SelectionMode="None"
+                      IsVisible="{Binding HasModifiers}">
+        <CollectionView.ItemTemplate>
+          <DataTemplate>
+            <Border StrokeThickness="1"
+                    Stroke="{AppThemeBinding Light=#E7E0E5, Dark=#333}"
+                    StrokeShape="{RoundRectangle CornerRadius=16}"
+                    Padding="16"
+                    Margin="0,6">
+              <VerticalStackLayout Spacing="12">
+                <Grid ColumnDefinitions="*,Auto">
+                  <Label Text="{Binding Name}"
+                         FontAttributes="Bold"
+                         FontSize="15"/>
+                  <Label Grid.Column="1"
+                         Text="{Binding RequirementText}"
+                         FontSize="12"
+                         TextColor="{AppThemeBinding Light=#884166, Dark=#D0A0B8}"/>
+                </Grid>
+
+                <VerticalStackLayout Spacing="8"
+                                     BindableLayout.ItemsSource="{Binding Options}">
+                  <BindableLayout.ItemTemplate>
+                    <DataTemplate>
+                      <Border StrokeThickness="1"
+                              Stroke="{AppThemeBinding Light=#E0E0E0, Dark=#444}"
+                              BackgroundColor="{Binding Background}"
+                              StrokeShape="{RoundRectangle CornerRadius=12}">
+                        <Border.GestureRecognizers>
+                          <TapGestureRecognizer Command="{Binding ToggleCommand}"/>
+                        </Border.GestureRecognizers>
+                        <Grid ColumnDefinitions="*,Auto"
+                              Padding="12,10">
+                          <VerticalStackLayout Spacing="2">
+                            <Label Text="{Binding Name}"
+                                   FontAttributes="Bold"
+                                   LineBreakMode="TailTruncation"/>
+                            <Label Text="{Binding Description}"
+                                   IsVisible="{Binding HasDescription}"
+                                   FontSize="12"
+                                   TextColor="{AppThemeBinding Light=#777, Dark=#AAA}"/>
+                          </VerticalStackLayout>
+                          <Label Grid.Column="1"
+                                 Text="{Binding ExtraLabel}"
+                                 FontAttributes="Bold"
+                                 VerticalOptions="Center"
+                                 TextColor="{AppThemeBinding Light=#894164, Dark=#D0A0B8}"/>
+                        </Grid>
+                      </Border>
+                    </DataTemplate>
+                  </BindableLayout.ItemTemplate>
+                </VerticalStackLayout>
+              </VerticalStackLayout>
+            </Border>
+          </DataTemplate>
+        </CollectionView.ItemTemplate>
+      </CollectionView>
+
+      <Grid ColumnDefinitions="Auto,*,Auto"
+            Padding="0,8,0,0">
+        <Label Text="Cantidad"
+               FontAttributes="Bold"
+               VerticalOptions="Center"/>
+        <Stepper Grid.Column="2"
+                 Minimum="1"
+                 Maximum="50"
+                 Increment="1"
+                 Value="{Binding Quantity}"/>
+      </Grid>
+
+      <VerticalStackLayout>
+        <Label Text="Notas opcionales"
+               FontSize="13"/>
+        <Editor Text="{Binding Notes}"
+                AutoSize="TextChanges"
+                Placeholder="Ej. Sin picante"/>
+      </VerticalStackLayout>
+
+      <Label Text="{Binding ValidationMessage}"
+             TextColor="#E53935"
+             FontSize="12"
+             IsVisible="{Binding HasValidationMessage}"/>
+
+      <Grid ColumnDefinitions="*,*"
+            ColumnSpacing="12"
+            Padding="0,8,0,0">
+        <Button Text="Cancelar"
+                Command="{Binding CancelCommand}"
+                BackgroundColor="{AppThemeBinding Light=#F1E9F1, Dark=#2B1D29}"
+                TextColor="{AppThemeBinding Light=#894164, Dark=#D5B2C2}"/>
+        <Button Grid.Column="1"
+                Text="{Binding ConfirmButtonText}"
+                Command="{Binding ConfirmCommand}"
+                BackgroundColor="#894164"
+                TextColor="White"/>
+      </Grid>
+      </VerticalStackLayout>
+    </ScrollView>
+  </Border>
+</toolkit:Popup>

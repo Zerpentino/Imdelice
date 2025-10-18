@@ -1,191 +1,522 @@
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Net;
+using System.Net.Http;
+using System.Linq;
 using System.Net.Http.Headers;
-using System.Text.Json;
-using Microsoft.Maui.Storage;
-using Microsoft.Maui.Networking;
-using Imdeliceapp.Helpers;
-using Microsoft.Maui.Controls;
+using System.Net.Http.Json;
+using System.Runtime.CompilerServices;
 using System.Text;
-using Imdeliceapp.Model;
-using System.Net.Http;       // por si no estaba
-using System.Net.Http.Json;  // <- aquí vive JsonContent
+using System.Text.Json;
+using Imdeliceapp.Helpers;
+using Imdeliceapp.Services;
+using Microsoft.Maui.Controls;
+using Microsoft.Maui.Networking;
+using Microsoft.Maui.Storage;
 
 namespace Imdeliceapp.Pages;
 
 [QueryProperty(nameof(MenuId), "menuId")]
 [QueryProperty(nameof(MenuName), "menuName")]
-public partial class MenuSectionsPage : ContentPage 
+public partial class MenuSectionsPage : ContentPage
 {
-    public int MenuId { get; set; }
-    public string? MenuName { get; set; }
-    public string Titulo => $"Secciones – {MenuName}";
+	public int MenuId { get; set; }
 
-    #region DTOs
-    class ApiEnvelope<T> { public object? error { get; set; } public T? data { get; set; } public string? message { get; set; } }
-    class SectionDTO { public int id { get; set; } public int menuId { get; set; } public string name { get; set; } = ""; public int position { get; set; } public int? categoryId { get; set; } }
-    class MenuPublicDTO { public int id { get; set; } public string name { get; set; } = ""; public bool isActive { get; set; } public List<SectionDTO> sections { get; set; } = new(); }
-    #endregion
+	string? _menuName;
+	public string? MenuName
+	{
+		get => _menuName;
+		set
+		{
+			_menuName = value;
+			OnPropertyChanged();
+			OnPropertyChanged(nameof(Titulo));
+		}
+	}
+	public string Titulo => $"Secciones – {MenuName}";
 
-    static readonly JsonSerializerOptions _json = new() { PropertyNameCaseInsensitive = true };
-    readonly ObservableCollection<SectionDTO> _sections = new();
-    SectionDTO? _selected;
+	public bool CanRead => Perms.MenusRead;
+	public bool CanCreate => Perms.MenusUpdate;
+	public bool CanUpdate => Perms.MenusUpdate;
+	public bool CanDelete => Perms.MenusDelete;
+	public bool ShowTrashFab => (CanUpdate || CanDelete) && _trash.Count > 0;
 
-    public MenuSectionsPage()
-    {
-        InitializeComponent();
-        BindingContext = this;
-        SectionsCV.ItemsSource = _sections;
-        SectionsCV.SelectionChanged += (_, __) => { _selected = null; };
-    }
+	#region DTOs
+	class ApiEnvelope<T>
+	{
+		public object? error { get; set; }
+		public T? data { get; set; }
+		public string? message { get; set; }
+	}
 
-    protected override async void OnAppearing()
-    {
-        base.OnAppearing();
-        await CargarSeccionesAsync();
-    }
+	class SectionItemDto
+	{
+		public int id { get; set; }
+		public string? refType { get; set; }
+		public int refId { get; set; }
+		public string? displayName { get; set; }
+		public int position { get; set; }
+		public bool isActive { get; set; }
+	}
 
-    #region helpers
-    static async Task<string?> GetTokenAsync()
-    {
-        var s = await SecureStorage.GetAsync("token");
-        if (!string.IsNullOrWhiteSpace(s)) return s;
-        var p = Preferences.Default.Get("token", string.Empty);
-        return string.IsNullOrWhiteSpace(p) ? null : p;
-    }
-    HttpClient NewAuthClient(string baseUrl, string token)
-    {
-        var cli = new HttpClient { BaseAddress = new Uri(baseUrl), Timeout = TimeSpan.FromSeconds(20) };
-        cli.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return cli;
-    }
-    #endregion
+	class SectionDto
+	{
+		public int id { get; set; }
+		public int menuId { get; set; }
+		public string name { get; set; } = string.Empty;
+		public int position { get; set; }
+		public bool isActive { get; set; }
+		public int? categoryId { get; set; }
+		public DateTime? deletedAt { get; set; }
+		public List<SectionItemDto> items { get; set; } = new();
+	}
 
-    async Task CargarSeccionesAsync()
-    {
-        try
-        {
-            _sections.Clear();
-            var token = await GetTokenAsync(); if (string.IsNullOrWhiteSpace(token)) { await AuthHelper.VerificarYRedirigirSiExpirado(this); return; }
-            var baseUrl = Application.Current.Resources["urlbase"].ToString().TrimEnd('/');
-            using var http = NewAuthClient(baseUrl, token);
+	class SectionVM : INotifyPropertyChanged
+	{
+		int _id;
+		int _menuId;
+		string _name = string.Empty;
+		int _position;
+		bool _isActive;
+		int? _categoryId;
+		int _itemsCount;
+		DateTime? _deletedAt;
 
-            // No hay GET de secciones sueltas; usamos el menú público y tomamos sus secciones
-            var resp = await http.GetAsync($"/api/menus/{MenuId}/public");
-            var body = await resp.Content.ReadAsStringAsync();
-            if (!resp.IsSuccessStatusCode) { await ErrorHandler.MostrarErrorUsuario(ErrorHandler.ObtenerMensajeHttp(resp, body)); return; }
+		public int id { get => _id; set => SetField(ref _id, value); }
+		public int menuId { get => _menuId; set => SetField(ref _menuId, value); }
+		public string name { get => _name; set => SetField(ref _name, value); }
+		public int position { get => _position; set => SetField(ref _position, value); }
+		public bool isActive { get => _isActive; set => SetField(ref _isActive, value); }
+		public int? categoryId { get => _categoryId; set => SetField(ref _categoryId, value); }
+		public int itemsCount { get => _itemsCount; set => SetField(ref _itemsCount, value); }
+		public DateTime? deletedAt { get => _deletedAt; set => SetField(ref _deletedAt, value); }
 
-            var env = JsonSerializer.Deserialize<ApiEnvelope<MenuPublicDTO>>(body, _json);
-            foreach (var s in env?.data?.sections ?? new()) _sections.Add(s);
-        }
-        catch (Exception ex) { await ErrorHandler.MostrarErrorTecnico(ex, "Secciones – Cargar"); }
-    }
+		public string PositionDisplay => $"Posición: {position}";
+		public string ItemsBadge => itemsCount == 1 ? "1 item" : $"{itemsCount} items";
+		public bool HasCategory => categoryId.HasValue;
+		public string CategoryBadge => categoryId.HasValue ? $"catId {categoryId}" : string.Empty;
+		public string TrashDisplay => deletedAt?.ToLocalTime().ToString("dd MMM yyyy HH:mm") ?? "Desconocido";
 
-    async void Agregar_Clicked(object sender, EventArgs e)
-    {
-        var name = TxtName.Text?.Trim();
-        if (string.IsNullOrWhiteSpace(name)) { await DisplayAlert("Sección", "Escribe un nombre.", "OK"); return; }
+		public event PropertyChangedEventHandler? PropertyChanged;
 
-        int.TryParse(TxtPos.Text, out var pos);
-        int? catId = null;
-        if (int.TryParse(TxtCatId.Text, out var cid)) catId = cid;
+		void OnPropertyChanged([CallerMemberName] string? name = null)
+			=> PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
-        try
-        {
-            var token = await GetTokenAsync(); if (string.IsNullOrWhiteSpace(token)) { await AuthHelper.VerificarYRedirigirSiExpirado(this); return; }
-            var baseUrl = Application.Current.Resources["urlbase"].ToString().TrimEnd('/');
-            using var http = NewAuthClient(baseUrl, token);
+		protected bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+		{
+			if (EqualityComparer<T>.Default.Equals(field, value))
+				return false;
+			field = value;
+			OnPropertyChanged(propertyName);
+			return true;
+		}
+	}
+	#endregion
 
-            var payload = JsonContent.Create(new { menuId = MenuId, name, position = pos, categoryId = catId });
-            var resp = await http.PostAsync("/api/menus/sections", payload);
-            var body = await resp.Content.ReadAsStringAsync();
-            if (!resp.IsSuccessStatusCode) { await ErrorHandler.MostrarErrorUsuario(ErrorHandler.ObtenerMensajeHttp(resp, body)); return; }
+	static readonly JsonSerializerOptions _json = new() { PropertyNameCaseInsensitive = true };
 
-            TxtName.Text = TxtPos.Text = TxtCatId.Text = "";
-            await CargarSeccionesAsync();
-        }
-        catch (Exception ex) { await ErrorHandler.MostrarErrorTecnico(ex, "Secciones – Agregar"); }
-    }
+	readonly ObservableCollection<SectionVM> _sections = new();
+	readonly List<SectionVM> _all = new();
+	readonly List<SectionVM> _trash = new();
 
-    // Mover “arriba/abajo”: cambiamos position y PATCH
-    async void Up_Clicked(object sender, EventArgs e)  => await MoverAsync(sender, -1);
-    async void Down_Clicked(object sender, EventArgs e)=> await MoverAsync(sender, +1);
+	bool _silenceSwitch;
+	readonly HashSet<int> _toggling = new();
 
-    async Task MoverAsync(object sender, int delta)
-    {
-        if ((sender as ImageButton)?.BindingContext is not SectionDTO s) return;
-        var nuevaPos = Math.Max(0, s.position + delta);
+	public MenuSectionsPage()
+	{
+		InitializeComponent();
+		BindingContext = this;
+		SectionsCV.ItemsSource = _sections;
+	}
 
-        try
-        {
-            var token = await GetTokenAsync(); if (string.IsNullOrWhiteSpace(token)) { await AuthHelper.VerificarYRedirigirSiExpirado(this); return; }
-            var baseUrl = Application.Current.Resources["urlbase"].ToString().TrimEnd('/');
-            using var http = NewAuthClient(baseUrl, token);
+	protected override async void OnAppearing()
+	{
+		base.OnAppearing();
 
-            var resp = await http.PatchAsync($"/api/menus/sections/{s.id}", JsonContent.Create(new { position = nuevaPos }));
-            var body = await resp.Content.ReadAsStringAsync();
-            if (!resp.IsSuccessStatusCode) { await ErrorHandler.MostrarErrorUsuario(ErrorHandler.ObtenerMensajeHttp(resp, body)); return; }
-            await CargarSeccionesAsync();
-        }
-        catch (Exception ex) { await ErrorHandler.MostrarErrorTecnico(ex, "Secciones – Reordenar"); }
-    }
+		if (!CanRead)
+		{
+			await DisplayAlert("Acceso restringido", "No tienes permiso para ver secciones.", "OK");
+			await Shell.Current.GoToAsync("..");
+			return;
+		}
 
-    async void Editar_Clicked(object sender, EventArgs e)
-    {
-        // Toma la última sección tocada (por Items/Up/Down/Delete) o pide id
-        var s = _selected ?? _sections.FirstOrDefault();
-        if (s is null) { await DisplayAlert("Sección", "No hay sección seleccionada.", "OK"); return; }
+		await CargarTodoAsync();
+	}
 
-        var name = TxtEditName.Text?.Trim();
-        int? pos = null; if (int.TryParse(TxtEditPos.Text, out var p)) pos = p;
-        int? catId = null; if (int.TryParse(TxtEditCatId.Text, out var cid)) catId = cid;
+	#region Helpers comunes
+	static async Task<string?> GetTokenAsync()
+	{
+		var secure = await SecureStorage.GetAsync("token");
+		if (!string.IsNullOrWhiteSpace(secure)) return secure;
+		var stored = Preferences.Default.Get("token", string.Empty);
+		return string.IsNullOrWhiteSpace(stored) ? null : stored;
+	}
 
-        if (string.IsNullOrWhiteSpace(name) && pos is null && !catId.HasValue)
-        { await DisplayAlert("Sección", "Nada que actualizar.", "OK"); return; }
+	static HttpClient NewAuthClient(string baseUrl, string token)
+	{
+		var cli = new HttpClient { BaseAddress = new Uri(baseUrl), Timeout = TimeSpan.FromSeconds(20) };
+		cli.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+		return cli;
+	}
 
-        try
-        {
-            var token = await GetTokenAsync(); if (string.IsNullOrWhiteSpace(token)) { await AuthHelper.VerificarYRedirigirSiExpirado(this); return; }
-            var baseUrl = Application.Current.Resources["urlbase"].ToString().TrimEnd('/');
-            using var http = NewAuthClient(baseUrl, token);
+	static SectionVM ToVM(SectionDto dto)
+		=> new()
+		{
+			id = dto.id,
+			menuId = dto.menuId,
+			name = dto.name,
+			position = dto.position,
+			isActive = dto.isActive,
+			categoryId = dto.categoryId,
+			itemsCount = dto.items?.Count ?? 0,
+			deletedAt = dto.deletedAt
+		};
 
-            var resp = await http.PatchAsync($"/api/menus/sections/{s.id}", JsonContent.Create(new { name, position = pos, categoryId = catId }));
-            var body = await resp.Content.ReadAsStringAsync();
-            if (!resp.IsSuccessStatusCode) { await ErrorHandler.MostrarErrorUsuario(ErrorHandler.ObtenerMensajeHttp(resp, body)); return; }
+	void ApplyFilter(string? query = null)
+	{
+		query = (query ?? string.Empty).Trim().ToLowerInvariant();
 
-            TxtEditName.Text = TxtEditPos.Text = TxtEditCatId.Text = "";
-            await CargarSeccionesAsync();
-        }
-        catch (Exception ex) { await ErrorHandler.MostrarErrorTecnico(ex, "Secciones – Editar"); }
-    }
+		_sections.Clear();
+		IEnumerable<SectionVM> src = _all;
 
-    async void Items_Clicked(object sender, EventArgs e)
-    {
-        if ((sender as Button)?.BindingContext is not SectionDTO s) return;
-        _selected = s;
-        await Shell.Current.GoToAsync($"{nameof(SectionItemsPage)}?menuId={MenuId}&sectionId={s.id}&sectionName={Uri.EscapeDataString(s.name)}");
-    }
+		if (!string.IsNullOrEmpty(query))
+		{
+			src = src.Where(s =>
+				s.name.ToLowerInvariant().Contains(query) ||
+				(s.CategoryBadge?.ToLowerInvariant().Contains(query) ?? false));
+		}
 
-    async void Eliminar_Clicked(object sender, EventArgs e)
-    {
-        if ((sender as ImageButton)?.BindingContext is not SectionDTO s) return;
-        var hard = await DisplayAlert("Eliminar sección", $"¿Eliminar “{s.name}” definitivamente?", "Hard delete", "Ocultar/soft");
-        var url = hard ? $"/api/menus/sections/{s.id}?hard=true" : $"/api/menus/sections/{s.id}";
-        try
-        {
-            var token = await GetTokenAsync(); if (string.IsNullOrWhiteSpace(token)) { await AuthHelper.VerificarYRedirigirSiExpirado(this); return; }
-            var baseUrl = Application.Current.Resources["urlbase"].ToString().TrimEnd('/');
-            using var http = NewAuthClient(baseUrl, token);
+		foreach (var s in src.OrderBy(s => s.position).ThenBy(s => s.name, StringComparer.CurrentCultureIgnoreCase))
+			_sections.Add(s);
+	}
+	#endregion
 
-            var resp = await http.DeleteAsync(url);
-            if (!resp.IsSuccessStatusCode)
-            {
-                var body = await resp.Content.ReadAsStringAsync();
-                await ErrorHandler.MostrarErrorUsuario(ErrorHandler.ObtenerMensajeHttp(resp, body));
-                return;
-            }
-            await CargarSeccionesAsync();
-        }
-        catch (Exception ex) { await ErrorHandler.MostrarErrorTecnico(ex, "Secciones – Eliminar"); }
-    }
+	async Task CargarTodoAsync()
+	{
+		try
+		{
+			if (Connectivity.Current.NetworkAccess != NetworkAccess.Internet)
+			{
+				await ErrorHandler.MostrarErrorUsuario("Sin conexión a Internet.");
+				return;
+			}
+
+			var token = await GetTokenAsync();
+			if (string.IsNullOrWhiteSpace(token))
+			{
+				await AuthHelper.VerificarYRedirigirSiExpirado(this);
+				return;
+			}
+
+			var baseUrl = Application.Current.Resources["urlbase"].ToString().TrimEnd('/');
+
+			await CargarSeccionesAsync(token, baseUrl);
+			await CargarPapelerasAsync(token, baseUrl);
+
+			OnPropertyChanged(nameof(ShowTrashFab));
+		}
+		catch (Exception ex)
+		{
+			await ErrorHandler.MostrarErrorTecnico(ex, "Secciones – Cargar todo");
+		}
+	}
+
+	async Task CargarSeccionesAsync(string token, string baseUrl)
+	{
+		try
+		{
+			using var http = NewAuthClient(baseUrl, token);
+			var resp = await http.GetAsync($"/api/menus/{MenuId}/sections");
+			var body = await resp.Content.ReadAsStringAsync();
+
+			if (!resp.IsSuccessStatusCode)
+			{
+				if (resp.StatusCode == HttpStatusCode.Unauthorized)
+				{
+					await AuthHelper.VerificarYRedirigirSiExpirado(this);
+					return;
+				}
+
+				await ErrorHandler.MostrarErrorUsuario(ErrorHandler.ObtenerMensajeHttp(resp, body));
+				return;
+			}
+
+			var env = JsonSerializer.Deserialize<ApiEnvelope<List<SectionDto>>>(body, _json);
+			_all.Clear();
+			foreach (var dto in env?.data ?? new())
+				_all.Add(ToVM(dto));
+
+			ApplyFilter(SearchBox?.Text);
+		}
+		catch (TaskCanceledException)
+		{
+			await ErrorHandler.MostrarErrorUsuario("Tiempo de espera agotado al cargar secciones.");
+		}
+		catch (HttpRequestException)
+		{
+			await ErrorHandler.MostrarErrorUsuario("No se pudo contactar al servidor.");
+		}
+	}
+
+	async Task CargarPapelerasAsync(string token, string baseUrl)
+	{
+		try
+		{
+			using var http = NewAuthClient(baseUrl, token);
+			var resp = await http.GetAsync($"/api/menus/{MenuId}/sections/trash");
+			var body = await resp.Content.ReadAsStringAsync();
+
+			if (!resp.IsSuccessStatusCode)
+			{
+				if (resp.StatusCode == HttpStatusCode.Unauthorized)
+				{
+					await AuthHelper.VerificarYRedirigirSiExpirado(this);
+					return;
+				}
+				_trash.Clear();
+				return;
+			}
+
+			var env = JsonSerializer.Deserialize<ApiEnvelope<List<SectionDto>>>(body, _json);
+			_trash.Clear();
+			foreach (var dto in env?.data ?? new())
+				_trash.Add(ToVM(dto));
+		}
+		catch
+		{
+			_trash.Clear();
+		}
+	}
+
+	#region UI handlers
+	void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
+		=> ApplyFilter(e.NewTextValue);
+
+	async void Refresh_Refreshing(object sender, EventArgs e)
+	{
+		try
+		{
+			await CargarTodoAsync();
+		}
+		finally
+		{
+			if (sender is RefreshView rv)
+				rv.IsRefreshing = false;
+		}
+	}
+
+	async void New_Clicked(object sender, EventArgs e)
+	{
+		if (!CanCreate)
+		{
+			await DisplayAlert("Acceso restringido", "No puedes crear secciones.", "OK");
+			return;
+		}
+
+		var menuName = Uri.EscapeDataString(MenuName ?? string.Empty);
+		await Shell.Current.GoToAsync($"{nameof(SectionEditorPage)}?mode=create&menuId={MenuId}&menuName={menuName}");
+	}
+
+	async void Edit_Clicked(object sender, EventArgs e)
+	{
+		if (!CanUpdate)
+		{
+			await DisplayAlert("Acceso restringido", "No puedes editar secciones.", "OK");
+			return;
+		}
+
+		if ((sender as SwipeItem)?.BindingContext is not SectionVM vm) return;
+
+		var menuName = Uri.EscapeDataString(MenuName ?? string.Empty);
+		var sectionName = Uri.EscapeDataString(vm.name ?? string.Empty);
+		var cat = vm.categoryId.HasValue ? vm.categoryId.Value.ToString() : string.Empty;
+		await Shell.Current.GoToAsync(
+			$"{nameof(SectionEditorPage)}?mode=edit&sectionId={vm.id}&menuId={MenuId}&menuName={menuName}&name={sectionName}&position={vm.position}&categoryId={cat}&isActive={vm.isActive}");
+	}
+
+	async void Items_Clicked(object sender, EventArgs e)
+	{
+		if ((sender as Button)?.CommandParameter is not SectionVM vm)
+			return;
+
+	await Shell.Current.GoToAsync(
+		$"{nameof(SectionItemsPage)}?menuId={MenuId}" +
+		$"&menuName={Uri.EscapeDataString(MenuName ?? string.Empty)}" +
+		$"&sectionId={vm.id}" +
+		$"&sectionName={Uri.EscapeDataString(vm.name)}");
+}
+
+	async void Delete_Clicked(object sender, EventArgs e)
+	{
+		if (!CanDelete)
+		{
+			await DisplayAlert("Acceso restringido", "No puedes eliminar secciones.", "OK");
+			return;
+		}
+
+		if ((sender as SwipeItem)?.BindingContext is not SectionVM vm)
+			return;
+
+		var confirm = await DisplayAlert("Enviar a papelera", $"¿Enviar “{vm.name}” a la papelera?", "Sí, enviar", "Cancelar");
+		if (!confirm) return;
+
+		await DeleteSectionAsync(vm.id, hard: false);
+	}
+
+	async void ToggleActivo_Toggled(object sender, ToggledEventArgs e)
+	{
+		if (_silenceSwitch) return;
+		if (sender is not Switch toggle || toggle.BindingContext is not SectionVM vm) return;
+
+		if (!CanUpdate)
+		{
+			_silenceSwitch = true;
+			toggle.IsToggled = vm.isActive;
+			_silenceSwitch = false;
+			return;
+		}
+
+		if (_toggling.Contains(vm.id))
+		{
+			_silenceSwitch = true;
+			toggle.IsToggled = !e.Value;
+			_silenceSwitch = false;
+			return;
+		}
+
+		_toggling.Add(vm.id);
+		var nuevo = e.Value;
+		var anterior = vm.isActive;
+		vm.isActive = nuevo;
+
+		try
+		{
+			var token = await GetTokenAsync();
+			if (string.IsNullOrWhiteSpace(token)) { await AuthHelper.VerificarYRedirigirSiExpirado(this); return; }
+			var baseUrl = Application.Current.Resources["urlbase"].ToString().TrimEnd('/');
+			using var http = NewAuthClient(baseUrl, token);
+
+			var resp = await http.PatchAsync($"/api/menus/sections/{vm.id}", JsonContent.Create(new { isActive = nuevo }));
+			var body = await resp.Content.ReadAsStringAsync();
+			if (!resp.IsSuccessStatusCode)
+			{
+				_silenceSwitch = true;
+				vm.isActive = anterior;
+				toggle.IsToggled = anterior;
+				_silenceSwitch = false;
+				await ErrorHandler.MostrarErrorUsuario(ErrorHandler.ObtenerMensajeHttp(resp, body));
+			}
+		}
+		catch (Exception ex)
+		{
+			_silenceSwitch = true;
+			vm.isActive = anterior;
+			toggle.IsToggled = anterior;
+			_silenceSwitch = false;
+			await ErrorHandler.MostrarErrorTecnico(ex, "Secciones – Activar/Inactivar");
+		}
+		finally
+		{
+			_toggling.Remove(vm.id);
+		}
+	}
+
+	async void TrashFab_Clicked(object sender, EventArgs e)
+	{
+		if (_trash.Count == 0) return;
+
+		var options = _trash
+			.Select(s => $"{s.name} • {s.TrashDisplay}")
+			.ToArray();
+
+		var choice = await DisplayActionSheet("Papelera de secciones", "Cerrar", null, options);
+		if (string.IsNullOrWhiteSpace(choice) || choice == "Cerrar")
+			return;
+
+		var index = Array.IndexOf(options, choice);
+		if (index < 0) return;
+		var selected = _trash[index];
+
+		var actions = new List<string>();
+		if (CanUpdate) actions.Add("Restaurar");
+		if (CanDelete) actions.Add("Eliminar definitivamente");
+
+		if (actions.Count == 0)
+		{
+			await DisplayAlert("Papelera", "No tienes permisos para administrar la papelera.", "OK");
+			return;
+		}
+
+		var action = await DisplayActionSheet(selected.name, "Cancelar", null, actions.ToArray());
+		if (string.IsNullOrWhiteSpace(action) || action == "Cancelar")
+			return;
+
+		switch (action)
+		{
+			case "Restaurar":
+				await RestaurarAsync(selected.id);
+				break;
+			case "Eliminar definitivamente":
+				await DeleteSectionAsync(selected.id, hard: true);
+				break;
+		}
+	}
+	#endregion
+
+	async Task DeleteSectionAsync(int id, bool hard)
+	{
+		try
+		{
+			var token = await GetTokenAsync();
+			if (string.IsNullOrWhiteSpace(token)) { await AuthHelper.VerificarYRedirigirSiExpirado(this); return; }
+			var baseUrl = Application.Current.Resources["urlbase"].ToString().TrimEnd('/');
+			using var http = NewAuthClient(baseUrl, token);
+
+            var url = hard
+                ? $"/api/menus/sections/{id}/hard"
+                : $"/api/menus/sections/{id}";
+                        
+			var resp = await http.DeleteAsync(url);
+			var body = await resp.Content.ReadAsStringAsync();
+			if (!resp.IsSuccessStatusCode)
+			{
+			System.Diagnostics.Debug.WriteLine($"[MenuSections] DELETE {(hard ? "hard" : "soft")} id={id}: {body}");
+				await ErrorHandler.MostrarErrorUsuario(ErrorHandler.ObtenerMensajeHttp(resp, body));
+				return;
+			}
+
+			await CargarTodoAsync();
+		}
+		catch (Exception ex)
+		{
+			await ErrorHandler.MostrarErrorTecnico(ex, hard ? "Secciones – Eliminar definitivo" : "Secciones – Eliminar");
+		}
+	}
+
+	async Task RestaurarAsync(int id)
+	{
+		try
+		{
+			var token = await GetTokenAsync();
+			if (string.IsNullOrWhiteSpace(token)) { await AuthHelper.VerificarYRedirigirSiExpirado(this); return; }
+			var baseUrl = Application.Current.Resources["urlbase"].ToString().TrimEnd('/');
+			using var http = NewAuthClient(baseUrl, token);
+
+			using var emptyContent = new StringContent(string.Empty, Encoding.UTF8, "application/json");
+			var resp = await http.PatchAsync($"/api/menus/sections/{id}/restore", emptyContent);
+			if (!resp.IsSuccessStatusCode && resp.StatusCode != HttpStatusCode.NoContent)
+			{
+				var body = await resp.Content.ReadAsStringAsync();
+				await ErrorHandler.MostrarErrorUsuario(ErrorHandler.ObtenerMensajeHttp(resp, body));
+				return;
+			}
+
+			await CargarTodoAsync();
+		}
+		catch (Exception ex)
+		{
+			await ErrorHandler.MostrarErrorTecnico(ex, "Secciones – Restaurar");
+		}
+	}
 }

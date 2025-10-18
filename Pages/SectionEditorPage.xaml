@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+  xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+  x:Class="Imdeliceapp.Pages.SectionEditorPage"
+  Title="Sección"
+  Shell.NavBarIsVisible="True">
+
+  <ContentPage.ToolbarItems>
+    <ToolbarItem Text="Guardar"
+                 Order="Primary"
+                 Priority="0"
+                 Clicked="Save_Clicked"/>
+  </ContentPage.ToolbarItems>
+
+  <ScrollView>
+    <VerticalStackLayout Padding="16"
+                         Spacing="18">
+
+      <ActivityIndicator x:Name="BusyIndicator"
+                         IsRunning="False"
+                         IsVisible="False"/>
+
+      <Frame Padding="16"
+             HasShadow="False"
+             CornerRadius="12"
+             BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E1E1E}">
+        <VerticalStackLayout Spacing="16">
+          <Label x:Name="HeaderLabel"
+                 Text="Crear sección"
+                 FontAttributes="Bold"
+                 FontSize="18"
+                 TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+
+          <VerticalStackLayout Spacing="6">
+            <Label Text="Nombre"
+                   FontSize="12"
+                   TextColor="{AppThemeBinding Light=#555, Dark=#BBB}"/>
+            <Entry x:Name="NameEntry"
+                   Placeholder="Bebidas"
+                   ReturnType="Next"/>
+          </VerticalStackLayout>
+
+          <Grid ColumnDefinitions="*,*"
+                ColumnSpacing="12">
+            <VerticalStackLayout Spacing="6">
+              <Label Text="Posición"
+                     FontSize="12"
+                     TextColor="{AppThemeBinding Light=#555, Dark=#BBB}"/>
+              <Entry x:Name="PositionEntry"
+                     Keyboard="Numeric"
+                     Placeholder="0"/>
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Grid.Column="1"
+                                 Spacing="6">
+              <Label Text="Categoría (opcional)"
+                     FontSize="12"
+                     TextColor="{AppThemeBinding Light=#555, Dark=#BBB}"/>
+              <Grid ColumnDefinitions="*,Auto"
+                    ColumnSpacing="8">
+                <Picker x:Name="CategoryPicker"
+                        Title="Selecciona una categoría"
+                        ItemDisplayBinding="{Binding Name}"/>
+                <Button Grid.Column="1"
+                        Text="✕"
+                        Padding="10,6"
+                        Clicked="ClearCategory_Clicked"/>
+              </Grid>
+            </VerticalStackLayout>
+          </Grid>
+
+          <HorizontalStackLayout Spacing="12">
+            <Label Text="Activa"
+                   VerticalTextAlignment="Center"
+                   TextColor="{AppThemeBinding Light=#333, Dark=#CCC}"/>
+            <Switch x:Name="ActiveSwitch"/>
+          </HorizontalStackLayout>
+
+        </VerticalStackLayout>
+      </Frame>
+
+      <Frame Padding="16"
+             HasShadow="False"
+             CornerRadius="12"
+             BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E1E1E}">
+        <VerticalStackLayout Spacing="8">
+          <Label Text="Resumen"
+                 FontAttributes="Bold"
+                 TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+          <Label x:Name="MenuLabel"
+                 FontSize="13"
+                 TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"/>
+        </VerticalStackLayout>
+      </Frame>
+
+    </VerticalStackLayout>
+  </ScrollView>
+</ContentPage>

@@ -8,6 +8,11 @@ namespace Imdeliceapp.Pages;
 
 public partial class ModifierGroupsPage : ContentPage
 {
+        public bool CanRead   => Perms.ModifiersRead;
+    public bool CanCreate => Perms.ModifiersCreate;
+    public bool CanUpdate => Perms.ModifiersUpdate;
+    public bool CanDelete => Perms.ModifiersDelete;
+
     readonly ModifiersApi _api = new();
     public class GroupListItem : INotifyPropertyChanged
     {
@@ -50,7 +55,19 @@ public partial class ModifierGroupsPage : ContentPage
 
     protected override async void OnAppearing()
 {
-    base.OnAppearing();
+        base.OnAppearing();
+     // refresca bindings de permisos
+    OnPropertyChanged(nameof(CanRead));
+    OnPropertyChanged(nameof(CanCreate));
+    OnPropertyChanged(nameof(CanUpdate));
+        OnPropertyChanged(nameof(CanDelete));
+        if (!CanRead)
+        {
+            await DisplayAlert("Acceso restringido", "No tienes permiso para ver modificadores.", "OK");
+            await Shell.Current.GoToAsync("..");
+            return;
+        }
+    
 
     if (!_loadedOnce || _needsReload)
     {
@@ -181,12 +198,17 @@ System.Timers.Timer? _searchDebounce;
 
     async void New_Clicked(object s, EventArgs e)
     {
+            if (!CanCreate) { await DisplayAlert("Acceso restringido", "No puedes crear grupos de modificadores.", "OK"); return; }
+
+
         _needsReload = true;
         await Shell.Current.GoToAsync(nameof(GroupEditorPage));
     }
 
     async void Edit_Clicked(object s, EventArgs e)
     {
+            if (!CanUpdate) { await DisplayAlert("Acceso restringido", "No puedes editar grupos de modificadores.", "OK"); return; }
+
         if ((s as Element)?.BindingContext is not GroupListItem g) return;
         _needsReload = true;
         await Shell.Current.GoToAsync($"{nameof(GroupEditorPage)}?id={g.id}");
@@ -198,7 +220,16 @@ System.Timers.Timer? _searchDebounce;
     if (sw.BindingContext is not GroupListItem g) return;
 
     var nuevo = e.Value;
-    var anterior = g.isActive;
+        var anterior = g.isActive;
+        if (!CanUpdate)
+        {
+            _silenceSwitch = true;
+            sw.IsToggled = anterior; // revertir de inmediato
+            _silenceSwitch = false;
+            await DisplayAlert("Acceso restringido", "No puedes actualizar grupos de modificadores.", "OK");
+            return;
+        }
+    
 
     if (_busyToggles.Contains(g.id))  // evita dobles PATCH por id
     {
@@ -252,6 +283,8 @@ System.Timers.Timer? _searchDebounce;
 
     async void Delete_Clicked(object s, EventArgs e)
     {
+            if (!CanDelete) { await DisplayAlert("Acceso restringido", "No puedes eliminar grupos de modificadores.", "OK"); return; }
+
         if ((s as Element)?.BindingContext is not GroupListItem g) return;
         var hard = await DisplayAlert("Eliminar", $"¿Eliminar el grupo “{g.name}”?", "Borrar", "Cancelar");
         if (!hard) return;

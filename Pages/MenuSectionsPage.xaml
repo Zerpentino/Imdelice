@@ -1,173 +1,202 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<ContentPage
-    x:Class="Imdeliceapp.Pages.MenuSectionsPage"
-    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    Title="{Binding Titulo}"
-    BackgroundColor="{AppThemeBinding Light=White, Dark=Black}"
-    Shell.NavBarIsVisible="True"
-    Shell.BackgroundColor="{StaticResource BrandPrimary}"
-    Shell.ForegroundColor="{StaticResource BrandOnPrimary}"
-    Shell.TitleColor="{StaticResource BrandOnPrimary}">
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:Imdeliceapp.Pages"
+             x:Class="Imdeliceapp.Pages.MenuSectionsPage"
+             x:Name="Page"
+             Title="{Binding Titulo}"
+             BackgroundColor="{AppThemeBinding Light=White, Dark=Black}"
+             Shell.NavBarIsVisible="True"
+             Shell.BackgroundColor="{StaticResource BrandPrimary}"
+             Shell.ForegroundColor="{StaticResource BrandOnPrimary}"
+             Shell.TitleColor="{StaticResource BrandOnPrimary}">
 
-  <!-- Estilos -->
-  <ContentPage.Resources>
-    <Style x:Key="CompactEntry" TargetType="Entry">
-      <Setter Property="HeightRequest" Value="44"/>
-      <Setter Property="FontSize" Value="14"/>
-    </Style>
+  <Grid RowDefinitions="Auto,*">
 
-    <Style x:Key="CardBorder" TargetType="Border">
-      <Setter Property="Stroke" Value="{AppThemeBinding Light=#E6E6E6, Dark=#333}"/>
-      <Setter Property="StrokeThickness" Value="1"/>
-      <Setter Property="Background" Value="{AppThemeBinding Light=#FFFFFF, Dark=#1E1E1E}"/>
-      <Setter Property="Padding" Value="12"/>
-      <Setter Property="Margin" Value="16,8,16,8"/>
-      <Setter Property="StrokeShape">
-        <Setter.Value><RoundRectangle CornerRadius="12"/></Setter.Value>
-      </Setter>
-    </Style>
+    <!-- Cabecera -->
+    <Grid Grid.Row="0"
+          Margin="12,12,12,6">
+      <SearchBar x:Name="SearchBox"
+                 Placeholder="Buscar sección…"
+                 TextChanged="SearchBox_TextChanged"/>
+    </Grid>
 
-    <Style x:Key="ChipButton" TargetType="Button">
-      <Setter Property="Padding" Value="12,6"/>
-      <Setter Property="CornerRadius" Value="10"/>
-      <Setter Property="FontSize" Value="13"/>
-      <!-- FIX: usar MinimumWidthRequest (no MinWidthRequest) -->
-      <Setter Property="MinimumWidthRequest" Value="88"/>
-      <Setter Property="HorizontalOptions" Value="Center"/>
-      <Setter Property="VerticalOptions" Value="Center"/>
-    </Style>
+    <!-- Lista -->
+    <RefreshView Grid.Row="1"
+                 x:Name="Refresh"
+                 Refreshing="Refresh_Refreshing">
 
-    <Style x:Key="IconBtn" TargetType="ImageButton">
-      <Setter Property="BackgroundColor" Value="Transparent"/>
-      <Setter Property="WidthRequest" Value="26"/>
-      <Setter Property="HeightRequest" Value="26"/>
-      <Setter Property="Padding" Value="4"/>
-      <Setter Property="Aspect" Value="AspectFit"/>
-      <Setter Property="HorizontalOptions" Value="Center"/>
-      <Setter Property="VerticalOptions" Value="Center"/>
-      <!-- FIX: quitar TintColor (no existe en ImageButton en tu runtime) -->
-    </Style>
+      <CollectionView x:Name="SectionsCV"
+                      Margin="12,0,12,0"
+                      SelectionMode="None"
+                      ItemSizingStrategy="MeasureFirstItem"
+                      ItemsUpdatingScrollMode="KeepScrollOffset">
 
-    <Style x:Key="DangerIconBtn" TargetType="ImageButton" BasedOn="{StaticResource IconBtn}">
-      <!-- FIX: sin TintColor; usa icono rojo (delete.png) ya coloreado -->
-    </Style>
-  </ContentPage.Resources>
+        <CollectionView.EmptyView>
+          <VerticalStackLayout Padding="32"
+                               Spacing="8"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center">
+            <Label Text="Sin secciones"
+                   FontAttributes="Bold"
+                   Opacity="0.9"
+                   TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+            <Button Text="Reintentar"
+                    Clicked="Refresh_Refreshing"/>
+          </VerticalStackLayout>
+        </CollectionView.EmptyView>
 
-  <Grid RowDefinitions="Auto,*,Auto" RowSpacing="0">
+        <CollectionView.ItemTemplate>
+          <DataTemplate>
+            <SwipeView>
+              <SwipeView.LeftItems>
+                <SwipeItems Mode="Reveal" SwipeBehaviorOnInvoked="Close">
+                  <SwipeItem Text="Eliminar"
+                             BackgroundColor="#E53935"
+                             Invoked="Delete_Clicked"
+                             IsVisible="{Binding Source={x:Reference Page}, Path=CanDelete}"
+                             IsEnabled="{Binding Source={x:Reference Page}, Path=CanDelete}"/>
+                </SwipeItems>
+              </SwipeView.LeftItems>
 
-    <!-- CREAR SECCIÓN -->
-    <Border Grid.Row="0" Style="{StaticResource CardBorder}" Margin="16,12,16,4">
-      <VerticalStackLayout Spacing="8">
-        <Entry x:Name="TxtName"
-               Style="{StaticResource CompactEntry}"
-               Placeholder="Nombre de sección (p. ej. BEBIDAS)"/>
+              <SwipeView.RightItems>
+                <SwipeItems Mode="Reveal" SwipeBehaviorOnInvoked="Close">
+                  <SwipeItem Text="Editar"
+                             BackgroundColor="#4CAF50"
+                             Invoked="Edit_Clicked"
+                             IsVisible="{Binding Source={x:Reference Page}, Path=CanUpdate}"
+                             IsEnabled="{Binding Source={x:Reference Page}, Path=CanUpdate}"/>
+                </SwipeItems>
+              </SwipeView.RightItems>
 
-        <Grid ColumnDefinitions="90,*,Auto" ColumnSpacing="8">
-          <Entry Grid.Column="0"
-                 x:Name="TxtPos"
-                 Style="{StaticResource CompactEntry}"
-                 Placeholder="Pos"
-                 Keyboard="Numeric"/>
+              <Grid Padding="14"
+                    Margin="0,6"
+                    ColumnSpacing="12"
+                    ColumnDefinitions="Auto,*,Auto,96"
+                    BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E1E1E}">
 
-          <Entry Grid.Column="1"
-                 x:Name="TxtCatId"
-                 Style="{StaticResource CompactEntry}"
-                 Placeholder="categoryId (opcional)"
-                 Keyboard="Numeric"/>
+                <Border WidthRequest="44"
+                        HeightRequest="44"
+                        BackgroundColor="{AppThemeBinding Light=#EEE, Dark=#333}"
+                        StrokeThickness="0"
+                        StrokeShape="{RoundRectangle CornerRadius=12}">
+                  <Grid>
+                    <Label Text="📄"
+                           FontSize="22"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center"/>
+                  </Grid>
+                </Border>
 
-          <Button Grid.Column="2"
-                  Text="Agregar"
-                  Style="{StaticResource ChipButton}"
-                  Clicked="Agregar_Clicked"/>
-        </Grid>
-      </VerticalStackLayout>
-    </Border>
+                <VerticalStackLayout Grid.Column="1"
+                                     Spacing="4">
+                  <Label Text="{Binding name}"
+                         FontAttributes="Bold"
+                         LineBreakMode="TailTruncation"
+                         TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
 
-    <!-- LISTA -->
-    <CollectionView Grid.Row="1"
-                    x:Name="SectionsCV"
-                    SelectionMode="None"
-                    ItemSizingStrategy="MeasureAllItems"
-                  
-                    Margin="{OnPlatform Android='0,0,0,96', iOS='0,0,0,84', MacCatalyst='0,0,0,72', WinUI='0,0,0,72'}">
-      <CollectionView.ItemTemplate>
-        <DataTemplate>
-          <Border Style="{StaticResource CardBorder}">
-            <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="12">
-              <VerticalStackLayout Spacing="2">
-                <Label Text="{Binding name}" FontAttributes="Bold"
-                       LineBreakMode="TailTruncation" MaxLines="1"
-                       TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
-                <Label Text="{Binding position, StringFormat='Posición: {0}'}"
-                       FontSize="12" Opacity="0.7"
-                       TextColor="{AppThemeBinding Light=#555, Dark=#CCC}"/>
-                <Label Text="{Binding categoryId, StringFormat='categoryId: {0}'}"
-                       FontSize="12" Opacity="0.7"
-                       TextColor="{AppThemeBinding Light=#555, Dark=#CCC}"/>
-              </VerticalStackLayout>
+                  <Label Text="{Binding PositionDisplay}"
+                         FontSize="12"
+                         TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"/>
 
-              <HorizontalStackLayout Grid.Column="1" Spacing="6" VerticalOptions="Center">
-                <ImageButton Source="up.png"   Style="{StaticResource IconBtn}" Clicked="Up_Clicked"/>
-                <ImageButton Source="down.png" Style="{StaticResource IconBtn}" Clicked="Down_Clicked"/>
-              </HorizontalStackLayout>
+                  <HorizontalStackLayout Spacing="8">
+                    <Border StrokeThickness="0"
+                            Padding="6,2"
+                            BackgroundColor="#EEE"
+                            StrokeShape="{RoundRectangle CornerRadius=8}">
+                      <Label Text="{Binding ItemsBadge}"
+                             FontSize="11"
+                             TextColor="#333"/>
+                    </Border>
 
-              <Button Grid.Column="2" Text="Items"
-                      Style="{StaticResource ChipButton}"
-                      Clicked="Items_Clicked"/>
+                    <Border StrokeThickness="0"
+                            Padding="6,2"
+                            BackgroundColor="#E6F4EA"
+                            StrokeShape="{RoundRectangle CornerRadius=8}"
+                            IsVisible="{Binding HasCategory}">
+                      <Label Text="{Binding CategoryBadge}"
+                             FontSize="11"
+                             TextColor="#1B5E20"/>
+                    </Border>
 
-              <ImageButton Grid.Column="3"
-                           Source="delete.png"
-                           Style="{StaticResource DangerIconBtn}"
-                           Clicked="Eliminar_Clicked"/>
-            </Grid>
-          </Border>
-        </DataTemplate>
-      </CollectionView.ItemTemplate>
+                    <Border StrokeThickness="0"
+                            Padding="6,2"
+                            BackgroundColor="#FAD7D7"
+                            StrokeShape="{RoundRectangle CornerRadius=8}">
+                      <Border.Triggers>
+                        <DataTrigger TargetType="Border"
+                                     Binding="{Binding isActive}"
+                                     Value="True">
+                          <Setter Property="IsVisible" Value="False"/>
+                        </DataTrigger>
+                      </Border.Triggers>
+                      <Label Text="Inactiva"
+                             FontSize="11"
+                             TextColor="#B71C1C"/>
+                    </Border>
+                  </HorizontalStackLayout>
+                </VerticalStackLayout>
 
-      <CollectionView.EmptyView>
-        <VerticalStackLayout Padding="32" Spacing="8"
-                             HorizontalOptions="Center"
-                             VerticalOptions="Center">
-          <Label Text="Sin secciones"
-                 FontAttributes="Bold"
-                 TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
-        </VerticalStackLayout>
-      </CollectionView.EmptyView>
-    </CollectionView>
+                <Switch Grid.Column="2"
+                        VerticalOptions="Center"
+                        IsToggled="{Binding isActive}"
+                        Toggled="ToggleActivo_Toggled"
+                        
+                        IsEnabled="{Binding Source={x:Reference Page}, Path=CanUpdate}"/>
 
-    <!-- EDITAR SELECCIONADO -->
-    <Border Grid.Row="2"
-            Background="{AppThemeBinding Light=#FAFAFA, Dark=#171717}"
-            Stroke="{AppThemeBinding Light=#E6E6E6, Dark=#333}"
-            StrokeThickness="1"
-            StrokeShape="{RoundRectangle CornerRadius=0}"
-            Padding="{OnPlatform Android='16,8,16,24', iOS='16,8,16,14', MacCatalyst='16,8,16,12', WinUI='16,8,16,12'}">
-      <VerticalStackLayout Spacing="8">
-        <Entry x:Name="TxtEditName"
-               Style="{StaticResource CompactEntry}"
-               Placeholder="Nuevo nombre"/>
+                <Button Grid.Column="3"
+                        Text="Items"
+                        HeightRequest="36"
+                        Padding="10,6"
+                        Clicked="Items_Clicked"
+                        CommandParameter="{Binding .}"
+                        BackgroundColor="{AppThemeBinding Light=#894164, Dark=#894164}"
+                        TextColor="White"
+                        CornerRadius="8"
+                        IsEnabled="{Binding Source={x:Reference Page}, Path=CanRead}"
+                        IsVisible="{Binding Source={x:Reference Page}, Path=CanRead}"
+                        HorizontalOptions="End"
+                        VerticalOptions="Center"/>
+              </Grid>
+            </SwipeView>
+          </DataTemplate>
+        </CollectionView.ItemTemplate>
 
-        <Grid ColumnDefinitions="90,*,Auto" ColumnSpacing="8">
-          <Entry Grid.Column="0"
-                 x:Name="TxtEditPos"
-                 Style="{StaticResource CompactEntry}"
-                 Placeholder="Nueva pos"
-                 Keyboard="Numeric"/>
+        <CollectionView.Footer>
+          <Grid HeightRequest="{OnPlatform Android=120, iOS=120, MacCatalyst=100, WinUI=100}"/>
+        </CollectionView.Footer>
 
-          <Entry Grid.Column="1"
-                 x:Name="TxtEditCatId"
-                 Style="{StaticResource CompactEntry}"
-                 Placeholder="categoryId (opcional)"
-                 Keyboard="Numeric"/>
+      </CollectionView>
+    </RefreshView>
 
-          <Button Grid.Column="2"
-                  Text="Guardar"
-                  Style="{StaticResource ChipButton}"
-                  Clicked="Editar_Clicked"/>
-        </Grid>
-      </VerticalStackLayout>
-    </Border>
+    <!-- FABs -->
+    <Button Grid.RowSpan="2"
+            Text="+"
+            Clicked="New_Clicked"
+            CornerRadius="28"
+            WidthRequest="56"
+            HeightRequest="56"
+            BackgroundColor="{AppThemeBinding Light=#894164, Dark=#894164}"
+            TextColor="White"
+            HorizontalOptions="End"
+            VerticalOptions="End"
+            Margin="16,16,16,32"
+            IsEnabled ="{Binding Source={x:Reference Page}, Path=CanCreate}"
+            IsVisible="{Binding Source={x:Reference Page}, Path=CanCreate}"
+            />
+
+    <Button Grid.RowSpan="2"
+            Text="🗑"
+            Clicked="TrashFab_Clicked"
+            CornerRadius="24"
+            WidthRequest="48"
+            HeightRequest="48"
+            BackgroundColor="{AppThemeBinding Light=#4A4A4A, Dark=#222}"
+            TextColor="White"
+            HorizontalOptions="End"
+            VerticalOptions="End"
+            Margin="16,16,80,32"
+            IsVisible="{Binding Source={x:Reference Page}, Path=ShowTrashFab}"/>
 
   </Grid>
 </ContentPage>

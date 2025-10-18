@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:Imdeliceapp.Controls"
              x:Class="Imdeliceapp.Pages.LoginPage"
              BackgroundColor="{AppThemeBinding Light=White, Dark=Black}"
              NavigationPage.HasNavigationBar="False"
@@ -31,7 +32,7 @@
             <!-- Campo ID del usuario -->
 <!-- Campo ID del usuario -->
 
-<Border
+<controls:LoginShadowBorder
     x:Name="frameCorreo"
     Margin="0,0,0,12"
     StrokeShape="{RoundRectangle CornerRadius=12}"
@@ -62,7 +63,7 @@
          MinimumHeightRequest="44"
          Text="{Binding dvcMail}"
          TextChanged="EntryCorreo_TextChanged"/>
-</Border>
+</controls:LoginShadowBorder>
        
 
 <Label x:Name="labelCorreoError"
@@ -73,7 +74,7 @@
        Margin="8,2,0,0" />
 <!-- Campo contraseña -->
 
-<Border
+<controls:LoginShadowBorder
     x:Name="frameContrasena"
     Margin="0,0,0,12"
     StrokeShape="{RoundRectangle CornerRadius=12}"
@@ -115,7 +116,7 @@
                  Source="{AppThemeBinding Light=ojo_cerrado.png, Dark=ojo_cerrado_blanco.png}"
                  Clicked="TogglePasswordVisibility_Clicked"/>
   </Grid>
-</Border>
+</controls:LoginShadowBorder>
 
  <Label x:Name="labelContraseniaError"
        Text="Este campo es obligatorio."

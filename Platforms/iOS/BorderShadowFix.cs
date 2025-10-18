@@ -3,6 +3,7 @@ using CoreGraphics;
 using UIKit;
 using Microsoft.Maui.Handlers;
 using Microsoft.Maui.Platform;   // ToCGColor(), etc.
+using Imdeliceapp.Controls;
 
 namespace Imdeliceapp.Platforms.iOS;
 
@@ -13,6 +14,9 @@ public static class BorderShadowFix
         // Se ejecuta una vez para TODOS los <Border>
         BorderHandler.Mapper.AppendToMapping("ShadowFix", (handler, view) =>
         {
+            if (view is not LoginShadowBorder)
+                return;
+
             var layer = handler.PlatformView.Layer;
 
             /* ---- 1. Ajustes básicos de la capa ---- */

@@ -39,18 +39,20 @@ public partial class ProductPickerPage : ContentPage
     static readonly JsonSerializerOptions _json = new() { PropertyNameCaseInsensitive = true };
     readonly List<ProductDTO> _all = new();
     readonly ObservableCollection<ViewItem> _view = new();
+    readonly Func<ProductDTO, bool>? _filter;
 
-    public ProductPickerPage()
+    public ProductPickerPage(Func<ProductDTO, bool>? filter = null)
     {
         InitializeComponent();
+        _filter = filter;
         CV.ItemsSource = _view;
     }
 
     // Devuelve el producto elegido
-    public static async Task<ProductDTO?> PickAsync(INavigation nav)
+    public static async Task<ProductDTO?> PickAsync(INavigation nav, Func<ProductDTO, bool>? filter = null)
     {
         var tcs = new TaskCompletionSource<ProductDTO?>();
-        var page = new ProductPickerPage();
+        var page = new ProductPickerPage(filter);
         page.ProductSelected += (_, p) => tcs.TrySetResult(p);
 
         await nav.PushModalAsync(new NavigationPage(page));
@@ -73,6 +75,7 @@ public partial class ProductPickerPage : ContentPage
     {
         try
         {
+            SetLoading(true);
             _all.Clear(); _view.Clear();
 
             var token = await SecureStorage.GetAsync("token");
@@ -93,6 +96,8 @@ public partial class ProductPickerPage : ContentPage
             var env = JsonSerializer.Deserialize<ApiEnvelope<List<ProductDTO>>>(body, _json);
             foreach (var p in env?.data ?? new())
             {
+                if (_filter != null && !_filter(p)) continue;
+
                 _all.Add(p);
                 _view.Add(new ViewItem
                 {
@@ -106,6 +111,10 @@ public partial class ProductPickerPage : ContentPage
         catch (Exception ex)
         {
             await ErrorHandler.MostrarErrorTecnico(ex, "Productos – Picker");
+        }
+        finally
+        {
+            SetLoading(false);
         }
     }
 
@@ -124,5 +133,15 @@ public partial class ProductPickerPage : ContentPage
             var chosen = _all.FirstOrDefault(p => p.id == v.id);
             ProductSelected?.Invoke(this, chosen);
         }
+    }
+
+    void Cancel_Clicked(object sender, EventArgs e)
+        => ProductSelected?.Invoke(this, null);
+
+    void SetLoading(bool value)
+    {
+        LoadingIndicator.IsVisible = LoadingIndicator.IsRunning = value;
+        CV.IsVisible = !value;
+        Search.IsEnabled = !value;
     }
 }

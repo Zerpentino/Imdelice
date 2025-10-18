@@ -156,7 +156,7 @@ public final class R {
 		public static final int TextAppearance_Compat_Notification_Title_Media = 0x7f1101d9;
 		public static final int Widget_Compat_NotificationActionContainer = 0x7f110341;
 		public static final int Widget_Compat_NotificationActionText = 0x7f110342;
-		public static final int Widget_Support_CoordinatorLayout = 0x7f110477;
+		public static final int Widget_Support_CoordinatorLayout = 0x7f110478;
 	}
 	public static final class styleable {
 		public static final int[] ColorStateListItem = new int[] { 0x010101a5, 0x0101031f, 0x01010647, 0x7f030031, 0x7f030288 };

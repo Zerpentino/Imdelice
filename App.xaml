@@ -213,7 +213,7 @@
   </Style>
 
   
-  <x:String x:Key="urlbase">http://192.168.100.73:3000</x:String>
+  <x:String x:Key="urlbase">http://172.20.14.24:3000</x:String>
       <x:String x:Key="urlloginemail">/api/auth/email</x:String>
       <x:String x:Key="urlloginpin">/api/auth/pin</x:String>
 
@@ -226,7 +226,6 @@
 
             
         </ResourceDictionary>
-        
     </Application.Resources>
     
 </Application>

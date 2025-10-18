@@ -4,6 +4,7 @@
   xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
   xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
   Title="Menús"
+  x:Name="Page"
   BackgroundColor="{AppThemeBinding Light=White, Dark=Black}"
   Shell.NavBarIsVisible="True"
   Shell.BackgroundColor="{StaticResource BrandPrimary}"
@@ -63,21 +64,47 @@
     </Style>
   </ContentPage.Resources>
 
-  <Grid RowDefinitions="Auto,*,Auto"
-      RowSpacing="0">
+  <Grid RowDefinitions="Auto,*"
+        RowSpacing="0">
 
-    <!-- Acciones (crear) -->
-    <HorizontalStackLayout Margin="16,12,16,8"
-        Spacing="8">
-      <Entry x:Name="TxtNewMenu"
-             Placeholder="Nombre del nuevo menú"
-             HorizontalOptions="FillAndExpand"/>
-      <Button Text="Crear"
-              Clicked="CrearMenu_Clicked"
-              Style="{StaticResource ChipButton}"/>
-    </HorizontalStackLayout>
+    <!-- Crear menú -->
+    <Border Grid.Row="0"
+            Style="{StaticResource CardBorder}"
+            Margin="16,16,16,12"
+            IsVisible="{Binding Source={x:Reference Page}, Path=FormCardVisible}">
+      <Grid ColumnDefinitions="*,Auto,Auto"
+            RowDefinitions="Auto,Auto"
+            ColumnSpacing="12"
+            RowSpacing="8">
+        <Label x:Name="FormTitle"
+               Text="Crear nuevo menú"
+               Grid.ColumnSpan="3"
+               FontAttributes="Bold"
+               FontSize="16"
+               TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+        <Entry x:Name="TxtMenuName"
+               Grid.Row="1"
+               Grid.Column="0"
+               Placeholder="Nombre del nuevo menú"
+               HorizontalOptions="FillAndExpand"/>
+        <Button x:Name="BtnSubmit"
+                Grid.Row="1"
+                Grid.Column="1"
+                Text="Crear"
+                Style="{StaticResource ChipButton}"
+                Clicked="SubmitMenu_Clicked"
+                IsEnabled="False"/>
+        <Button x:Name="BtnCancelEdit"
+                Grid.Row="1"
+                Grid.Column="2"
+                Text="Cancelar"
+                Style="{StaticResource ChipButton}"
+                Clicked="CancelEdit_Clicked"
+                IsVisible="False"/>
+      </Grid>
+    </Border>
 
-    <!-- Lista -->
+    <!-- Lista principal -->
     <RefreshView Grid.Row="1"
         x:Name="Refresh"
         Refreshing="Refresh_Refreshing">
@@ -109,6 +136,7 @@
                 <Switch Grid.Column="1"
                         VerticalOptions="Center"
                         IsToggled="{Binding isActive}"
+                        IsEnabled="{Binding Source={x:Reference Page}, Path=CanUpdate}"
                         Toggled="ToggleActivo_Toggled"/>
 
                 <!-- acciones -->
@@ -120,7 +148,9 @@
                           Clicked="Abrir_Clicked"/>
                   <ImageButton Source="delete.png"
                                Style="{StaticResource IconBtn}"
-                               Clicked="Eliminar_Clicked"/>
+                               Clicked="Eliminar_Clicked"
+                                IsEnabled="{Binding Source={x:Reference Page}, Path=CanDelete}"
+                               IsVisible="{Binding Source={x:Reference Page}, Path=CanDelete}"/>
                 </HorizontalStackLayout>
               </Grid>
             </Border>
@@ -143,28 +173,21 @@
       </CollectionView>
     </RefreshView>
 
-    <!-- Renombrar (fijo abajo con padding extra para TabBar) -->
-    <Border Grid.Row="2"
-            Background="{AppThemeBinding Light=#FAFAFA, Dark=#171717}"
-            Stroke="{AppThemeBinding Light=#E6E6E6, Dark=#333}"
-            StrokeThickness="1"
-            StrokeShape="{RoundRectangle CornerRadius=0}"
-            Padding="{OnPlatform Android='16,8,16,24',
-                  iOS='16,8,16,14',
-                  MacCatalyst='16,8,16,12',
-                  WinUI='16,8,16,12',
-                  Default='16,8,16,16'}">
-      <Grid ColumnDefinitions="*,Auto"
-          ColumnSpacing="8">
-        <Entry x:Name="TxtRename"
-               Placeholder="Renombrar (selecciona con 'Abrir' y edita aquí)"
-               HorizontalOptions="FillAndExpand"/>
-        <Button Grid.Column="1"
-                Text="Renombrar"
-                Style="{StaticResource ChipButton}"
-                Clicked="Renombrar_Clicked"/>
-      </Grid>
-    </Border>
+    <!-- FAB Papelera -->
+    <Button Grid.RowSpan="2"
+            x:Name="TrashFab"
+            WidthRequest="56"
+            HeightRequest="56"
+            CornerRadius="28"
+            BackgroundColor="#894164"
+            TextColor="White"
+            FontSize="18"
+                        Text="🗑"
 
+            HorizontalOptions="End"
+            VerticalOptions="End"
+            Margin="16"
+            IsVisible="{Binding Source={x:Reference Page}, Path=ShowTrashFab}"
+            Clicked="TrashFab_Clicked"/>
   </Grid>
 </ContentPage>

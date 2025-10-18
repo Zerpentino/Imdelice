@@ -32,5 +32,10 @@ public static bool ModifiersRead    => Has("modifiers.read");
     public static bool ModifiersUpdate  => Has("modifiers.update");
     public static bool ModifiersDelete => Has("modifiers.delete");
 
-    public static bool MenuUpdate  => Has("menu.update");
+
+    public static bool MenusRead    => Has("menu.read");
+public static bool MenusCreate  => Has("menu.create");
+public static bool MenusUpdate  => Has("menu.update");
+public static bool MenusDelete  => Has("menu.delete");
+
 }
