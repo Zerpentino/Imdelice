@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Imdeliceapp")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0.0+276cd25fd54c687b26820dda1b2798192b0e6a1f")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0.0+a08680a9b6feebb1586d4387d2192e46fa89c453")]
 [assembly: System.Reflection.AssemblyProductAttribute("Imdeliceapp")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Imdeliceapp")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

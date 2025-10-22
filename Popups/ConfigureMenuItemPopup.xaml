@@ -108,12 +108,10 @@
                       <Border StrokeThickness="1"
                               Stroke="{AppThemeBinding Light=#E0E0E0, Dark=#444}"
                               BackgroundColor="{Binding Background}"
-                              StrokeShape="{RoundRectangle CornerRadius=12}">
-                        <Border.GestureRecognizers>
-                          <TapGestureRecognizer Command="{Binding ToggleCommand}"/>
-                        </Border.GestureRecognizers>
-                        <Grid ColumnDefinitions="*,Auto"
-                              Padding="12,10">
+                              StrokeShape="{RoundRectangle CornerRadius=12}"
+                              Padding="12"
+                              Margin="0,2">
+                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="12">
                           <VerticalStackLayout Spacing="2">
                             <Label Text="{Binding Name}"
                                    FontAttributes="Bold"
@@ -122,12 +120,42 @@
                                    IsVisible="{Binding HasDescription}"
                                    FontSize="12"
                                    TextColor="{AppThemeBinding Light=#777, Dark=#AAA}"/>
+                            <Label Text="{Binding ExtraLabel}"
+                                   FontSize="12"
+                                   TextColor="{AppThemeBinding Light=#884166, Dark=#D0A0B8}"/>
                           </VerticalStackLayout>
-                          <Label Grid.Column="1"
-                                 Text="{Binding ExtraLabel}"
-                                 FontAttributes="Bold"
-                                 VerticalOptions="Center"
-                                 TextColor="{AppThemeBinding Light=#894164, Dark=#D0A0B8}"/>
+
+                          <HorizontalStackLayout Grid.Column="1"
+                                                 Grid.RowSpan="2"
+                                                 Spacing="6"
+                                                 VerticalOptions="Center">
+                            <Button Text="−"
+                                    WidthRequest="32"
+                                    HeightRequest="32"
+                                    CornerRadius="16"
+                                    Command="{Binding DecrementCommand}"
+                                    IsEnabled="{Binding CanDecrement}"/>
+                            <Frame WidthRequest="32"
+                                   HeightRequest="32"
+                                   CornerRadius="16"
+                                   Padding="0"
+                                   HasShadow="False"
+                                   BackgroundColor="{AppThemeBinding Light=#894164, Dark=#894164}"
+                                   VerticalOptions="Center"
+                                   HorizontalOptions="Center">
+                              <Label Text="{Binding QuantityDisplay}"
+                                     HorizontalOptions="Center"
+                                     VerticalOptions="Center"
+                                     TextColor="White"
+                                     FontAttributes="Bold"/>
+                            </Frame>
+                            <Button Text="+"
+                                    WidthRequest="32"
+                                    HeightRequest="32"
+                                    CornerRadius="16"
+                                    Command="{Binding IncrementCommand}"
+                                    IsEnabled="{Binding CanIncrement}"/>
+                          </HorizontalStackLayout>
                         </Grid>
                       </Border>
                     </DataTemplate>

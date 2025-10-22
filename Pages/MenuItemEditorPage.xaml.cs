@@ -48,6 +48,7 @@ public partial class MenuItemEditorPage : ContentPage
     string? _selectedRefType;
     int? _selectedRefId;
     string _selectedRefLabel = "Ninguna";
+    bool _suppressTypeChanged;
 
     public MenuItemEditorPage()
     {
@@ -114,7 +115,7 @@ public partial class MenuItemEditorPage : ContentPage
 
     void RefTypePicker_SelectedIndexChanged(object? sender, EventArgs e)
     {
-        if (IsEdit) return;
+        if (IsEdit || _suppressTypeChanged) return;
         _selectedRefType = RefTypePicker.SelectedItem as string;
         _selectedRefId = null;
         _selectedRefLabel = "Ninguna";
@@ -164,7 +165,7 @@ public partial class MenuItemEditorPage : ContentPage
             var type = p.type?.ToUpperInvariant() ?? string.Empty;
             if (includeCombos)
                 return type == "COMBO";
-            return type != "COMBO";
+            return type == "SIMPLE";
         }
 
         var product = await ProductPickerPage.PickAsync(Navigation, Filter);
@@ -396,6 +397,10 @@ public partial class MenuItemEditorPage : ContentPage
         if (string.IsNullOrWhiteSpace(type)) return;
         var idx = RefTypePicker.Items.IndexOf(type);
         if (idx >= 0)
+        {
+            _suppressTypeChanged = true;
             RefTypePicker.SelectedIndex = idx;
+            _suppressTypeChanged = false;
+        }
     }
 }

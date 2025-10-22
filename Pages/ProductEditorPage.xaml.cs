@@ -10,6 +10,8 @@ using Microsoft.Maui.Media;     // solo si vas a usar MediaPicker (capturar/gale
 using System.Text;              // por Encoding en Txt(...)
 using System.IO;                // por MemoryStream, etc.
 using System.Net.Http;          // ByteArrayContent, MultipartFormDataContent
+using Microsoft.Maui.Graphics;
+using Microsoft.Maui.Controls.Shapes;
 
 namespace Imdeliceapp.Pages;
 
@@ -60,7 +62,9 @@ class ComboItemAsComboDTO
     public int id { get; set; }
     public int quantity { get; set; }
     public string? notes { get; set; }
+    public bool isRequired { get; set; } = true;
     public ProductMiniDTO? componentProduct { get; set; } // trae id, categoryId, etc.
+    public VariantDTO? componentVariant { get; set; }
 }
 
     class VariantDTO { public int id { get; set; } public string? name { get; set; } public int priceCents { get; set; } public bool isActive { get; set; } }
@@ -74,20 +78,48 @@ class ComboItemAsComboDTO
         public override string ToString() => name ?? $"#{id}";
     }
 
-    class ComboItemDTO
-    {
-        public int id { get; set; }                 // comboItemId
-        public int componentProductId { get; set; }
+class ComboItemDTO
+{
+    public int id { get; set; }                 // comboItemId
+    public int componentProductId { get; set; }
+    public int? componentVariantId { get; set; }
         public int quantity { get; set; }
+        public bool isRequired { get; set; } = true;
         public string? notes { get; set; }
     }
 
-    class ProductMiniDTO   // para resolver categoría del componente
+class ProductMiniDTO   // para resolver categoría del componente
+{
+    public int id { get; set; }
+    public string? name { get; set; }
+    public int categoryId { get; set; }
+    public string? type { get; set; }  // SIMPLE / VARIANTED / COMBO
+}
+
+record ComboItemInput(
+    int? ComboItemId,
+    int ComponentProductId,
+    string ProductName,
+    string ProductType,
+    int? ComponentVariantId,
+    int Quantity,
+    bool IsRequired,
+    string? Notes,
+    int? OriginalComponentProductId,
+    int? OriginalComponentVariantId);
+
+    class ComboRowContext
     {
-        public int id { get; set; }
-        public string? name { get; set; }
-        public int categoryId { get; set; }
-        public string? type { get; set; }  // SIMPLE / VARIANTED / COMBO
+        public int? comboItemId { get; set; }
+        public int? originalComponentProductId { get; set; }
+        public int? originalComponentVariantId { get; set; }
+        public Picker? PkCategory { get; set; }
+        public Picker? PkProduct { get; set; }
+        public Picker? PkVariant { get; set; }
+        public Entry? QtyEntry { get; set; }
+        public Switch? RequiredSwitch { get; set; }
+        public Entry? NotesEntry { get; set; }
+        public int? PendingVariantId { get; set; }
     }
 
 
@@ -106,12 +138,12 @@ class ComboItemAsComboDTO
     //     return env?.data ?? new();
     // }
 
-    async Task<ProductMiniDTO?> LoadProductMiniAsync(HttpClient http, int productId)
+    async Task<ProductDetailDTO?> LoadProductDetailAsync(HttpClient http, int productId)
     {
         var resp = await http.GetAsync($"/api/products/{productId}");
         if (!resp.IsSuccessStatusCode) return null;
         var body = await resp.Content.ReadAsStringAsync();
-        var env = JsonSerializer.Deserialize<ApiEnvelope<ProductMiniDTO>>(body, _json);
+        var env = JsonSerializer.Deserialize<ApiEnvelope<ProductDetailDTO>>(body, _json);
         return env?.data;
     }
 
@@ -124,38 +156,13 @@ class ComboItemAsComboDTO
     List<CategoryDTO> _cats = new();
     // Piezas originales del combo (para diff al guardar)
     List<ComboItemDTO> _origComboItems = new();
+    readonly Dictionary<int, List<VariantDTO>> _variantCache = new();
 
-    class ItemMeta
-    {
-        public int? comboItemId { get; set; }          // id de la pieza en BD
-        public int? originalComponentProductId { get; set; } // para detectar cambio de producto
-    }
+    readonly Color _errorStroke = Color.FromArgb("#E53935");
+    readonly Color _inputStrokeLight = Color.FromArgb("#DDD");
+    readonly Color _inputStrokeDark = Color.FromArgb("#444");
 
 // Lee las filas del UI e incluye comboItemId si existe
-List<(int? comboItemId, int componentProductId, int quantity, string? notes)> GetComboItemsWithMeta()
-{
-    return ComboItemsHost.Children
-        .OfType<Grid>()
-        .Select(g =>
-        {
-            var meta = g.BindingContext as ItemMeta;
-            var pkProd = (Picker)g.Children[1];
-            var eQty   = (Entry)g.Children[2];
-            var eNotes = (Entry)g.Children[3];
-
-            var prod = pkProd.SelectedItem as ProductOption;
-            if (prod == null) return ( (int?)null, 0, 0, (string?)null );
-
-            int qty = 1;
-            _ = int.TryParse(eQty.Text, out qty);
-            if (qty <= 0) qty = 1;
-
-            return ( meta?.comboItemId, prod.id, qty, string.IsNullOrWhiteSpace(eNotes.Text) ? null : eNotes.Text!.Trim() );
-        })
-        .Where(x => x.Item2 > 0)
-        .ToList();
-}
-
     static string? MapProductError(HttpStatusCode status, string? body)
     {
         var b = (body ?? "").ToLowerInvariant();
@@ -453,7 +460,9 @@ List<(int? comboItemId, int componentProductId, int quantity, string? notes)> Ge
      .Select(ci => new ComboItemDTO {
          id = ci.id,
          componentProductId = ci.componentProduct!.id,
+         componentVariantId = ci.componentVariant?.id,
          quantity = ci.quantity,
+         isRequired = ci.isRequired,
          notes = ci.notes
      }).ToList()
     ?? new List<ComboItemDTO>();
@@ -461,19 +470,27 @@ List<(int? comboItemId, int componentProductId, int quantity, string? notes)> Ge
                 foreach (var it in _origComboItems)
                 {
                     // Necesitamos la categoría del producto componente para preseleccionar
-                    var comp = await LoadProductMiniAsync(http, it.componentProductId);
+                    var comp = await LoadProductDetailAsync(http, it.componentProductId);
+                    if (comp?.variants != null && comp.variants.Count > 0)
+                        _variantCache[it.componentProductId] = comp.variants;
 
                     var row = NewComboItemRow(
                         qty: (it.quantity <= 0 ? "1" : it.quantity.ToString()),
-                        notes: it.notes ?? string.Empty
+                        notes: it.notes ?? string.Empty,
+                        isRequired: it.isRequired,
+                        variantId: it.componentVariantId
                     );
 
                     // guarda metadatos en la fila
-                    row.BindingContext = new ItemMeta
+                    if (row.BindingContext is ComboRowContext ctx)
                     {
-                        comboItemId = it.id,
-                        originalComponentProductId = it.componentProductId
-                    };
+                        ctx.comboItemId = it.id;
+                        ctx.originalComponentProductId = it.componentProductId;
+                        ctx.originalComponentVariantId = it.componentVariantId;
+                        ctx.PendingVariantId = it.componentVariantId;
+                        if (ctx.RequiredSwitch != null)
+                            ctx.RequiredSwitch.IsToggled = it.isRequired;
+                    }
 
                     ComboItemsHost.Children.Add(row);
 
@@ -506,6 +523,7 @@ List<(int? comboItemId, int componentProductId, int quantity, string? notes)> Ge
                 foreach (var v in _origVariants)
                     VariantsHost.Children.Add(NewVariantRow(v.name ?? "", (v.priceCents / 100.0M).ToString("0.00")));
             }
+            ResetValidationState();
         }
         catch (Exception ex) { await ErrorHandler.MostrarErrorTecnico(ex, "Product – Cargar detalle"); }
     }
@@ -519,67 +537,177 @@ List<(int? comboItemId, int componentProductId, int quantity, string? notes)> Ge
     void TogglePanels()
     {
         var t = (PkType.SelectedItem as string) ?? "SIMPLE";
-        PanelSimple.IsVisible = (t == "SIMPLE" || t == "COMBO"); // precio aplica a SIMPLE/COMBO
+        PanelSimple.IsVisible = (t == "SIMPLE" || t == "COMBO");
         PanelVariants.IsVisible = (t == "VARIANTED");
-        PanelCombo.IsVisible = (t == "COMBO");
+        ComboCard.IsVisible = (t == "COMBO");
+        if (t != "COMBO")
+            HideComboError();
     }
-View NewComboItemRow(string qty = "1", string notes = "")
+    View NewComboItemRow(string qty = "1", string notes = "", bool isRequired = true, int? variantId = null)
     {
-        // grid: Cat | Prod | Qty | Notes | (-)
-        var grid = new Grid
+        var catsNoCombos = _cats.Where(c => !c.isComboOnly).ToList();
+        var frame = new Border
         {
-            ColumnDefinitions = new()
-        {
-            new ColumnDefinition(GridLength.Star),
-            new ColumnDefinition(GridLength.Star),
-            new ColumnDefinition(70),
-            new ColumnDefinition(GridLength.Star),
-            new ColumnDefinition(40)
-        },
-            ColumnSpacing = 8
+            Stroke = Colors.Transparent,
+            StrokeShape = new RoundRectangle { CornerRadius = 12 },
+            BackgroundColor = Application.Current.RequestedTheme == AppTheme.Dark ? Color.FromArgb("#1A1A1A") : Color.FromArgb("#F6F2F6"),
+            Padding = new Thickness(14),
+            Margin = new Thickness(0)
         };
 
-        // 1) Categorías sin combos
-        var catsNoCombos = _cats.Where(c => !c.isComboOnly).ToList();
+        var container = new VerticalStackLayout
+        {
+            Spacing = 12
+        };
+
         var pkCat = new Picker { Title = "Categoría", ItemsSource = catsNoCombos, ItemDisplayBinding = new Binding("name"), HeightRequest = 44 };
-
-        // 2) Productos dependientes
-        var pkProd = new Picker { Title = "Producto", HeightRequest = 44, ItemDisplayBinding = new Binding("name") };
-
-        // 3) Cantidad
-        var eQty = new Entry { Placeholder = "Cant.", Keyboard = Keyboard.Numeric, Text = string.IsNullOrWhiteSpace(qty) ? "1" : qty, HeightRequest = 44 };
-
-        // 4) Notas
+        var pkProd = new Picker { Title = "Producto", ItemDisplayBinding = new Binding("name"), HeightRequest = 44 };
+        var pkVariant = new Picker { Title = "Variante", ItemDisplayBinding = new Binding("name"), HeightRequest = 44, IsVisible = false, IsEnabled = false };
+        var eQty = new Entry { Placeholder = "Cantidad", Keyboard = Keyboard.Numeric, Text = string.IsNullOrWhiteSpace(qty) ? "1" : qty, HeightRequest = 44 };
+        var swRequired = new Switch { IsToggled = isRequired, HorizontalOptions = LayoutOptions.Start, VerticalOptions = LayoutOptions.Center };
+        var requiredLayout = new HorizontalStackLayout
+        {
+            Spacing = 12,
+            Children =
+            {
+                new Label { Text = "Obligatorio", VerticalOptions = LayoutOptions.Center, FontSize = 13 },
+                swRequired
+            }
+        };
         var eNotes = new Entry { Placeholder = "Notas (opcional)", Text = notes, HeightRequest = 44 };
+        var btnRemove = new Button
+        {
+            Text = "–",
+            WidthRequest = 44,
+            HeightRequest = 44,
+            CornerRadius = 22,
+            BackgroundColor = Color.FromArgb("#894164"),
+            TextColor = Colors.White,
+            FontAttributes = FontAttributes.Bold,
+            HorizontalOptions = LayoutOptions.End
+        };
 
-        // 5) Quitar
-        var btnX = new Button { Text = "–", WidthRequest = 36, HeightRequest = 36 };
-        btnX.Clicked += (s, e) => ComboItemsHost.Children.Remove(grid);
+        btnRemove.Clicked += (s, e) => ComboItemsHost.Children.Remove(frame);
 
-        // Evento: al cambiar categoría, cargar productos
+        var ctx = new ComboRowContext
+        {
+            comboItemId = null,
+            originalComponentProductId = null,
+            originalComponentVariantId = null,
+            PkCategory = pkCat,
+            PkProduct = pkProd,
+            PkVariant = pkVariant,
+            QtyEntry = eQty,
+            RequiredSwitch = swRequired,
+            NotesEntry = eNotes,
+            PendingVariantId = variantId
+        };
+        frame.BindingContext = ctx;
+
         pkCat.SelectedIndexChanged += async (_, __) =>
         {
-            if (pkCat.SelectedItem is CategoryDTO c)
+            if (frame.BindingContext is ComboRowContext rowCtx && pkCat.SelectedItem is CategoryDTO c)
             {
+                rowCtx.PkVariant!.ItemsSource = null;
+                rowCtx.PkVariant.IsVisible = false;
+                rowCtx.PkVariant.IsEnabled = false;
+                rowCtx.PkVariant.SelectedItem = null;
+                rowCtx.PendingVariantId = null;
+
                 pkProd.ItemsSource = null;
                 pkProd.SelectedItem = null;
                 pkProd.IsEnabled = false;
 
-                var list = await LoadProductsForCategoryAsync(c); // <- ahora pasa la categoría completa
+                var list = await LoadProductsForCategoryAsync(c);
                 pkProd.ItemsSource = list;
                 pkProd.IsEnabled = true;
             }
         };
 
+        pkProd.SelectedIndexChanged += async (_, __) =>
+        {
+            if (frame.BindingContext is ComboRowContext rowCtx)
+                await ConfigureVariantPickerAsync(rowCtx);
+        };
 
-        // Layout
-        grid.Add(pkCat, 0, 0);
-        grid.Add(pkProd, 1, 0);
-        grid.Add(eQty, 2, 0);
-        grid.Add(eNotes, 3, 0);
-        grid.Add(btnX, 4, 0);
+        var headerGrid = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitionCollection
+            {
+                new ColumnDefinition(GridLength.Star),
+                new ColumnDefinition(new GridLength(44))
+            },
+            ColumnSpacing = 8
+        };
+        headerGrid.Add(pkCat);
+        Grid.SetColumn(pkCat, 0);
+        headerGrid.Add(btnRemove);
+        Grid.SetColumn(btnRemove, 1);
+        container.Add(headerGrid);
 
-        return grid;
+        container.Add(pkProd);
+        container.Add(pkVariant);
+
+        var qtyRow = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitionCollection
+            {
+                new ColumnDefinition(GridLength.Star),
+                new ColumnDefinition(GridLength.Star)
+            },
+            ColumnSpacing = 12
+        };
+        qtyRow.Add(eQty);
+        Grid.SetColumn(eQty, 0);
+        qtyRow.Add(requiredLayout);
+        Grid.SetColumn(requiredLayout, 1);
+        container.Add(qtyRow);
+
+        container.Add(eNotes);
+
+        frame.Content = container;
+        return frame;
+    }
+
+    async Task ConfigureVariantPickerAsync(ComboRowContext ctx)
+    {
+        if (ctx.PkVariant == null || ctx.PkProduct == null)
+            return;
+
+        ctx.PkVariant.ItemsSource = null;
+        ctx.PkVariant.IsVisible = false;
+        ctx.PkVariant.IsEnabled = false;
+        ctx.PkVariant.SelectedItem = null;
+
+        if (ctx.PkProduct.SelectedItem is not ProductOption prod)
+            return;
+
+        if (!string.Equals(prod.type, "VARIANTED", StringComparison.OrdinalIgnoreCase))
+        {
+            ctx.PendingVariantId = null;
+            return;
+        }
+
+        var variants = await LoadVariantsForProductAsync(prod.id);
+        if (variants == null || variants.Count == 0)
+        {
+            ctx.PendingVariantId = null;
+            return;
+        }
+
+        ctx.PkVariant.ItemsSource = variants;
+        ctx.PkVariant.IsVisible = true;
+        ctx.PkVariant.IsEnabled = true;
+
+        VariantDTO? selected = null;
+        if (ctx.PendingVariantId.HasValue)
+            selected = variants.FirstOrDefault(v => v.id == ctx.PendingVariantId.Value);
+
+        if (selected == null)
+            selected = variants.FirstOrDefault();
+
+        ctx.PkVariant.SelectedItem = selected;
+        ctx.PendingVariantId = null;
     }
 
     void AddComboItem_Clicked(object s, EventArgs e) => ComboItemsHost.Children.Add(NewComboItemRow());
@@ -676,35 +804,6 @@ View NewComboItemRow(string qty = "1", string notes = "")
         catch { ImgPreview.Source = null; }
     }
 
-
-
-    List<(int componentProductId, int quantity, string? notes)> GetComboItems()
-    {
-        return ComboItemsHost.Children
-            .OfType<Grid>()
-            .Select(g =>
-            {
-                var pkCat = (Picker)g.Children[0];
-                var pkProd = (Picker)g.Children[1];
-                var eQty = (Entry)g.Children[2];
-                var eNotes = (Entry)g.Children[3];
-
-                var prod = pkProd.SelectedItem as ProductOption;
-                if (prod == null) return (0, 0, (string?)null);
-
-                int qty = 1;
-                _ = int.TryParse(eQty.Text, out qty);
-                if (qty <= 0) qty = 1;
-
-                return (prod.id, qty, string.IsNullOrWhiteSpace(eNotes.Text) ? null : eNotes.Text!.Trim());
-            })
-            .Where(x => x.Item1 > 0)
-            .Select(x => (componentProductId: x.Item1, quantity: x.Item2, notes: x.Item3))
-            .ToList();
-    }
-
-
-
     // === Guardar ===
     async void Guardar_Clicked(object s, EventArgs e)
     {
@@ -716,14 +815,25 @@ View NewComboItemRow(string qty = "1", string notes = "")
         var desc = TxtDesc.Text?.Trim();
 
         if (cat is null) { await DisplayAlert("Categoría", "Selecciona la categoría.", "OK"); return; }
-        if (string.IsNullOrWhiteSpace(name)) { await DisplayAlert("Nombre", "Escribe el nombre.", "OK"); return; }
+
+        ResetValidationState();
+
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            ShowFieldError(BdrName, ErrName, "Escribe el nombre.");
+            await ScrollToAsync(BdrName);
+            return;
+        }
 
         decimal? priceMxn = null;
-        if (type == "SIMPLE")
+        if (type == "SIMPLE" || type == "COMBO")
         {
             if (string.IsNullOrWhiteSpace(TxtPrice.Text) || !decimal.TryParse(TxtPrice.Text.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var pMx) || pMx < 0)
-            { ErrPrice.IsVisible = true; return; }
-            ErrPrice.IsVisible = false;
+            {
+                ShowFieldError(BdrPrice, ErrPrice, "Ingresa un precio válido.");
+                await ScrollToAsync(BdrPrice);
+                return;
+            }
             priceMxn = pMx;
         }
 
@@ -732,7 +842,10 @@ View NewComboItemRow(string qty = "1", string notes = "")
         if (type == "VARIANTED")
         {
             if (VariantsHost.Children.Count == 0)
-            { await DisplayAlert("Variantes", "Agrega al menos una variante.", "OK"); return; }
+            {
+                await DisplayAlert("Variantes", "Agrega al menos una variante.", "OK");
+                return;
+            }
 
             foreach (var row in VariantsHost.Children.OfType<Grid>())
             {
@@ -808,17 +921,6 @@ View NewComboItemRow(string qty = "1", string notes = "")
                 // --- CREAR COMBO (JSON + PATCH imagen) ---
                 if (type == "COMBO")
                 {
-                    // 1) Validar precio
-                    if (string.IsNullOrWhiteSpace(TxtPrice.Text) ||
-                        !decimal.TryParse(TxtPrice.Text.Replace(',', '.'),
-                            System.Globalization.NumberStyles.Any,
-                            System.Globalization.CultureInfo.InvariantCulture,
-                            out var pMx) || pMx < 0)
-                    {
-                        ErrPrice.IsVisible = true; SetSaving(false); return;
-                    }
-                    ErrPrice.IsVisible = false;
-
                     // 2) Validar categoría que acepte combos
                     var catSel = (CategoryDTO)PkCategory.SelectedItem!;
                     if (!catSel.isComboOnly)
@@ -828,21 +930,30 @@ View NewComboItemRow(string qty = "1", string notes = "")
                     }
 
                     // 3) Recolectar piezas (array real)
-                    var items = GetComboItems();
+                    if (!TryCollectComboItems(out var comboInputs, out var comboError))
+                    {
+                        SetSaving(false);
+                        ShowComboError(comboError ?? "Completa los productos del combo.");
+                        await ScrollToAsync(ComboCard);
+                        return;
+                    }
+                    HideComboError();
 
                     // 4) POST JSON puro
                     var dtoCombo = new
                     {
                         name = name,
-                        categoryId = catSel.id,                          // number
-                        priceCents = (int)Math.Round(pMx * 100),         // number
+                        categoryId = catSel.id,
+                        priceCents = (int)Math.Round(priceMxn!.Value * 100),
                         description = string.IsNullOrWhiteSpace(desc) ? null : desc,
                         sku = string.IsNullOrWhiteSpace(sku) ? null : sku,
-                        items = items.Select(i => new
+                        items = comboInputs.Select(i => new
                         {
-                            componentProductId = i.componentProductId,   // number
-                            quantity = i.quantity,                       // number
-                            notes = i.notes                              // string? (opcional)
+                            componentProductId = i.ComponentProductId,
+                            componentVariantId = i.ComponentVariantId,
+                            quantity = i.Quantity,
+                            isRequired = i.IsRequired,
+                            notes = i.Notes
                         }).ToList()
                     };
 
@@ -1012,11 +1123,18 @@ View NewComboItemRow(string qty = "1", string notes = "")
                                   // === Sincronizar piezas del COMBO en edición ===
                     if (type == "COMBO" && ProductId > 0)
                     {
-                        var now = GetComboItemsWithMeta();
+                    if (!TryCollectComboItems(out var now, out var comboError))
+                    {
+                        SetSaving(false);
+                        ShowComboError(comboError ?? "Completa los productos del combo.");
+                        await ScrollToAsync(ComboCard);
+                        return;
+                    }
+                    HideComboError();
 
                         // 1) Borrar las que ya no están en UI
-                        var idsNow = now.Where(x => x.comboItemId.HasValue)
-                                        .Select(x => x.comboItemId!.Value)
+                        var idsNow = now.Where(x => x.ComboItemId.HasValue)
+                                        .Select(x => x.ComboItemId!.Value)
                                         .ToHashSet();
 
                         var toDelete = _origComboItems
@@ -1037,20 +1155,24 @@ View NewComboItemRow(string qty = "1", string notes = "")
 
                         // 2) Actualizar cantidad/notas cuando NO cambió el producto
                         var origById = _origComboItems.ToDictionary(i => i.id, i => i);
-                        var changedProductRows = new List<(int id, int newComponentId, int qty, string? notes)>();
+                        var changedProductRows = new List<ComboItemInput>();
 
-                        foreach (var row in now.Where(x => x.comboItemId.HasValue))
+                        foreach (var row in now.Where(x => x.ComboItemId.HasValue))
                         {
-                            var id = row.comboItemId!.Value;
+                            var id = row.ComboItemId!.Value;
                             if (!origById.TryGetValue(id, out var orig)) continue;
 
-                            if (orig.componentProductId == row.componentProductId)
+                            bool sameProduct = orig.componentProductId == row.ComponentProductId;
+                            bool sameVariant = orig.componentVariantId == row.ComponentVariantId;
+
+                            if (sameProduct && sameVariant)
                             {
-                                bool qtyDiff = orig.quantity != row.quantity;
-                                bool notesDiff = (orig.notes ?? "") != (row.notes ?? "");
-                                if (qtyDiff || notesDiff)
+                                bool qtyDiff = orig.quantity != row.Quantity;
+                                bool notesDiff = (orig.notes ?? "") != (row.Notes ?? "");
+                                bool requiredDiff = orig.isRequired != row.IsRequired;
+                                if (qtyDiff || notesDiff || requiredDiff)
                                 {
-                                    var patch = new { quantity = row.quantity, notes = row.notes };
+                                    var patch = new { quantity = row.Quantity, notes = row.Notes, isRequired = row.IsRequired };
                                     var json = JsonSerializer.Serialize(patch, _jsonWrite);
 
                                     var rPat = await http.PatchAsync($"/api/products/combo-items/{id}",
@@ -1067,31 +1189,35 @@ View NewComboItemRow(string qty = "1", string notes = "")
                             else
                             {
                                 // Si cambió el producto, borraremos y recrearemos
-                                changedProductRows.Add((id, row.componentProductId, row.quantity, row.notes));
+                                changedProductRows.Add(row);
                             }
                         }
 
                         // 2b) Borrar las que cambiaron de producto (se recrean abajo)
                         foreach (var ch in changedProductRows)
                         {
-                            var rDel = await http.DeleteAsync($"/api/products/combo-items/{ch.id}");
+                            if (!ch.ComboItemId.HasValue)
+                                continue;
+                            var rDel = await http.DeleteAsync($"/api/products/combo-items/{ch.ComboItemId.Value}");
                             if (!rDel.IsSuccessStatusCode)
                             {
                                 var bDel = await rDel.Content.ReadAsStringAsync();
                                 await DisplayAlert("Aviso",
-                                    $"No se pudo eliminar pieza #{ch.id} (para reemplazarla): {ExtractApiError(bDel)}", "OK");
+                                    $"No se pudo eliminar pieza #{ch.ComboItemId.Value} (para reemplazarla): {ExtractApiError(bDel)}", "OK");
                             }
                         }
 
                         // 3) Crear nuevas (sin comboItemId) y las reemplazadas
                         var toCreate = now
-                            .Where(x => !x.comboItemId.HasValue
-                                     || changedProductRows.Any(c => c.id == x.comboItemId))
+                            .Where(x => !x.ComboItemId.HasValue
+                                     || changedProductRows.Any(c => c.ComboItemId == x.ComboItemId))
                             .Select(x => new
                             {
-                                componentProductId = x.componentProductId,
-                                quantity = x.quantity,
-                                notes = x.notes
+                                componentProductId = x.ComponentProductId,
+                                componentVariantId = x.ComponentVariantId,
+                                quantity = x.Quantity,
+                                isRequired = x.IsRequired,
+                                notes = x.Notes
                             })
                             .ToList();
 
@@ -1259,4 +1385,133 @@ View NewComboItemRow(string qty = "1", string notes = "")
     }
 
     async void Cancelar_Clicked(object s, EventArgs e) => await Shell.Current.GoToAsync("..");
+
+    async Task<List<VariantDTO>> LoadVariantsForProductAsync(int productId)
+    {
+        if (_variantCache.TryGetValue(productId, out var cached))
+            return cached;
+
+        var token = await GetTokenAsync();
+        if (string.IsNullOrWhiteSpace(token)) return new();
+
+        var baseUrl = Application.Current.Resources["urlbase"].ToString().TrimEnd('/');
+        using var http = NewAuthClient(baseUrl, token);
+
+        var resp = await http.GetAsync($"/api/products/{productId}");
+        if (!resp.IsSuccessStatusCode) return new();
+
+        var body = await resp.Content.ReadAsStringAsync();
+        var env = JsonSerializer.Deserialize<ApiEnvelope<ProductDetailDTO>>(body, _json);
+        var list = env?.data?.variants ?? new();
+        _variantCache[productId] = list;
+        return list;
+    }
+
+    bool TryCollectComboItems(out List<ComboItemInput> items, out string? error)
+    {
+        items = new();
+        error = null;
+
+        foreach (var grid in ComboItemsHost.Children.OfType<Grid>())
+        {
+            if (grid.BindingContext is not ComboRowContext ctx)
+                continue;
+
+            if (ctx.PkProduct?.SelectedItem is not ProductOption prod)
+            {
+                error = "Completa los productos del combo.";
+                return false;
+            }
+
+            VariantDTO? variantDto = null;
+            if (string.Equals(prod.type, "VARIANTED", StringComparison.OrdinalIgnoreCase))
+            {
+                if (ctx.PkVariant?.SelectedItem is not VariantDTO variant)
+                {
+                    error = $"Selecciona la variante para {prod.name}.";
+                    return false;
+                }
+                variantDto = variant;
+            }
+
+            int qty = 1;
+            if (!int.TryParse(ctx.QtyEntry?.Text, out qty) || qty <= 0)
+                qty = 1;
+
+            var notes = ctx.NotesEntry?.Text?.Trim();
+            if (string.IsNullOrWhiteSpace(notes))
+                notes = null;
+
+            var isRequired = ctx.RequiredSwitch?.IsToggled ?? true;
+
+            items.Add(new ComboItemInput(
+                ctx.comboItemId,
+                prod.id,
+                prod.name ?? $"Producto #{prod.id}",
+                prod.type ?? string.Empty,
+                variantDto?.id,
+                qty,
+                isRequired,
+                notes,
+                ctx.originalComponentProductId,
+                ctx.originalComponentVariantId));
+        }
+
+        if (items.Count == 0)
+        {
+            error = "Agrega al menos un producto al combo.";
+            return false;
+        }
+        return true;
+    }
+
+    void ResetValidationState()
+    {
+        ResetFieldState(BdrName, ErrName);
+        ResetFieldState(BdrPrice, ErrPrice);
+        HideComboError();
+    }
+
+    void ResetFieldState(Border? border, Label? label)
+    {
+        if (border != null)
+        {
+            border.ClearValue(Border.StrokeProperty);
+            border.SetAppThemeColor(Border.StrokeProperty, _inputStrokeLight, _inputStrokeDark);
+        }
+        if (label != null)
+            label.IsVisible = false;
+    }
+
+    void ShowFieldError(Border border, Label label, string message)
+    {
+        border.Stroke = _errorStroke;
+        label.Text = message;
+        label.IsVisible = true;
+    }
+
+    void ShowComboError(string message)
+    {
+        ErrCombo.Text = message;
+        ErrCombo.IsVisible = true;
+        ComboCard.Stroke = _errorStroke;
+    }
+
+    void HideComboError()
+    {
+        ErrCombo.IsVisible = false;
+        ComboCard.ClearValue(Border.StrokeProperty);
+        ComboCard.SetAppThemeColor(Border.StrokeProperty, _inputStrokeLight, _inputStrokeDark);
+    }
+
+    async Task ScrollToAsync(View? target)
+    {
+        if (target == null || MainScroll == null)
+            return;
+        try
+        {
+            await MainScroll.ScrollToAsync(target, ScrollToPosition.Start, true);
+        }
+        catch { }
+    }
 }

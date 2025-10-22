@@ -7,6 +7,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using CommunityToolkit.Maui.Views;
+using Imdeliceapp;
 using Imdeliceapp.Models;
 using Imdeliceapp.Pages;
 using Microsoft.Maui.Controls;
@@ -303,8 +304,13 @@ class ModifierGroupVm
         Options = new ObservableCollection<ModifierOptionVm>(
             source.options
                 .OrderBy(o => o.position)
-                .Select(o => new ModifierOptionVm(this, o,
-                    existingSelection?.Options.Any(sel => sel.OptionId == o.id) ?? false)));
+                .Select(o =>
+                {
+                    var existingQty = existingSelection?.Options
+                        .FirstOrDefault(sel => sel.OptionId == o.id)?.Quantity ?? 0;
+                    return new ModifierOptionVm(this, o, existingQty);
+                }));
+        NotifyLimitChanges();
     }
 
     public string Name { get; }
@@ -314,7 +320,7 @@ class ModifierGroupVm
     public bool Validate(out string? message)
     {
         message = null;
-        int selectedCount = Options.Count(o => o.IsSelected);
+        int selectedCount = Options.Sum(o => o.Quantity);
 
         if (selectedCount < _min)
         {
@@ -333,25 +339,40 @@ class ModifierGroupVm
         return true;
     }
 
-    public void ToggleOption(ModifierOptionVm option)
+    public bool CanIncrementOption(ModifierOptionVm option)
     {
-        if (_isSingleChoice)
+        if (_max.HasValue)
         {
-            foreach (var opt in Options)
-                opt.SetSelected(opt == option);
-            return;
+            int total = Options.Sum(o => o.Quantity);
+            if (total >= _max.Value)
+                return false;
         }
+        return true;
+    }
 
-        if (!option.IsSelected)
-        {
-            if (_max.HasValue && Options.Count(o => o.IsSelected) >= _max.Value)
-                return;
-            option.SetSelected(true);
-        }
-        else
-        {
-            option.SetSelected(false);
-        }
+    public bool TryIncrementOption(ModifierOptionVm option)
+    {
+        if (!CanIncrementOption(option))
+            return false;
+
+        option.ApplyQuantity(option.Quantity + 1);
+        NotifyLimitChanges();
+        return true;
+    }
+
+    public void DecrementOption(ModifierOptionVm option)
+    {
+        if (option.Quantity <= 0)
+            return;
+
+        option.ApplyQuantity(option.Quantity - 1);
+        NotifyLimitChanges();
+    }
+
+    void NotifyLimitChanges()
+    {
+        foreach (var opt in Options)
+            opt.NotifyLimitChanged();
     }
 
     static string BuildRequirementText(ModifierGroupDTO source)
@@ -373,7 +394,7 @@ class ModifierGroupVm
 
     public TakeOrderPage.CartModifierSelection? ToCartSelection()
     {
-        var selected = Options.Where(o => o.IsSelected).ToList();
+        var selected = Options.Where(o => o.Quantity > 0).ToList();
         if (selected.Count == 0)
             return null;
 
@@ -382,7 +403,8 @@ class ModifierGroupVm
             .Select(o => new TakeOrderPage.ModifierOptionSelection(
                 o.Id,
                 o.Name,
-                o.PriceExtra))
+                o.PriceExtra,
+                o.Quantity))
             .ToList();
 
         return new TakeOrderPage.CartModifierSelection(_source.id, _source.name, mapped);
@@ -397,22 +419,31 @@ class ModifierOptionVm : INotifyPropertyChanged
     readonly Color _selectedBackground = Color.FromArgb("#f0d8e6");
     readonly Color _defaultBackground = Color.FromArgb("#ffffff");
 
-    bool _isSelected;
+    int _quantity;
     Color _background;
 
-    public ModifierOptionVm(ModifierGroupVm parent, ModifierOptionDTO source, bool isSelected)
+    public ModifierOptionVm(ModifierGroupVm parent, ModifierOptionDTO source, int initialQuantity)
     {
         _parent = parent;
         _source = source;
-        _isSelected = isSelected;
-        _background = isSelected ? _selectedBackground : _defaultBackground;
+        _quantity = Math.Max(0, initialQuantity);
+        _background = _quantity > 0 ? _selectedBackground : _defaultBackground;
 
         Name = source.name;
         Description = source.isDefault ? "Incluido por defecto" : null;
         PriceExtra = source.priceExtraCents.ToCurrency();
         ExtraLabel = PriceExtra > 0 ? $"+{PriceExtra.ToString("$0.00", System.Globalization.CultureInfo.CurrentCulture)}" : "Incluido";
+        IncrementCommand = new Command(() =>
+        {
+            _parent.TryIncrementOption(this);
+        }, () => CanIncrement);
 
-        ToggleCommand = new Command(() => _parent.ToggleOption(this));
+        DecrementCommand = new Command(() =>
+        {
+            _parent.DecrementOption(this);
+        }, () => CanDecrement);
+
+        UpdateState();
     }
 
     public int Id => _source.id;
@@ -421,18 +452,11 @@ class ModifierOptionVm : INotifyPropertyChanged
     public bool HasDescription => !string.IsNullOrWhiteSpace(Description);
     public decimal PriceExtra { get; }
     public string ExtraLabel { get; }
-
-    public bool IsSelected
-    {
-        get => _isSelected;
-        private set
-        {
-            if (_isSelected == value) return;
-            _isSelected = value;
-            Background = value ? _selectedBackground : _defaultBackground;
-            OnPropertyChanged();
-        }
-    }
+    public int Quantity => _quantity;
+    public bool IsSelected => Quantity > 0;
+    public string QuantityDisplay => Quantity.ToString();
+    public bool CanDecrement => Quantity > 0;
+    public bool CanIncrement => _parent.CanIncrementOption(this);
 
     public Color Background
     {
@@ -445,9 +469,34 @@ class ModifierOptionVm : INotifyPropertyChanged
         }
     }
 
-    public void SetSelected(bool value) => IsSelected = value;
+    internal void ApplyQuantity(int value)
+    {
+        value = Math.Max(0, value);
+        if (_quantity == value) return;
+        _quantity = value;
+        UpdateState();
+    }
 
-    public ICommand ToggleCommand { get; }
+    void UpdateState()
+    {
+        Background = IsSelected ? _selectedBackground : _defaultBackground;
+        OnPropertyChanged(nameof(Quantity));
+        OnPropertyChanged(nameof(QuantityDisplay));
+        OnPropertyChanged(nameof(IsSelected));
+        OnPropertyChanged(nameof(CanDecrement));
+        OnPropertyChanged(nameof(CanIncrement));
+        IncrementCommand.ChangeCanExecute();
+        DecrementCommand.ChangeCanExecute();
+    }
+
+    public void NotifyLimitChanged()
+    {
+        OnPropertyChanged(nameof(CanIncrement));
+        IncrementCommand.ChangeCanExecute();
+    }
+
+    public Command IncrementCommand { get; }
+    public Command DecrementCommand { get; }
 
     public event PropertyChangedEventHandler? PropertyChanged;
     void OnPropertyChanged([CallerMemberName] string? name = null)

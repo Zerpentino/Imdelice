@@ -7,20 +7,85 @@
   BackgroundColor="{AppThemeBinding Light=White, Dark=Black}">
 
   <ContentPage.Resources>
-    <Style TargetType="Entry"
-        x:Key="CompactEntry">
-      <Setter Property="HeightRequest"
-          Value="44"/>
-      <Setter Property="FontSize"
-          Value="14"/>
-      <Setter Property="ClearButtonVisibility"
-          Value="WhileEditing"/>
+    <Color x:Key="SectionBorderLight">#E5E0E7</Color>
+    <Color x:Key="SectionBorderDark">#2C1D25</Color>
+    <Color x:Key="SectionBackgroundLight">#FFFFFF</Color>
+    <Color x:Key="SectionBackgroundDark">#151515</Color>
+    <Color x:Key="InputBorderLight">#DDD</Color>
+    <Color x:Key="InputBorderDark">#444</Color>
+    <Color x:Key="ErrorColor">#E53935</Color>
+
+    <Style TargetType="Entry" x:Key="CompactEntry">
+      <Setter Property="HeightRequest" Value="44"/>
+      <Setter Property="FontSize" Value="14"/>
+      <Setter Property="ClearButtonVisibility" Value="WhileEditing"/>
+    </Style>
+
+    <Style x:Key="SectionCardStyle" TargetType="Border">
+      <Setter Property="StrokeThickness" Value="1"/>
+      <Setter Property="Stroke">
+        <Setter.Value>
+          <AppThemeBinding Light="{StaticResource SectionBorderLight}"
+                           Dark="{StaticResource SectionBorderDark}"/>
+        </Setter.Value>
+      </Setter>
+      <Setter Property="BackgroundColor">
+        <Setter.Value>
+          <AppThemeBinding Light="{StaticResource SectionBackgroundLight}"
+                           Dark="{StaticResource SectionBackgroundDark}"/>
+        </Setter.Value>
+      </Setter>
+      <Setter Property="StrokeShape">
+        <Setter.Value>
+          <RoundRectangle CornerRadius="16"/>
+        </Setter.Value>
+      </Setter>
+      <Setter Property="Padding" Value="18"/>
+    </Style>
+
+    <Style x:Key="SectionHeaderStyle" TargetType="Label">
+      <Setter Property="FontAttributes" Value="Bold"/>
+      <Setter Property="FontSize" Value="16"/>
+      <Setter Property="TextColor" Value="{AppThemeBinding Light=Black, Dark=White}"/>
+    </Style>
+
+    <Style x:Key="HintLabelStyle" TargetType="Label">
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="Opacity" Value="0.7"/>
+      <Setter Property="TextColor" Value="{AppThemeBinding Light=#555, Dark=#CCC}"/>
+    </Style>
+
+    <Style x:Key="InputBorderStyle" TargetType="Border">
+      <Setter Property="StrokeThickness" Value="1"/>
+      <Setter Property="Padding" Value="8,0"/>
+      <Setter Property="StrokeShape">
+        <Setter.Value>
+          <RoundRectangle CornerRadius="10"/>
+        </Setter.Value>
+      </Setter>
+      <Setter Property="Stroke">
+        <Setter.Value>
+          <AppThemeBinding Light="{StaticResource InputBorderLight}"
+                           Dark="{StaticResource InputBorderDark}"/>
+        </Setter.Value>
+      </Setter>
+      <Setter Property="BackgroundColor">
+        <Setter.Value>
+          <AppThemeBinding Light="White" Dark="#121212"/>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style x:Key="FieldErrorStyle" TargetType="Label">
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="TextColor" Value="{StaticResource ErrorColor}"/>
+      <Setter Property="IsVisible" Value="False"/>
     </Style>
   </ContentPage.Resources>
 
-  <ScrollView>
+  <ScrollView x:Name="MainScroll">
     <VerticalStackLayout Padding="20"
-        Spacing="12">
+        Spacing="18">
       <Label x:Name="TitleLabel"
           Text="Crear producto"
           FontSize="20"
@@ -28,105 +93,117 @@
              TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
       <Label x:Name="HintEdit"
           Text="En edición: deja vacío lo que no quieras modificar."
-             FontSize="12"
+          FontSize="12"
           Opacity="0.7"
           IsVisible="False"
              TextColor="{AppThemeBinding Light=#555, Dark=#CCC}"/>
 
-      <Picker x:Name="PkCategory"
-          Title="Categoría"
-          ItemDisplayBinding="{Binding name}"
-          SelectedIndexChanged="PkCategory_SelectedIndexChanged"/>
-      <Picker x:Name="PkType"
-              Title="Tipo (SIMPLE / VARIANTED / COMBO)"
-              SelectedIndexChanged="PkType_SelectedIndexChanged">
-        <Picker.Items>
-          <x:String>SIMPLE</x:String>
-          <x:String>VARIANTED</x:String>
-          <x:String>COMBO</x:String>   <!-- NUEVO -->
-          <!-- <x:String>COMBO</x:String> (luego) -->
-        </Picker.Items>
-      </Picker>
+      <Border Style="{StaticResource SectionCardStyle}">
+        <VerticalStackLayout Spacing="16">
+          <Label Text="Información general" Style="{StaticResource SectionHeaderStyle}"/>
+          <VerticalStackLayout Spacing="6">
+            <Picker x:Name="PkCategory"
+                    Title="Categoría"
+                    ItemDisplayBinding="{Binding name}"
+                    SelectedIndexChanged="PkCategory_SelectedIndexChanged"/>
+            <Picker x:Name="PkType"
+                    Title="Tipo (SIMPLE / VARIANTED / COMBO)"
+                    SelectedIndexChanged="PkType_SelectedIndexChanged">
+              <Picker.Items>
+                <x:String>SIMPLE</x:String>
+                <x:String>VARIANTED</x:String>
+                <x:String>COMBO</x:String>
+              </Picker.Items>
+            </Picker>
+          </VerticalStackLayout>
 
+          <Border x:Name="BdrName" Style="{StaticResource InputBorderStyle}">
+            <Entry x:Name="TxtName"
+                   Style="{StaticResource CompactEntry}"
+                   Placeholder="Nombre"/>
+          </Border>
+          <Label x:Name="ErrName" Style="{StaticResource FieldErrorStyle}" Text="Nombre requerido."/>
 
-      <Entry x:Name="TxtName"
-          Style="{StaticResource CompactEntry}"
-          Placeholder="Nombre"/>
-      <Entry x:Name="TxtSku"
-          Style="{StaticResource CompactEntry}"
-          Placeholder="SKU (opcional)"/>
-      <!-- NUEVO: imagen + acciones -->
-      <VerticalStackLayout Spacing="6">
-        <Border StrokeThickness="0"
-                Background="{AppThemeBinding Light=#F3F3F3, Dark=#222}"
-                StrokeShape="{RoundRectangle CornerRadius=8}">
-          <Image x:Name="ImgPreview"
-                 HeightRequest="160"
-                 Aspect="AspectFill"/>
-        </Border>
+          <Border Style="{StaticResource InputBorderStyle}">
+            <Entry x:Name="TxtSku"
+                   Style="{StaticResource CompactEntry}"
+                   Placeholder="SKU (opcional)"/>
+          </Border>
 
-        <HorizontalStackLayout Spacing="8">
-          <Button Text="Seleccionar foto"
-              Clicked="PickImage_Clicked"/>
-          <Button Text="Quitar imagen"
-              Clicked="RemoveImage_Clicked"/>
-        </HorizontalStackLayout>
+          <VerticalStackLayout Spacing="6">
+            <Border StrokeThickness="0"
+                    Background="{AppThemeBinding Light=#F3F3F3, Dark=#222}"
+                    StrokeShape="{RoundRectangle CornerRadius=12}">
+              <Image x:Name="ImgPreview"
+                     HeightRequest="160"
+                     Aspect="AspectFill"/>
+            </Border>
 
-        <Label x:Name="LblImgHint"
-               Text="JPG/PNG hasta 5 MB."
-               FontSize="12"
-            Opacity="0.7"
-               TextColor="{AppThemeBinding Light=#555, Dark=#CCC}"/>
-      </VerticalStackLayout>
+            <HorizontalStackLayout Spacing="8">
+              <Button Text="Seleccionar foto"
+                      Clicked="PickImage_Clicked"/>
+              <Button Text="Quitar imagen"
+                      Clicked="RemoveImage_Clicked"/>
+            </HorizontalStackLayout>
 
-      <Editor x:Name="TxtDesc"
-          Placeholder="Descripción (opcional)"
-          AutoSize="TextChanges"/>
+            <Label x:Name="LblImgHint"
+                   Text="JPG/PNG hasta 5 MB."
+                   Style="{StaticResource HintLabelStyle}"/>
+          </VerticalStackLayout>
 
-      <!-- SIMPLE / COMBO: Precio en MXN -->
-      <VerticalStackLayout x:Name="PanelSimple"
-          Spacing="2"
-          IsVisible="False">
-        <Border x:Name="BdrPrice"
-            StrokeThickness="1"
-                Stroke="{AppThemeBinding Light=#DDD, Dark=#444}"
-                StrokeShape="{RoundRectangle CornerRadius=6}"
-            Padding="8,0">
-          <Entry x:Name="TxtPrice"
-              Style="{StaticResource CompactEntry}"
-                 Placeholder="Precio (MXN, ej. 25.00)"
-              Keyboard="Numeric"/>
-        </Border>
-        <Label x:Name="ErrPrice"
-            Text="Precio inválido."
-            TextColor="Red"
-            FontSize="12"
-            IsVisible="False"/>
-      </VerticalStackLayout>
+          <Border Style="{StaticResource InputBorderStyle}">
+            <Editor x:Name="TxtDesc"
+                    Placeholder="Descripción (opcional)"
+                    AutoSize="TextChanges"/>
+          </Border>
+        </VerticalStackLayout>
+      </Border>
 
-      <!-- VARIANTED: variantes dinámicas -->
-      <VerticalStackLayout x:Name="PanelVariants"
-          Spacing="8"
-          IsVisible="False">
-        <Label Text="Variantes"
-            FontAttributes="Bold"
-               TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
-        <VerticalStackLayout x:Name="VariantsHost"
-            Spacing="6"/>
-        <Button Text="Agregar variante"
-            Clicked="AddVariant_Clicked"/>
-      </VerticalStackLayout>
-      <!-- COMBO: piezas -->
-<VerticalStackLayout x:Name="PanelCombo" Spacing="8" IsVisible="False">
-  <Label Text="Piezas del combo" FontAttributes="Bold"
-         TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
-  <VerticalStackLayout x:Name="ComboItemsHost" Spacing="6"/>
-  <Button Text="Agregar pieza" Clicked="AddComboItem_Clicked"/>
-  <Label FontSize="12" Opacity="0.7"
-         Text="Cada pieza requiere el ID del producto componente y cantidad (default 1)."
-         TextColor="{AppThemeBinding Light=#555, Dark=#CCC}"/>
-</VerticalStackLayout>
+      <Border Style="{StaticResource SectionCardStyle}">
+        <VerticalStackLayout Spacing="16">
+          <Label Text="Precio y variantes" Style="{StaticResource SectionHeaderStyle}"/>
 
+          <VerticalStackLayout x:Name="PanelSimple"
+                               Spacing="4"
+                               IsVisible="False">
+            <Border x:Name="BdrPrice" Style="{StaticResource InputBorderStyle}">
+              <Entry x:Name="TxtPrice"
+                     Style="{StaticResource CompactEntry}"
+                     Placeholder="Precio (MXN, ej. 25.00)"
+                     Keyboard="Numeric"/>
+            </Border>
+            <Label x:Name="ErrPrice"
+                   Style="{StaticResource FieldErrorStyle}"
+                   Text="Precio inválido."/>
+          </VerticalStackLayout>
+
+          <VerticalStackLayout x:Name="PanelVariants"
+                               Spacing="10"
+                               IsVisible="False">
+            <Label Text="Variantes" Style="{StaticResource SectionHeaderStyle}"/>
+            <Label Text="Agrega cada presentación con su precio." Style="{StaticResource HintLabelStyle}"/>
+            <VerticalStackLayout x:Name="VariantsHost"
+                                 Spacing="6"/>
+            <Button Text="Agregar variante"
+                    Clicked="AddVariant_Clicked"/>
+          </VerticalStackLayout>
+        </VerticalStackLayout>
+      </Border>
+
+      <Border Style="{StaticResource SectionCardStyle}"
+              x:Name="ComboCard"
+              IsVisible="False">
+        <VerticalStackLayout Spacing="12">
+          <Label Text="Piezas del combo" Style="{StaticResource SectionHeaderStyle}"/>
+          <Label Text="Selecciona los productos que conforman el combo. Puedes marcar si una pieza es opcional y ajustar la cantidad."
+                 Style="{StaticResource HintLabelStyle}"/>
+          <VerticalStackLayout x:Name="ComboItemsHost" Spacing="12"/>
+          <Button Text="Agregar pieza" Clicked="AddComboItem_Clicked"/>
+          <Label x:Name="ErrCombo"
+                 Style="{StaticResource FieldErrorStyle}"
+                 Text="Completa los productos del combo."/>
+        </VerticalStackLayout>
+      </Border>
 
       <HorizontalStackLayout Spacing="12"
           Margin="0,12,0,0">

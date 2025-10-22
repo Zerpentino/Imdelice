@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using CommunityToolkit.Maui.Views;
+using Imdeliceapp;
 using Imdeliceapp.Models;
 using Imdeliceapp.Popups;
 using Imdeliceapp.Services;
@@ -94,43 +95,37 @@ public partial class TakeOrderPage : ContentPage
     }
 
     protected override async void OnAppearing()
+{
+    base.OnAppearing();
+
+    if (!CanOrder())
     {
-        base.OnAppearing();
-
-        if (!CanOrder())
-        {
-            await DisplayAlert("Sin conexión", "Necesitas Internet para ver el menú.", "OK");
-            return;
-        }
-
-        if (_hasLoaded)
-            return;
-
-        bool menusReady = false;
-        bool menuContentReady = false;
-
-        SetLoading(true);
-        try
-        {
-            menusReady = await EnsureMenusLoadedAsync();
-            if (!menusReady)
-                return;
-
-            if (SelectedMenu != null)
-            {
-                menuContentReady = await LoadMenuSectionsAsync(SelectedMenu.Id, false);
-            }
-            else
-            {
-                await DisplayAlert("Menú", "Selecciona un menú para continuar.", "OK");
-            }
-        }
-        finally
-        {
-            SetLoading(false);
-            _hasLoaded = menusReady && menuContentReady;
-        }
+        await DisplayAlert("Sin conexión", "Necesitas Internet para ver el menú.", "OK");
+        return;
     }
+
+    // Limpia cache de modificadores (por si cambian los grupos/precios)
+    _modifierCache.Clear();
+
+    SetLoading(true);
+    try
+    {
+        // Si no hay menú seleccionado, asegura que exista uno
+        if (SelectedMenu == null)
+            await EnsureMenusLoadedAsync();
+
+        // Con un menú ya elegido, recarga SIEMPRE las secciones al entrar
+        if (SelectedMenu != null)
+            await LoadMenuSectionsAsync(SelectedMenu.Id, manageLoading: false);
+        else
+            await DisplayAlert("Menú", "Selecciona un menú para continuar.", "OK");
+    }
+    finally
+    {
+        SetLoading(false);
+    }
+}
+
 
     bool CanOrder() => Connectivity.Current.NetworkAccess == NetworkAccess.Internet;
 
@@ -811,7 +806,7 @@ public partial class TakeOrderPage : ContentPage
         public string GroupName { get; }
         public List<ModifierOptionSelection> Options { get; }
 
-        public decimal TotalExtra => Options.Sum(o => o.PriceExtra);
+        public decimal TotalExtra => Options.Sum(o => o.TotalExtra);
 
         public string Summary
         {
@@ -836,40 +831,51 @@ public partial class TakeOrderPage : ContentPage
         }
 
         public override bool Equals(object? obj) => Equals(obj as CartModifierSelection);
-        public override int GetHashCode() => HashCode.Combine(GroupId, Options.Count);
+        public override int GetHashCode()
+        {
+            var hash = new HashCode();
+            hash.Add(GroupId);
+            foreach (var opt in Options)
+                hash.Add(opt);
+            return hash.ToHashCode();
+        }
     }
 
     public class ModifierOptionSelection : IEquatable<ModifierOptionSelection>
     {
-        public ModifierOptionSelection(int id, string name, decimal priceExtra)
+        public ModifierOptionSelection(int id, string name, decimal priceExtra, int quantity)
         {
             OptionId = id;
             Name = name;
             PriceExtra = priceExtra;
+            Quantity = Math.Max(0, quantity);
         }
 
         public int OptionId { get; }
         public string Name { get; }
         public decimal PriceExtra { get; }
-        public string DisplayName => PriceExtra > 0 ? $"{Name} (+{PriceExtra.ToString("$0.00", CultureInfo.CurrentCulture)})" : Name;
+        public int Quantity { get; }
+        public decimal TotalExtra => PriceExtra * Quantity;
+        public string DisplayName
+        {
+            get
+            {
+                var baseLabel = PriceExtra > 0
+                    ? $"{Name} (+{PriceExtra.ToString("$0.00", CultureInfo.CurrentCulture)})"
+                    : Name;
+                return Quantity > 1 ? $"{baseLabel} x{Quantity}" : baseLabel;
+            }
+        }
 
         public bool Equals(ModifierOptionSelection? other)
         {
             if (other is null) return false;
-            return OptionId == other.OptionId;
+            return OptionId == other.OptionId && Quantity == other.Quantity;
         }
 
         public override bool Equals(object? obj) => Equals(obj as ModifierOptionSelection);
-        public override int GetHashCode() => OptionId.GetHashCode();
+        public override int GetHashCode() => HashCode.Combine(OptionId, Quantity);
     }
 
     #endregion
-}
-
-static class DecimalExtensions
-{
-    public static decimal ToCurrency(this int cents) => cents / 100m;
-
-    public static decimal? ToCurrency(this int? cents)
-        => cents.HasValue ? cents.Value / 100m : (decimal?)null;
 }

@@ -3,6 +3,8 @@ using System.Collections.ObjectModel; // <— faltaba
 using System.Linq;
 using Imdeliceapp.Models;
 using System.ComponentModel;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Imdeliceapp.Pages;
 
@@ -14,6 +16,7 @@ public partial class ModifierGroupsPage : ContentPage
     public bool CanDelete => Perms.ModifiersDelete;
 
     readonly ModifiersApi _api = new();
+    readonly MenusApi _menus = new();
     public class GroupListItem : INotifyPropertyChanged
     {
         int _id, _minSelect, _position;
@@ -33,6 +36,21 @@ public partial class ModifierGroupsPage : ContentPage
         public event PropertyChangedEventHandler PropertyChanged;
     }
     public ObservableCollection<GroupListItem> Groups { get; } = new();
+    class CategoryOption
+    {
+        public int? Id { get; }
+        public string Name { get; }
+        public string? Slug { get; }
+        public CategoryOption(int? id, string name, string? slug = null)
+        {
+            Id = id;
+            Name = name;
+            Slug = slug;
+        }
+        public override string ToString() => Name;
+    }
+    readonly List<CategoryOption> _categoryOptions = new();
+    CategoryOption? _selectedCategory;
     List<GroupListItem> _all = new();
 
     bool _isRefreshing;
@@ -46,6 +64,9 @@ public partial class ModifierGroupsPage : ContentPage
     bool _loading;             // evita llamadas simultáneas
 
     bool _silenceSwitch;
+    bool _filtersLoaded;
+    bool _suppressFilterEvents;
+    bool _onlyActive = true;
     readonly HashSet<int> _busyToggles = new();
     public ModifierGroupsPage()
     {
@@ -68,6 +89,12 @@ public partial class ModifierGroupsPage : ContentPage
             return;
         }
     
+
+    if (!_filtersLoaded)
+    {
+        await EnsureCategoriesAsync();
+        _filtersLoaded = true;
+    }
 
     if (!_loadedOnce || _needsReload)
     {
@@ -130,7 +157,11 @@ System.Timers.Timer? _searchDebounce;
 
     try
     {
-        var raw = await _api.GetGroupsAsync(search: string.IsNullOrWhiteSpace(search) ? null : search);
+        var raw = await _api.GetGroupsAsync(
+            isActive: _onlyActive ? true : (bool?)null,
+            categoryId: _selectedCategory?.Id,
+            categorySlug: _selectedCategory?.Slug,
+            search: string.IsNullOrWhiteSpace(search) ? null : search);
         ct.ThrowIfCancellationRequested();
 
         _all = raw.Select(g => new GroupListItem
@@ -187,13 +218,61 @@ System.Timers.Timer? _searchDebounce;
 
     void SearchBox_TextChanged(object s, TextChangedEventArgs e) => ApplySearch(e.NewTextValue);
     // async void Filter_Toggled(object s, ToggledEventArgs e) { IsRefreshing = true; await LoadAsync(); }
-   async void ProdRefresh_Refreshing(object s, EventArgs e)
+    async void ProdRefresh_Refreshing(object s, EventArgs e)
 {
     _loadCts?.Cancel();
     _loadCts = new();
     IsRefreshing = true;
     await LoadAsync(SearchBox?.Text, _loadCts.Token);
 }
+
+    async Task EnsureCategoriesAsync()
+    {
+        if (CategoryFilterPicker == null) return;
+        try
+        {
+            var cats = await _menus.GetCategoriesAsync(isActive: true);
+            _categoryOptions.Clear();
+            _categoryOptions.Add(new CategoryOption(null, "Todas las categorías"));
+            foreach (var cat in cats.OrderBy(c => c.position).ThenBy(c => c.name))
+            {
+                _categoryOptions.Add(new CategoryOption(cat.id, cat.name ?? $"Categoría #{cat.id}", cat.slug));
+            }
+            CategoryFilterPicker.ItemsSource = _categoryOptions;
+            _suppressFilterEvents = true;
+            CategoryFilterPicker.SelectedIndex = 0;
+            _selectedCategory = _categoryOptions.FirstOrDefault();
+            if (ActiveFilterSwitch != null)
+                ActiveFilterSwitch.IsToggled = _onlyActive;
+            _suppressFilterEvents = false;
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Categorías", ex.Message, "OK");
+        }
+    }
+
+    async void CategoryFilterPicker_SelectedIndexChanged(object sender, EventArgs e)
+    {
+        if (_suppressFilterEvents) return;
+        _selectedCategory = CategoryFilterPicker.SelectedItem as CategoryOption;
+        if (_selectedCategory == null && _categoryOptions.Count > 0)
+            _selectedCategory = _categoryOptions[0];
+        _loadCts?.Cancel();
+        _loadCts = new();
+        IsRefreshing = true;
+        await LoadAsync(SearchBox?.Text, _loadCts.Token);
+    }
+
+    async void ActiveFilterSwitch_Toggled(object sender, ToggledEventArgs e)
+    {
+        if (_suppressFilterEvents) return;
+        _onlyActive = e.Value;
+        _loadCts?.Cancel();
+        _loadCts = new();
+        IsRefreshing = true;
+        await LoadAsync(SearchBox?.Text, _loadCts.Token);
+    }
 
 
     async void New_Clicked(object s, EventArgs e)

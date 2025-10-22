@@ -21,6 +21,25 @@
                  TextChanged="SearchBox_TextChanged"/>
     </Grid>
 
+    <!-- Filtros -->
+    <Grid Grid.Row="1"
+          Margin="12,0,12,6"
+          ColumnSpacing="12"
+          ColumnDefinitions="*,Auto">
+      <Picker x:Name="CategoryFilterPicker"
+              Title="Todas las categorías"
+              SelectedIndexChanged="CategoryFilterPicker_SelectedIndexChanged"/>
+      <HorizontalStackLayout Grid.Column="1"
+                             Spacing="6"
+                             VerticalOptions="Center">
+        <Label Text="Sólo activos"
+               FontSize="12"
+               TextColor="{AppThemeBinding Light=#555, Dark=#BBB}"/>
+        <Switch x:Name="ActiveFilterSwitch"
+                IsToggled="True"
+                Toggled="ActiveFilterSwitch_Toggled"/>
+      </HorizontalStackLayout>
+    </Grid>
 
     <!-- Pull to refresh -->
     <RefreshView x:Name="ProdRefresh"
