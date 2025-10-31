@@ -37,6 +37,7 @@ public partial class AppShell : Shell
 		// AppShell.xaml.cs
 		Routing.RegisterRoute(nameof(GroupLinkedProductsPage), typeof(GroupLinkedProductsPage));
 		Routing.RegisterRoute(nameof(AttachGroupToProductPage), typeof(AttachGroupToProductPage));
+		Routing.RegisterRoute(nameof(VariantModifierOverridesPage), typeof(VariantModifierOverridesPage));
 
 
 

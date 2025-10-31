@@ -301,6 +301,64 @@ public async Task SetOptionActiveAsync(int optionId, bool isActive)
         if (!resp.IsSuccessStatusCode) throw new HttpRequestException(body);
     }
 
+    // ---------------- VARIANT OVERRIDES ----------------
+    public async Task<List<VariantModifierGroupLinkDTO>> GetVariantModifierGroupsAsync(int variantId)
+    {
+        using var http = await NewAuthClientAsync();
+        var resp = await http.GetAsync($"/api/products/variants/{variantId}/modifier-groups");
+        var body = await resp.Content.ReadAsStringAsync();
+        if (!resp.IsSuccessStatusCode) throw new HttpRequestException(body);
+
+        var env = JsonSerializer.Deserialize<ApiEnvelopeMods<List<VariantModifierGroupLinkDTO>>>(body, _json);
+        return env?.data ?? new();
+    }
+
+    public class AttachVariantModifierGroupDto
+    {
+        public int groupId { get; set; }
+        public int minSelect { get; set; }
+        public int? maxSelect { get; set; }
+        public bool isRequired { get; set; }
+    }
+
+    public async Task AttachGroupToVariantAsync(int variantId, AttachVariantModifierGroupDto dto)
+    {
+        using var http = await NewAuthClientAsync();
+        var json = JsonSerializer.Serialize(dto, _writeJson);
+        var resp = await http.PostAsync($"/api/products/variants/{variantId}/modifier-groups",
+            new StringContent(json, Encoding.UTF8, "application/json"));
+        var body = await resp.Content.ReadAsStringAsync();
+        if (!resp.IsSuccessStatusCode) throw new HttpRequestException(body);
+    }
+
+    public class UpdateVariantModifierGroupDto
+    {
+        public int? minSelect { get; set; }
+        public int? maxSelect { get; set; }
+        public bool? isRequired { get; set; }
+    }
+
+    public async Task UpdateVariantModifierGroupAsync(int variantId, int groupId, UpdateVariantModifierGroupDto dto)
+    {
+        using var http = await NewAuthClientAsync();
+        var json = JsonSerializer.Serialize(dto, _writeJson);
+        var req = new HttpRequestMessage(HttpMethod.Patch, $"/api/products/variants/{variantId}/modifier-groups/{groupId}")
+        {
+            Content = new StringContent(json, Encoding.UTF8, "application/json")
+        };
+        var resp = await http.SendAsync(req);
+        var body = await resp.Content.ReadAsStringAsync();
+        if (!resp.IsSuccessStatusCode) throw new HttpRequestException(body);
+    }
+
+    public async Task DeleteVariantModifierGroupAsync(int variantId, int groupId)
+    {
+        using var http = await NewAuthClientAsync();
+        var resp = await http.DeleteAsync($"/api/products/variants/{variantId}/modifier-groups/{groupId}");
+        var body = await resp.Content.ReadAsStringAsync();
+        if (!resp.IsSuccessStatusCode) throw new HttpRequestException(body);
+    }
+
 public class SimpleProductDTO
 {
     public int id { get; set; }

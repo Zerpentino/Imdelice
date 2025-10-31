@@ -191,10 +191,11 @@
 
                     <VerticalStackLayout Spacing="4"
                         Grid.Column="1">
-                      <Label Text="Precio (centavos)"
+                      <Label Text="Precio (MXN)"
                           FontSize="12"
                              TextColor="{AppThemeBinding Light=#555, Dark=#BBB}"/>
-                      <Entry Text="{Binding priceExtraCents}"
+                      <Entry Text="{Binding priceDisplay, Mode=TwoWay}"
+                             Placeholder="0.00"
                              Keyboard="Numeric"
                              HorizontalTextAlignment="Center"/>
                     </VerticalStackLayout>

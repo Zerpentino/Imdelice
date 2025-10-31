@@ -1,16 +1,24 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using CommunityToolkit.Maui.Views;
 using Imdeliceapp;
 using Imdeliceapp.Models;
+using System.Text.Json;
+
 using Imdeliceapp.Popups;
 using Imdeliceapp.Services;
 using Microsoft.Maui.Controls;
@@ -27,6 +35,7 @@ public partial class TakeOrderPage : ContentPage
 
     readonly Dictionary<int, List<MenuItemVm>> _itemsByProduct = new();
     readonly Dictionary<int, List<ModifierGroupDTO>> _modifierCache = new();
+    static readonly ConcurrentDictionary<string, ImageSource> _menuImageCache = new();
     readonly List<MenuSectionVm> _allSections = new();
     readonly List<CartEntry> _cart = new();
 
@@ -37,6 +46,21 @@ public partial class TakeOrderPage : ContentPage
     public ObservableCollection<MenuOptionVm> MenuOptions { get; } = new();
     public ObservableCollection<MenuSectionVm> Sections { get; } = new();
     public ObservableCollection<MenuItemVm> VisibleItems { get; } = new();
+
+    static async Task<string?> GetTokenAsync()
+    {
+        var s = await SecureStorage.GetAsync("token");
+        if (!string.IsNullOrWhiteSpace(s)) return s;
+        var p = Preferences.Default.Get("token", string.Empty);
+        return string.IsNullOrWhiteSpace(p) ? null : p;
+    }
+
+    static HttpClient NewAuthClient(string baseUrl, string token)
+    {
+        var cli = new HttpClient { BaseAddress = new Uri(baseUrl), Timeout = TimeSpan.FromSeconds(20) };
+        cli.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return cli;
+    }
 
     MenuOptionVm? _selectedMenu;
     MenuSectionVm? _selectedSection;
@@ -215,16 +239,52 @@ public partial class TakeOrderPage : ContentPage
                      .ThenBy(s => s.name, StringComparer.CurrentCultureIgnoreCase))
             {
                 var vmSection = new MenuSectionVm(section.id, section.name ?? $"Sección #{section.id}", section.position);
+                var sourceItems = section.items
+                    .Where(i => i.isActive)
+                    .OrderBy(i => i.position)
+                    .ThenBy(i => i.displayName, StringComparer.CurrentCultureIgnoreCase)
+                    .Select(i => MenuItemVm.From(section, i))
+                    .Where(vm => vm != null)
+                    .Cast<MenuItemVm>()
+                    .ToList();
 
-                foreach (var item in section.items
-                             .Where(i => i.isActive)
-                             .OrderBy(i => i.position)
-                             .ThenBy(i => i.displayName, StringComparer.CurrentCultureIgnoreCase))
+                await PrefetchImagesAsync(sourceItems);
+
+                if (sourceItems.Any(vm => vm.ImageSource == null))
                 {
-                    var vm = MenuItemVm.From(section, item);
-                    if (vm == null)
-                        continue;
+                    try
+                    {
+#if DEBUG
+                        var detailed = await _menusApi.GetSectionItemsAsync(section.id);
+                        var json = JsonSerializer.Serialize(detailed, new JsonSerializerOptions { WriteIndented = true });
+                        try { await Clipboard.SetTextAsync(json); } catch { }
+                        System.Diagnostics.Debug.WriteLine($"[TakeOrder] Section {section.id} items:\n{json}");
+#else
+                        var detailed = await _menusApi.GetSectionItemsAsync(section.id);
+#endif
+                        if (detailed?.Any() ?? false)
+                        {
+                            sourceItems = detailed
+                                .Where(i => i.isActive)
+                                .OrderBy(i => i.position)
+                                .ThenBy(i => i.displayName, StringComparer.CurrentCultureIgnoreCase)
+                                .Select(i => MenuItemVm.From(i, section.name))
+                                .Where(vm => vm != null)
+                                .Cast<MenuItemVm>()
+                                .ToList();
+                            await PrefetchImagesAsync(sourceItems);
+                        }
+                    }
+                    catch
+                    {
+                        // ignorar fallos y quedarse con los datos iniciales
+                    }
+                }
 
+                await PrefetchImagesAsync(sourceItems);
+
+                foreach (var vm in sourceItems)
+                {
                     vmSection.Items.Add(vm);
 
                     if (vm.ProductId.HasValue)
@@ -279,6 +339,58 @@ public partial class TakeOrderPage : ContentPage
         }
 
         return false;
+    }
+
+    async Task PrefetchImagesAsync(IEnumerable<MenuItemVm> items)
+    {
+        var list = items
+            .Where(i => i.Raw?.@ref != null)
+            .Where(i => i.Raw.@ref?.product?.imageUrl != null || i.Raw.@ref?.variant?.imageUrl != null)
+            .ToList();
+        if (list.Count == 0) return;
+
+        var token = await GetTokenAsync();
+        if (string.IsNullOrWhiteSpace(token)) return;
+
+        var baseUrl = Application.Current.Resources["urlbase"].ToString().TrimEnd('/');
+        using var http = NewAuthClient(baseUrl, token);
+
+        var sem = new SemaphoreSlim(4);
+        var tasks = list.Select(async item =>
+        {
+            var rawPath = item.Raw.@ref?.variant?.imageUrl ?? item.Raw.@ref?.product?.imageUrl;
+            if (string.IsNullOrWhiteSpace(rawPath)) return;
+
+            var path = rawPath!.StartsWith('/') ? rawPath : "/" + rawPath;
+            if (!path.StartsWith("/api/", StringComparison.OrdinalIgnoreCase))
+                path = "/api" + path;
+
+            var cacheKey = baseUrl + path;
+            if (_menuImageCache.TryGetValue(cacheKey, out var cached))
+            {
+                item.SetImage(cached);
+                return;
+            }
+
+            await sem.WaitAsync();
+            try
+            {
+                using var resp = await http.GetAsync(path);
+                if (!resp.IsSuccessStatusCode)
+                    return;
+
+                var bytes = await resp.Content.ReadAsByteArrayAsync();
+                var image = ImageSource.FromStream(() => new MemoryStream(bytes));
+                _menuImageCache[cacheKey] = image;
+                item.SetImage(image);
+            }
+            finally
+            {
+                sem.Release();
+            }
+        });
+
+        await Task.WhenAll(tasks);
     }
 
     void UpdateVisibleItems()
@@ -353,7 +465,23 @@ public partial class TakeOrderPage : ContentPage
         if (targetProductId.HasValue)
             modifierGroups = await GetModifierGroupsAsync(targetProductId.Value);
 
-        var popup = new ConfigureMenuItemPopup(baseItem, relatedVariants, modifierGroups, editingEntry);
+        Func<int, Task<IReadOnlyList<VariantModifierGroupLinkDTO>>>? variantRulesLoader = null;
+        if (relatedVariants.Any(v => v.VariantId.HasValue) || item.VariantId.HasValue)
+        {
+            variantRulesLoader = async variantId =>
+            {
+                try
+                {
+                    return await _menusApi.GetVariantModifierGroupsAsync(variantId);
+                }
+                catch
+                {
+                    return Array.Empty<VariantModifierGroupLinkDTO>();
+                }
+            };
+        }
+
+        var popup = new ConfigureMenuItemPopup(baseItem, relatedVariants, modifierGroups, editingEntry, variantRulesLoader);
         var result = await this.ShowPopupAsync(popup) as ConfigureMenuItemResult;
         if (result is null)
             return;
@@ -550,7 +678,7 @@ public partial class TakeOrderPage : ContentPage
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
 
-    public class MenuItemVm
+    public class MenuItemVm : INotifyPropertyChanged
     {
         public int Id { get; init; }
         public int SectionId { get; init; }
@@ -566,7 +694,17 @@ public partial class TakeOrderPage : ContentPage
         public string ReferenceLabel { get; init; } = string.Empty;
         public bool HasReferenceLabel => !string.IsNullOrWhiteSpace(ReferenceLabel);
         public decimal UnitPrice { get; init; }
-        public string? ImageSource { get; init; }
+        ImageSource? _imageSource;
+        public ImageSource? ImageSource
+        {
+            get => _imageSource;
+            private set
+            {
+                if (_imageSource == value) return;
+                _imageSource = value;
+                OnPropertyChanged();
+            }
+        }
         public MenusApi.MenuPublicItemDto Raw { get; init; } = new();
 
         public bool HasSubtitle => !string.IsNullOrWhiteSpace(Subtitle);
@@ -592,7 +730,7 @@ public partial class TakeOrderPage : ContentPage
             int? productId = null;
             int? variantId = null;
             int? optionId = null;
-            string? image = null;
+            ImageSource? image = null;
 
             switch (dto.refType.ToUpperInvariant())
             {
@@ -606,6 +744,7 @@ public partial class TakeOrderPage : ContentPage
                     description = product.description;
                     price = (dto.displayPriceCents ?? product.priceCents)?.ToCurrency();
                     productId = product.id;
+                    image = BuildImage(product.imageUrl);
                     break;
                 case "VARIANT":
                     var variant = reference?.variant;
@@ -618,6 +757,7 @@ public partial class TakeOrderPage : ContentPage
                     price = (dto.displayPriceCents ?? variant.priceCents ?? parent?.priceCents)?.ToCurrency();
                     variantId = variant.id;
                     productId = parent?.id;
+                    image = BuildImage(variant.imageUrl) ?? BuildImage(parent?.imageUrl);
                     break;
                 case "OPTION":
                     var option = reference?.option;
@@ -665,6 +805,60 @@ public partial class TakeOrderPage : ContentPage
                 ImageSource = image,
                 Raw = dto
             };
+        }
+
+        static ImageSource? BuildImage(string? raw)
+        {
+            if (string.IsNullOrWhiteSpace(raw)) return ImageSource.FromFile("no_disponible.png");
+            if (Uri.TryCreate(raw, UriKind.Absolute, out var absolute))
+                return ImageSource.FromUri(absolute);
+
+            var baseUrl = Application.Current.Resources["urlbase"].ToString().TrimEnd('/');
+            var path = raw.StartsWith('/') ? raw : "/" + raw;
+            if (!path.StartsWith("/api/", StringComparison.OrdinalIgnoreCase))
+                path = "/api" + path;
+            return ImageSource.FromUri(new Uri(baseUrl + path));
+        }
+
+        public static MenuItemVm? From(MenusApi.MenuItemDto dto, string? sectionName = null)
+        {
+            var section = new MenusApi.MenuPublicSectionDto
+            {
+                id = dto.sectionId,
+                name = sectionName ?? $"Sección #{dto.sectionId}",
+                items = new List<MenusApi.MenuPublicItemDto>()
+            };
+
+            var item = new MenusApi.MenuPublicItemDto
+            {
+                id = dto.id,
+                sectionId = dto.sectionId,
+                refType = dto.refType,
+                refId = dto.refId,
+                displayName = dto.displayName,
+                displayPriceCents = dto.displayPriceCents,
+                position = dto.position,
+                isFeatured = dto.isFeatured,
+                isActive = dto.isActive,
+                @ref = new MenusApi.MenuPublicReferenceDto
+                {
+                    kind = dto.refType,
+                    product = dto.@ref?.product,
+                    variant = dto.@ref?.variant,
+                    option = dto.@ref?.option
+                }
+            };
+
+            return From(section, item);
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+        void OnPropertyChanged([CallerMemberName] string? name = null)
+            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+
+        public void SetImage(ImageSource source)
+        {
+            ImageSource = source;
         }
     }
 

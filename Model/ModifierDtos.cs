@@ -38,3 +38,13 @@ public class ProductGroupLinkDTO
     public int position { get; set; }
     public ModifierGroupDTO? group { get; set; }
 }
+
+public class VariantModifierGroupLinkDTO
+{
+    public int groupId { get; set; }
+    public ModifierGroupDTO? group { get; set; }
+    public int minSelect { get; set; }
+    public int? maxSelect { get; set; }
+    public bool isRequired { get; set; }
+    public bool? inheritsFromProduct { get; set; } // nullable for backwards compatibility
+}

@@ -8,6 +8,9 @@ using System.Collections.Generic;       // ← Dictionary<,>
 using Microsoft.Maui.Controls;          // ← ContentPage, ToolbarItem, etc.
 using Microsoft.Maui.ApplicationModel;  // ← MainThread, HapticFeedback
 using Microsoft.Maui.Graphics;          // ← Color, Colors
+using System.Globalization;
+using System.ComponentModel;
+using System.Collections.Specialized;
 
 namespace Imdeliceapp.Pages;
 
@@ -17,7 +20,7 @@ public partial class GroupEditorPage : ContentPage
     public int GroupId { get; set; } // 0 = crear
     readonly ModifiersApi _api = new();
 
-    public ObservableCollection<ModifierOptionDTO> Options { get; } = new();
+    public ObservableCollection<OptionVm> Options { get; } = new();
 
     public ObservableCollection<ModelsCategoryDTO> Categories { get; } = new();
     ModelsCategoryDTO? _selectedCategory;
@@ -79,7 +82,7 @@ public partial class GroupEditorPage : ContentPage
     string _baselineNoActiveJson = "";
     Dictionary<int, bool> _baselineActive = new();
 
-    static string ToNoActiveSnapshot(IEnumerable<ModifierOptionDTO> opts)
+    static string ToNoActiveSnapshot(IEnumerable<OptionVm> opts)
     {
         var anon = opts.Select(o => new { o.id, o.name, o.priceExtraCents, o.isDefault, o.position })
                        .OrderBy(x => x.id).ToList();
@@ -98,6 +101,8 @@ public partial class GroupEditorPage : ContentPage
 
         WireNumericSanitizers();
 
+        Options.CollectionChanged += Options_CollectionChanged;
+
     }
     bool _dirty;
 
@@ -112,6 +117,16 @@ public partial class GroupEditorPage : ContentPage
         });
         return true; // intercepta
     }
+
+    void Options_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (e.NewItems != null)
+            foreach (OptionVm opt in e.NewItems)
+                NormalizePrice(opt);
+
+        UpdateSaveEnabled();
+    }
+
     void EnforceDefaultForSingleChoice()
     {
         int min = int.TryParse(MinEntry.Text, out var mi) ? mi : 0;
@@ -136,13 +151,11 @@ public partial class GroupEditorPage : ContentPage
         MaxEntry.TextChanged += (_, __) => UpdateSaveEnabled();
         ReqSwitch.Toggled += (_, __) => UpdateSaveEnabled();
         ActiveSwitch.Toggled += (_, __) => UpdateSaveEnabled();
-        Options.CollectionChanged += (_, __) => UpdateSaveEnabled();
         NameEntry.TextChanged += (_, __) => _dirty = true;
         MinEntry.TextChanged += (_, __) => _dirty = true;
         MaxEntry.TextChanged += (_, __) => _dirty = true;
         ReqSwitch.Toggled += (_, __) => _dirty = true;
         ActiveSwitch.Toggled += (_, __) => _dirty = true;
-        Options.CollectionChanged += (_, __) => _dirty = true;
         MinEntry.TextChanged += (_, __) => { _dirty = true; UpdateSaveEnabled(); EnforceDefaultForSingleChoice(); };
         MaxEntry.TextChanged += (_, __) => { _dirty = true; UpdateSaveEnabled(); EnforceDefaultForSingleChoice(); };
     }
@@ -184,7 +197,7 @@ public partial class GroupEditorPage : ContentPage
                 return;
             }
         }
-    
+
         await LoadCategoriesAsync();
 
 
@@ -223,7 +236,7 @@ public partial class GroupEditorPage : ContentPage
 
             Options.Clear();
             foreach (var o in (g.options ?? new()).OrderBy(o => o.position))
-                Options.Add(o);
+                Options.Add(new OptionVm(o, MarkDirty));
             // ===== baseline para decidir si sólo cambió disponibilidad
             _baselineNoActiveJson = ToNoActiveSnapshot(Options);
             _baselineActive = Options.Where(o => o.id > 0)
@@ -240,7 +253,7 @@ public partial class GroupEditorPage : ContentPage
 
     void AddOption_Clicked(object sender, EventArgs e)
     {
-        var opt = new ModifierOptionDTO { name = "", priceExtraCents = 0, isActive = true, position = Options.Count };
+        var opt = new OptionVm(new ModifierOptionDTO { name = "", priceExtraCents = 0, isActive = true, position = Options.Count }, MarkDirty);
         Options.Add(opt);
         ReindexOptions();
 
@@ -268,7 +281,7 @@ public partial class GroupEditorPage : ContentPage
 
     void RemoveOption_Clicked(object sender, EventArgs e)
     {
-        if ((sender as Button)?.BindingContext is ModifierOptionDTO opt)
+        if ((sender as Button)?.BindingContext is OptionVm opt)
         {
             if (Options.Count <= 1)
             {
@@ -295,7 +308,7 @@ public partial class GroupEditorPage : ContentPage
 
     void MoveUp_Clicked(object sender, EventArgs e)
     {
-        if ((sender as Button)?.BindingContext is not ModifierOptionDTO opt) return;
+        if ((sender as Button)?.BindingContext is not OptionVm opt) return;
         var idx = Options.IndexOf(opt);
         if (idx > 0)
         {
@@ -306,7 +319,7 @@ public partial class GroupEditorPage : ContentPage
 
     void MoveDown_Clicked(object sender, EventArgs e)
     {
-        if ((sender as Button)?.BindingContext is not ModifierOptionDTO opt) return;
+        if ((sender as Button)?.BindingContext is not OptionVm opt) return;
         var idx = Options.IndexOf(opt);
         if (idx >= 0 && idx < Options.Count - 1)
         {
@@ -315,7 +328,7 @@ public partial class GroupEditorPage : ContentPage
         }
     }
 
-    void NormalizePrice(ModifierOptionDTO o)
+    void NormalizePrice(OptionVm o)
     {
         if (o.priceExtraCents < 0) o.priceExtraCents = 0;
     }
@@ -334,7 +347,7 @@ public partial class GroupEditorPage : ContentPage
         var min = int.TryParse(MinEntry.Text, out var mi) ? mi : 0;
         int? max = int.TryParse(MaxEntry.Text, out var ma) ? ma : null;
 
-        if (min == 1 && max == 1 && e.Value && (sender as Element)?.BindingContext is ModifierOptionDTO current)
+        if (min == 1 && max == 1 && e.Value && (sender as Element)?.BindingContext is OptionVm current)
         {
             foreach (var o in Options) if (!ReferenceEquals(o, current)) o.isDefault = false;
             // vibración ligera para feedback (Android/iOS soportado)
@@ -388,16 +401,7 @@ public partial class GroupEditorPage : ContentPage
                     isActive = isActive,
                     position = position,
                     appliesToCategoryId = appliesToCategoryId,
-                    options = Options.Select(o => new ModifierOptionDTO
-                    {
-                        id = o.id,
-                        groupId = o.groupId,
-                        name = o.name?.Trim() ?? "",
-                        priceExtraCents = o.priceExtraCents,
-                        isDefault = o.isDefault,
-                        isActive = o.isActive,
-                        position = o.position
-                    }).ToList()
+                    options = Options.Select(o => o.ToDto(0)).ToList()
                 };
 
                 var newId = await _api.CreateGroupAsync(dto);
@@ -426,16 +430,7 @@ public partial class GroupEditorPage : ContentPage
                 if (!onlyAvailabilityChanged)
                 {
                     // Hubo cambios en nombre/precio/orden/etc → reemplazar
-                    var optsPayload = Options.Select(o => new ModifierOptionDTO
-                    {
-                        id = o.id,
-                        groupId = GroupId,
-                        name = o.name?.Trim() ?? "",
-                        priceExtraCents = o.priceExtraCents,
-                        isDefault = o.isDefault,
-                        isActive = o.isActive,
-                        position = o.position
-                    }).ToList();
+                    var optsPayload = Options.Select(o => o.ToDto(GroupId)).ToList();
 
                     await _api.ReplaceGroupOptionsAsync(GroupId, optsPayload);
 
@@ -466,23 +461,23 @@ public partial class GroupEditorPage : ContentPage
     }
     async void OptionActive_Toggled(object sender, ToggledEventArgs e)
     {
-        if ((sender as Switch)?.BindingContext is not ModifierOptionDTO opt) return;
+        if ((sender as Switch)?.BindingContext is not OptionVm opt) return;
 
         // Si todavía no existe en DB (creación), solo cambia localmente.
         if (opt.id <= 0)
         {
             if (GroupId == 0 && !Perms.ModifiersCreate) { (sender as Switch)!.IsToggled = !e.Value; return; }
-        if (GroupId > 0 && !Perms.ModifiersUpdate) { (sender as Switch)!.IsToggled = !e.Value; return; }
+            if (GroupId > 0 && !Perms.ModifiersUpdate) { (sender as Switch)!.IsToggled = !e.Value; return; }
             opt.isActive = e.Value;
             MarkDirty();
             return;
         }
         if (!Perms.ModifiersUpdate)
-    {
-        (sender as Switch)!.IsToggled = opt.isActive;   // revertir
-        await DisplayAlert("Acceso restringido", "No puedes actualizar opciones.", "OK");
-        return;
-    }
+        {
+            (sender as Switch)!.IsToggled = opt.isActive;   // revertir
+            await DisplayAlert("Acceso restringido", "No puedes actualizar opciones.", "OK");
+            return;
+        }
 
         var nuevo = e.Value;
         var anterior = opt.isActive;
@@ -526,16 +521,11 @@ public partial class GroupEditorPage : ContentPage
         MaxEntry.TextChanged += (_, e) => { if (e.NewTextValue != DigitsOnly(e.NewTextValue)) MaxEntry.Text = DigitsOnly(e.NewTextValue); };
         PositionEntry.TextChanged += (_, e) => { if (e.NewTextValue != DigitsOnly(e.NewTextValue)) PositionEntry.Text = DigitsOnly(e.NewTextValue); };
 
-        // Para cada item de Options, engancha precio cuando se agregue
-        Options.CollectionChanged += (_, __) =>
-        {
-            foreach (var o in Options) NormalizePrice(o);
-        };
     }
 
     void OptIsActive_Toggled(object sender, ToggledEventArgs e)
     {
-        if ((sender as Switch)?.BindingContext is ModifierOptionDTO opt)
+        if ((sender as Switch)?.BindingContext is OptionVm opt)
         {
             // Aunque el TwoWay ya lo hace, lo fijamos explícito
             opt.isActive = e.Value;
@@ -553,4 +543,151 @@ public partial class GroupEditorPage : ContentPage
         el.BackgroundColor = Colors.Transparent;
     }
 
+}
+
+public class OptionVm : INotifyPropertyChanged
+{
+    readonly ModifierOptionDTO _dto;
+    readonly Action _markDirty;
+
+    public OptionVm(ModifierOptionDTO dto, Action markDirty)
+    {
+        _dto = dto ?? new ModifierOptionDTO();
+        _markDirty = markDirty;
+    }
+
+    void Dirty() => _markDirty?.Invoke();
+
+    public int id
+    {
+        get => _dto.id;
+        set
+        {
+            if (_dto.id == value) return;
+            _dto.id = value;
+            OnPropertyChanged();
+            Dirty();
+        }
+    }
+
+    public int groupId
+    {
+        get => _dto.groupId;
+        set
+        {
+            if (_dto.groupId == value) return;
+            _dto.groupId = value;
+            OnPropertyChanged();
+            Dirty();
+        }
+    }
+
+    public string? name
+    {
+        get => _dto.name;
+        set
+        {
+            var val = value ?? string.Empty;
+            if (_dto.name == val) return;
+            _dto.name = val;
+            OnPropertyChanged();
+            Dirty();
+        }
+    }
+
+    public int priceExtraCents
+    {
+        get => _dto.priceExtraCents;
+        set
+        {
+            var val = Math.Max(0, value);
+            if (_dto.priceExtraCents == val) return;
+            _dto.priceExtraCents = val;
+            Dirty();
+            OnPropertyChanged();
+            if (!_isBlank)
+                MainThread.BeginInvokeOnMainThread(() => OnPropertyChanged(nameof(priceDisplay)));
+        }
+    }
+
+    public string priceDisplay
+    {
+        get => (_dto.priceExtraCents / 100m).ToString("0.00", CultureInfo.CurrentCulture);
+        set
+        {
+            var input = (value ?? string.Empty).Trim();
+            if (string.IsNullOrEmpty(input))
+            {
+                // permitir campo vacío mientras se edita; no formatear inmediatamente
+                priceExtraCents = 0;
+                _isBlank = true;
+                return;
+            }
+
+            _isBlank = false;
+
+            if (decimal.TryParse(input, NumberStyles.Number, CultureInfo.CurrentCulture, out var pesos))
+            {
+                var cents = (int)Math.Round(pesos * 100m, MidpointRounding.AwayFromZero);
+                priceExtraCents = cents;
+            }
+            else
+            {
+                OnPropertyChanged(nameof(priceDisplay));
+            }
+        }
+    }
+
+    bool _isBlank;
+
+    public bool isDefault
+    {
+        get => _dto.isDefault;
+        set
+        {
+            if (_dto.isDefault == value) return;
+            _dto.isDefault = value;
+            OnPropertyChanged();
+            Dirty();
+        }
+    }
+
+    public bool isActive
+    {
+        get => _dto.isActive;
+        set
+        {
+            if (_dto.isActive == value) return;
+            _dto.isActive = value;
+            OnPropertyChanged();
+            Dirty();
+        }
+    }
+
+    public int position
+    {
+        get => _dto.position;
+        set
+        {
+            if (_dto.position == value) return;
+            _dto.position = value;
+            OnPropertyChanged();
+            Dirty();
+        }
+    }
+
+    internal ModifierOptionDTO ToDto(int fallbackGroupId) => new()
+    {
+        id = _dto.id,
+        groupId = _dto.groupId != 0 ? _dto.groupId : fallbackGroupId,
+        name = _dto.name?.Trim() ?? string.Empty,
+        priceExtraCents = _dto.priceExtraCents,
+        isDefault = _dto.isDefault,
+        isActive = _dto.isActive,
+        position = _dto.position
+    };
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    void OnPropertyChanged([System.Runtime.CompilerServices.CallerMemberName] string? name = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 }

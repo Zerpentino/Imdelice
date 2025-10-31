@@ -180,6 +180,12 @@ build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.UsersPag
 build_metadata.AdditionalFiles.TargetPath = Pages/UsersPage.xaml
 build_metadata.AdditionalFiles.RelativePath = Pages/UsersPage.xaml
 
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/VariantModifierOverridesPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.VariantModifierOverridesPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages/VariantModifierOverridesPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages/VariantModifierOverridesPage.xaml
+
 [/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Popups/CartReviewPopup.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Popups.CartReviewPopup.xaml

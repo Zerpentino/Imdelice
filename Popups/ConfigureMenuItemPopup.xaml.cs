@@ -5,11 +5,14 @@ using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using System.Windows.Input;
 using CommunityToolkit.Maui.Views;
 using Imdeliceapp;
 using Imdeliceapp.Models;
 using Imdeliceapp.Pages;
+using Imdeliceapp.Services;
+using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Controls;
 using Microsoft.Maui.Graphics;
 
@@ -23,10 +26,11 @@ public partial class ConfigureMenuItemPopup : Popup
         TakeOrderPage.MenuItemVm baseItem,
         IReadOnlyList<TakeOrderPage.MenuItemVm> variants,
         IReadOnlyList<ModifierGroupDTO> modifierGroups,
-        TakeOrderPage.CartEntry? existingEntry = null)
+        TakeOrderPage.CartEntry? existingEntry = null,
+        Func<int, Task<IReadOnlyList<VariantModifierGroupLinkDTO>>>? variantRulesLoader = null)
     {
         InitializeComponent();
-        _viewModel = new ConfigureMenuItemViewModel(baseItem, variants, modifierGroups, existingEntry, CloseWithResult);
+        _viewModel = new ConfigureMenuItemViewModel(baseItem, variants, modifierGroups, existingEntry, CloseWithResult, variantRulesLoader);
         BindingContext = _viewModel;
     }
 
@@ -39,28 +43,34 @@ class ConfigureMenuItemViewModel : INotifyPropertyChanged
 {
     readonly Action<ConfigureMenuItemResult?> _closeCallback;
     readonly Guid? _existingLineId;
+    readonly Func<int, Task<IReadOnlyList<VariantModifierGroupLinkDTO>>>? _variantRulesLoader;
+    readonly Dictionary<int, IReadOnlyList<VariantModifierGroupLinkDTO>> _variantRulesCache = new();
 
     public ConfigureMenuItemViewModel(
         TakeOrderPage.MenuItemVm baseItem,
         IReadOnlyList<TakeOrderPage.MenuItemVm> variants,
         IReadOnlyList<ModifierGroupDTO> modifierGroups,
         TakeOrderPage.CartEntry? existingEntry,
-        Action<ConfigureMenuItemResult?> closeCallback)
+        Action<ConfigureMenuItemResult?> closeCallback,
+        Func<int, Task<IReadOnlyList<VariantModifierGroupLinkDTO>>>? variantRulesLoader)
     {
         BaseItem = baseItem;
         _closeCallback = closeCallback;
         _existingLineId = existingEntry?.LineId;
+        _variantRulesLoader = variantRulesLoader;
 
         Title = baseItem.Title;
         Subtitle = baseItem.Subtitle;
         Description = baseItem.Description;
 
-        Variants = new ObservableCollection<VariantChoiceVm>(
-            BuildVariants(baseItem, variants, existingEntry?.SelectedItem));
-        SelectedVariant = Variants.FirstOrDefault(v => v.IsSelected) ?? Variants.FirstOrDefault();
+        var variantChoices = BuildVariants(baseItem, variants, existingEntry?.SelectedItem).ToList();
+        Variants = new ObservableCollection<VariantChoiceVm>(variantChoices);
 
         ModifierGroups = new ObservableCollection<ModifierGroupVm>(
             BuildModifierGroups(modifierGroups, existingEntry));
+
+        var initialVariant = Variants.FirstOrDefault(v => v.IsSelected) ?? Variants.FirstOrDefault();
+        SelectedVariant = initialVariant;
 
         Quantity = existingEntry?.Quantity ?? 1;
         Notes = existingEntry?.Notes ?? string.Empty;
@@ -100,6 +110,10 @@ class ConfigureMenuItemViewModel : INotifyPropertyChanged
                 _selectedVariant.IsSelected = true;
 
             OnPropertyChanged();
+            if (_variantRulesLoader != null)
+                _ = ApplyVariantRulesAsync(_selectedVariant?.Item?.VariantId);
+            else
+                ApplyVariantRules(null);
         }
     }
 
@@ -150,6 +164,60 @@ class ConfigureMenuItemViewModel : INotifyPropertyChanged
 
     public ICommand ConfirmCommand { get; }
     public ICommand CancelCommand { get; }
+
+    async Task ApplyVariantRulesAsync(int? variantId)
+    {
+        try
+        {
+            IReadOnlyList<VariantModifierGroupLinkDTO>? overrides = null;
+            if (variantId.HasValue && _variantRulesLoader != null)
+            {
+                if (!_variantRulesCache.TryGetValue(variantId.Value, out overrides))
+                {
+                    overrides = await _variantRulesLoader(variantId.Value);
+                    _variantRulesCache[variantId.Value] = overrides;
+                }
+            }
+
+            var capturedVariant = variantId;
+            var capturedOverrides = overrides;
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                if (!Equals(SelectedVariant?.Item?.VariantId, capturedVariant))
+                    return;
+                ApplyVariantRules(capturedOverrides);
+            });
+        }
+        catch
+        {
+            var capturedVariant = variantId;
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                if (!Equals(SelectedVariant?.Item?.VariantId, capturedVariant))
+                    return;
+                ApplyVariantRules(null);
+            });
+        }
+    }
+
+    void ApplyVariantRules(IReadOnlyList<VariantModifierGroupLinkDTO>? overrides)
+    {
+        Dictionary<int, VariantModifierGroupLinkDTO>? map = null;
+        if (overrides != null)
+        {
+            map = overrides
+                .Where(o => (o.group?.id ?? o.groupId) != 0)
+                .ToDictionary(o => o.group?.id ?? o.groupId);
+        }
+
+        foreach (var group in ModifierGroups)
+        {
+            if (map != null && map.TryGetValue(group.Id, out var rule))
+                group.ApplyRules(rule.minSelect, rule.maxSelect, rule.isRequired);
+            else
+                group.ResetToDefaultRules();
+        }
+    }
 
     void Confirm()
     {
@@ -284,22 +352,33 @@ class VariantChoiceVm : INotifyPropertyChanged
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 }
 
-class ModifierGroupVm
+class ModifierGroupVm : INotifyPropertyChanged
 {
     readonly ModifierGroupDTO _source;
-    readonly bool _isSingleChoice;
-    readonly int _min;
-    readonly int? _max;
+    readonly int _defaultMin;
+    readonly int? _defaultMax;
+    readonly bool _defaultIsRequired;
+
+    int _min;
+    int? _max;
+    bool _isRequired;
+    bool _isSingleChoice;
+    string _requirementText;
 
     public ModifierGroupVm(ModifierGroupDTO source, TakeOrderPage.CartModifierSelection? existingSelection)
     {
         _source = source;
-        _min = Math.Max(0, source.minSelect);
-        _max = source.maxSelect;
+        _defaultMin = Math.Max(0, source.minSelect);
+        _defaultMax = source.maxSelect;
+        _defaultIsRequired = source.isRequired;
+
+        _min = _defaultMin;
+        _max = _defaultMax;
+        _isRequired = _defaultIsRequired;
         _isSingleChoice = _max == 1 && _min <= 1;
+        _requirementText = BuildRequirementText();
 
         Name = source.name;
-        RequirementText = BuildRequirementText(source);
 
         Options = new ObservableCollection<ModifierOptionVm>(
             source.options
@@ -311,10 +390,21 @@ class ModifierGroupVm
                     return new ModifierOptionVm(this, o, existingQty);
                 }));
         NotifyLimitChanges();
+        RequirementText = BuildRequirementText();
     }
 
+    public int Id => _source.id;
     public string Name { get; }
-    public string RequirementText { get; }
+    public string RequirementText
+    {
+        get => _requirementText;
+        private set
+        {
+            if (_requirementText == value) return;
+            _requirementText = value;
+            OnPropertyChanged();
+        }
+    }
     public ObservableCollection<ModifierOptionVm> Options { get; }
 
     public bool Validate(out string? message)
@@ -375,19 +465,60 @@ class ModifierGroupVm
             opt.NotifyLimitChanged();
     }
 
-    static string BuildRequirementText(ModifierGroupDTO source)
+    public void ApplyRules(int min, int? max, bool isRequired)
     {
-        if (source.isRequired && source.maxSelect == 1)
+        _min = Math.Max(0, min);
+        _max = max;
+        _isRequired = isRequired;
+        _isSingleChoice = _max == 1 && _min <= 1;
+        ClampToMaxIfNeeded();
+        RequirementText = BuildRequirementText();
+        NotifyLimitChanges();
+    }
+
+    public void ResetToDefaultRules()
+    {
+        _min = _defaultMin;
+        _max = _defaultMax;
+        _isRequired = _defaultIsRequired;
+        _isSingleChoice = _max == 1 && _min <= 1;
+        ClampToMaxIfNeeded();
+        RequirementText = BuildRequirementText();
+        NotifyLimitChanges();
+    }
+
+    void ClampToMaxIfNeeded()
+    {
+        if (!_max.HasValue) return;
+        var allowed = Math.Max(0, _max.Value);
+        var total = Options.Sum(o => o.Quantity);
+        if (total <= allowed) return;
+
+        foreach (var opt in Options.OrderByDescending(o => o.Quantity))
+        {
+            if (total <= allowed) break;
+            var reducible = Math.Min(opt.Quantity, total - allowed);
+            if (reducible > 0)
+            {
+                opt.ApplyQuantity(opt.Quantity - reducible);
+                total -= reducible;
+            }
+        }
+    }
+
+    string BuildRequirementText()
+    {
+        if (_isRequired && _max == 1)
             return "Obligatorio";
 
-        if (source.isRequired && source.maxSelect.HasValue)
-            return $"Min {source.minSelect} · Max {source.maxSelect}";
+        if (_isRequired && _max.HasValue)
+            return $"Min {_min} · Max {_max}";
 
-        if (source.isRequired)
-            return $"Min {source.minSelect}";
+        if (_isRequired)
+            return $"Min {_min}";
 
-        if (source.maxSelect.HasValue)
-            return $"Max {source.maxSelect}";
+        if (_max.HasValue)
+            return $"Max {_max}";
 
         return "Opcional";
     }
@@ -409,6 +540,10 @@ class ModifierGroupVm
 
         return new TakeOrderPage.CartModifierSelection(_source.id, _source.name, mapped);
     }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    void OnPropertyChanged([CallerMemberName] string? name = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 }
 
 class ModifierOptionVm : INotifyPropertyChanged

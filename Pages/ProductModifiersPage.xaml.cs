@@ -252,8 +252,18 @@ async void OptionToggle_Toggled(object sender, ToggledEventArgs e)
         _busyOptions.Remove(opt.Id);
         sw.IsEnabled = true;
     }
-}
+    }
 
 
+        async void VariantOverrides_Clicked(object? sender, EventArgs e)
+        {
+            if (ProductId <= 0)
+            {
+                await DisplayAlert("Producto", "Falta el identificador del producto.", "OK");
+                return;
+            }
+
+            await Shell.Current.GoToAsync($"{nameof(VariantModifierOverridesPage)}?productId={ProductId}");
+        }
     }
 }

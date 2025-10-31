@@ -31,6 +31,8 @@ class ProductListDTO
     public int? priceCents { get; set; } // null si VARIANTED
     public bool isActive { get; set; }
     public bool isAvailable { get; set; }  // <-- NUEVO
+    public string? imageUrl { get; set; }
+    public bool hasImage { get; set; }
 }
 class ApiEnvelope2<T> { public bool ok { get; set; } public T? data { get; set; } public string? error { get; set; } }
 
@@ -62,6 +64,9 @@ public class ProductListItem : INotifyPropertyChanged
         get => _thumb;
         set { _thumb = value; PropertyChanged?.Invoke(this, new(nameof(thumb))); }
     }
+
+    public string? imageUrl { get; set; }
+    public bool hasImageUrl { get; set; }
 
     public event PropertyChangedEventHandler PropertyChanged;
 }
@@ -124,7 +129,7 @@ public partial class ProductsPage : ContentPage
         cli.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return cli;
     }
-    static readonly ConcurrentDictionary<int, ImageSource> _thumbCache = new();
+    static readonly ConcurrentDictionary<string, ImageSource> _thumbCache = new();
     bool _silenceSwitch;                 // silenciar eventos durante rebinds/moves
     readonly HashSet<int> _busyToggles = new(); // evitar dobles PATCH por el mismo id
 
@@ -174,25 +179,48 @@ public partial class ProductsPage : ContentPage
     }
 
 
-    async Task<ImageSource> GetThumbAsync(int productId, HttpClient http)
+    async Task<ImageSource> GetThumbAsync(ProductListItem item, HttpClient http)
     {
-        if (_thumbCache.TryGetValue(productId, out var cached)) return cached;
+        var cacheKey = !string.IsNullOrWhiteSpace(item.imageUrl) ? item.imageUrl! : $"id:{item.id}";
+        if (_thumbCache.TryGetValue(cacheKey, out var cached)) return cached;
 
         try
         {
-            var ts = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            using var resp = await http.GetAsync($"/api/products/{productId}/image?ts={ts}");
+            string path;
+            if (!string.IsNullOrWhiteSpace(item.imageUrl))
+            {
+                path = item.imageUrl!;
+                if (!path.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (!path.StartsWith('/'))
+                        path = "/" + path;
+
+                    if (!path.StartsWith("/api/", StringComparison.OrdinalIgnoreCase))
+                        path = "/api" + path;
+                }
+            }
+            else
+            {
+                path = $"/api/products/{item.id}/image";
+                if (!path.Contains("?"))
+                {
+                    var ts = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                    path += $"?ts={ts}";
+                }
+            }
+
+            using var resp = await http.GetAsync(path);
             if (!resp.IsSuccessStatusCode)
-                return _thumbCache[productId] = ImageSource.FromFile("no_disponible.png");
+                return _thumbCache[cacheKey] = ImageSource.FromFile("no_disponible.png");
 
             var bytes = await resp.Content.ReadAsByteArrayAsync();
             var src = ImageSource.FromStream(() => new MemoryStream(bytes));
-            _thumbCache[productId] = src;
+            _thumbCache[cacheKey] = src;
             return src;
         }
         catch
         {
-            return _thumbCache[productId] = ImageSource.FromFile("no_disponible.png");
+            return _thumbCache[cacheKey] = ImageSource.FromFile("no_disponible.png");
         }
     }
     async Task CargarCategoriasAsync()
@@ -303,7 +331,9 @@ public partial class ProductsPage : ContentPage
                 isActive = p.isActive,
                 isAvailable = p.isAvailable,
 
-                thumb = ImageSource.FromFile("no_disponible.png")
+                thumb = ImageSource.FromFile("no_disponible.png"),
+                imageUrl = p.imageUrl,
+                hasImageUrl = !string.IsNullOrWhiteSpace(p.imageUrl)
             }).ToList();
             _all = _all
        .OrderByDescending(p => p.isActive)     // activos primero
@@ -331,11 +361,12 @@ public partial class ProductsPage : ContentPage
         var tasks = items.Select(async item =>
         {
             await sem.WaitAsync();
-            try { item.thumb = await GetThumbAsync(item.id, http); }
+            try { item.thumb = await GetThumbAsync(item, http); }
             finally { sem.Release(); }
         });
         await Task.WhenAll(tasks);
     }
+
 
     async void PkCategory_SelectedIndexChanged(object s, EventArgs e) => await CargarProductosAsync();
 

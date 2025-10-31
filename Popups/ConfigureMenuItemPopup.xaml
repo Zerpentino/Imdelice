@@ -111,7 +111,7 @@
                               StrokeShape="{RoundRectangle CornerRadius=12}"
                               Padding="12"
                               Margin="0,2">
-                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="12">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                           <VerticalStackLayout Spacing="2">
                             <Label Text="{Binding Name}"
                                    FontAttributes="Bold"
@@ -122,11 +122,16 @@
                                    TextColor="{AppThemeBinding Light=#777, Dark=#AAA}"/>
                             <Label Text="{Binding ExtraLabel}"
                                    FontSize="12"
-                                   TextColor="{AppThemeBinding Light=#884166, Dark=#D0A0B8}"/>
+                                   TextColor="{AppThemeBinding Light=#884166, Dark=#D0A0B8}">
+                              <Label.Triggers>
+                                <DataTrigger TargetType="Label" Binding="{Binding ExtraLabel}" Value="">
+                                  <Setter Property="IsVisible" Value="False"/>
+                                </DataTrigger>
+                              </Label.Triggers>
+                            </Label>
                           </VerticalStackLayout>
 
                           <HorizontalStackLayout Grid.Column="1"
-                                                 Grid.RowSpan="2"
                                                  Spacing="6"
                                                  VerticalOptions="Center">
                             <Button Text="−"

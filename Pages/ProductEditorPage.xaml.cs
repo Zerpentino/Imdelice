@@ -494,18 +494,21 @@ record ComboItemInput(
 
                     ComboItemsHost.Children.Add(row);
 
-                    if (comp != null)
+                    if (comp != null && row.BindingContext is ComboRowContext rowCtx)
                     {
-                        var pkCat = (Picker)((Grid)row).Children[0];
-                        var pkProd = (Picker)((Grid)row).Children[1];
+                        var pkCat = rowCtx.PkCategory;
+                        var pkProd = rowCtx.PkProduct;
 
-                        var catObj = _cats.FirstOrDefault(c => c.id == comp.categoryId);
-                        if (catObj != null)
+                        if (pkCat != null && pkProd != null)
                         {
-                            pkCat.SelectedItem = catObj;
-                            var list = await LoadProductsForCategoryAsync(catObj);
-                            pkProd.ItemsSource = list;
-                            pkProd.SelectedItem = list.FirstOrDefault(p => p.id == it.componentProductId);
+                            var catObj = _cats.FirstOrDefault(c => c.id == comp.categoryId);
+                            if (catObj != null)
+                            {
+                                pkCat.SelectedItem = catObj;
+                                var list = await LoadProductsForCategoryAsync(catObj);
+                                pkProd.ItemsSource = list;
+                                pkProd.SelectedItem = list.FirstOrDefault(p => p.id == it.componentProductId);
+                            }
                         }
                     }
                 }
@@ -1412,9 +1415,9 @@ record ComboItemInput(
         items = new();
         error = null;
 
-        foreach (var grid in ComboItemsHost.Children.OfType<Grid>())
+        foreach (var frame in ComboItemsHost.Children.OfType<Border>())
         {
-            if (grid.BindingContext is not ComboRowContext ctx)
+            if (frame.BindingContext is not ComboRowContext ctx)
                 continue;
 
             if (ctx.PkProduct?.SelectedItem is not ProductOption prod)

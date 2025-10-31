@@ -99,6 +99,9 @@ public class MenusApi
         public bool isActive { get; init; }
         public bool isAvailable { get; init; }
         public MenuPublicProductReference? product { get; init; }
+        public string? imageUrl { get; init; }
+        public bool hasImage { get; init; }
+        public List<VariantModifierGroupLinkDTO> modifierGroups { get; init; } = new();
     }
 
     public record MenuPublicProductReference
@@ -110,6 +113,8 @@ public class MenusApi
         public int? priceCents { get; init; }
         public bool isActive { get; init; }
         public bool isAvailable { get; init; }
+        public string? imageUrl { get; init; }
+        public bool hasImage { get; init; }
     }
 
     public record MenuPublicOptionReference
@@ -135,6 +140,7 @@ public class MenusApi
         public DateTime createdAt { get; init; }
         public DateTime updatedAt { get; init; }
         public DateTime? deletedAt { get; init; }
+        public MenuPublicReferenceDto? @ref { get; init; }
     }
 
     public record MenuItemCreateDto
@@ -165,6 +171,9 @@ public class MenusApi
         public bool? isActive { get; init; }
         public bool? isAvailable { get; init; }
         public int? priceCents { get; init; }
+        public string? imageUrl { get; init; }
+        public bool? hasImage { get; init; }
+        public List<VariantModifierGroupLinkDTO> modifierGroups { get; init; } = new();
     }
 
     public record ProductSummaryDto
@@ -198,6 +207,17 @@ public class MenusApi
         if (!resp.IsSuccessStatusCode) throw new HttpRequestException(body);
 
         var env = JsonSerializer.Deserialize<ApiEnvelope<List<MenuSummaryDto>>>(body, _json);
+        return env?.data ?? new();
+    }
+
+    public async Task<List<VariantModifierGroupLinkDTO>> GetVariantModifierGroupsAsync(int variantId)
+    {
+        using var http = await NewAuthClientAsync();
+        var resp = await http.GetAsync($"/api/products/variants/{variantId}/modifier-groups");
+        var body = await resp.Content.ReadAsStringAsync();
+        if (!resp.IsSuccessStatusCode) throw new HttpRequestException(body);
+
+        var env = JsonSerializer.Deserialize<ApiEnvelope<List<VariantModifierGroupLinkDTO>>>(body, _json);
         return env?.data ?? new();
     }
 

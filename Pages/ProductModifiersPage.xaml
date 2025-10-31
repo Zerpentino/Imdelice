@@ -10,6 +10,13 @@
     Shell.ForegroundColor="{StaticResource BrandOnPrimary}"
     Shell.TitleColor="{StaticResource BrandOnPrimary}">
 
+  <ContentPage.ToolbarItems>
+    <ToolbarItem Text="Reglas por variante"
+                 Order="Secondary"
+                 Priority="0"
+                 Clicked="VariantOverrides_Clicked" />
+  </ContentPage.ToolbarItems>
+
   <Grid Padding="12">
     <CollectionView x:Name="GroupsCV"
                     ItemsSource="{Binding Groups}"

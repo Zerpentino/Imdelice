@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Class="Imdeliceapp.Pages.VariantModifierOverridesPage"
+    Title="Reglas por variante"
+    BackgroundColor="{AppThemeBinding Light=White, Dark=Black}"
+    Shell.NavBarIsVisible="True"
+    Shell.BackgroundColor="{StaticResource BrandPrimary}"
+    Shell.ForegroundColor="{StaticResource BrandOnPrimary}"
+    Shell.TitleColor="{StaticResource BrandOnPrimary}">
+
+  <ContentPage.ToolbarItems>
+    <ToolbarItem x:Name="AddOverrideToolbar"
+                 Text="Agregar override"
+                 Order="Secondary"
+                 Priority="0"
+                 Clicked="AddOverride_Clicked" />
+  </ContentPage.ToolbarItems>
+
+  <!-- ========== ESTILOS ========== -->
+  <ContentPage.Resources>
+    <!-- Tarjeta/Sección -->
+    <Style x:Key="SectionCard" TargetType="Border">
+      <Setter Property="Stroke" Value="{AppThemeBinding Light=#E5E5EA, Dark=#2C2C2C}" />
+      <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#FFFFFF, Dark=#1E1E1E}" />
+      <Setter Property="StrokeShape">
+        <Setter.Value>
+          <RoundRectangle CornerRadius="14" />
+        </Setter.Value>
+      </Setter>
+      <Setter Property="Padding" Value="16" />
+      <Setter Property="Margin" Value="0,12,0,0" />
+    </Style>
+
+    <!-- Etiquetas de formulario -->
+    <Style x:Key="FormLabel" TargetType="Label">
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="TextColor" Value="{AppThemeBinding Light=#444444, Dark=#CCCCCC}" />
+      <Setter Property="Margin" Value="0,0,0,4" />
+    </Style>
+
+    <!-- Texto de ayuda -->
+    <Style x:Key="HelperText" TargetType="Label">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="TextColor" Value="{AppThemeBinding Light=#777777, Dark=#BBBBBB}" />
+    </Style>
+
+    <!-- Contenedor de input -->
+    <Style x:Key="InputBorder" TargetType="Border">
+      <Setter Property="Stroke" Value="{AppThemeBinding Light=#C8B8D7, Dark=#3C2F45}" />
+      <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#FFFFFF, Dark=#1E1623}" />
+      <Setter Property="StrokeShape">
+        <Setter.Value>
+          <RoundRectangle CornerRadius="12" />
+        </Setter.Value>
+      </Setter>
+      <Setter Property="Padding" Value="12,6" />
+    </Style>
+
+    <!-- Botón primario -->
+    <Style x:Key="PrimaryButton" TargetType="Button">
+      <Setter Property="CornerRadius" Value="12" />
+      <Setter Property="HeightRequest" Value="44" />
+      <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource BrandPrimary}, Dark=#5E4AA6}" />
+      <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource BrandOnPrimary}, Dark=White}" />
+    </Style>
+
+    <!-- Botón “peligro” suave -->
+    <Style x:Key="DangerGhost" TargetType="Button">
+      <Setter Property="CornerRadius" Value="12" />
+      <Setter Property="HeightRequest" Value="44" />
+      <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#FBEAEA, Dark=#402020}" />
+      <Setter Property="TextColor" Value="{AppThemeBinding Light=#B3261E, Dark=#FFB4AB}" />
+    </Style>
+  </ContentPage.Resources>
+
+  <!-- ========== CONTENIDO ========== -->
+  <Grid Padding="16" RowSpacing="14" RowDefinitions="Auto,*,Auto">
+
+    <!-- Encabezado + Picker dentro de tarjeta -->
+    <Border Grid.Row="0" Style="{StaticResource SectionCard}">
+      <VerticalStackLayout Spacing="10">
+        <Label Text="{Binding ProductHeadline}"
+               FontSize="20"
+               FontAttributes="Bold"
+               TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+
+        <Label Text="{Binding VariantHint}"
+               Style="{StaticResource HelperText}" />
+
+        <Picker
+            Title="Selecciona una variante"
+            ItemsSource="{Binding Variants}"
+            ItemDisplayBinding="{Binding DisplayName}"
+            SelectedItem="{Binding SelectedVariant}" />
+
+        <Button Text="Agregar override"
+                Style="{StaticResource PrimaryButton}"
+                IsEnabled="{Binding HasVariantSelected}"
+                Clicked="AddOverride_Clicked" />
+      </VerticalStackLayout>
+    </Border>
+
+    <!-- Lista de overrides + estados -->
+    <Grid Grid.Row="1">
+      <ActivityIndicator IsRunning="{Binding IsVariantLoading}"
+                         IsVisible="{Binding IsVariantLoading}"
+                         HorizontalOptions="Center"
+                         VerticalOptions="Center"
+                         Color="{AppThemeBinding Light={StaticResource BrandPrimary}, Dark={StaticResource BrandOnPrimary}}" />
+
+      <RefreshView IsVisible="{Binding OverridesVisible}"
+                   IsRefreshing="{Binding IsRefreshing}"
+                   Refreshing="OverridesRefresh_Refreshing">
+        <CollectionView ItemsSource="{Binding Overrides}" Margin="0,4,0,0">
+          <CollectionView.EmptyView>
+            <Border Style="{StaticResource SectionCard}">
+              <Label Text="Esta variante usa las reglas del producto. Agrega un override si necesitas valores distintos."
+                     Style="{StaticResource HelperText}" />
+            </Border>
+          </CollectionView.EmptyView>
+
+          <CollectionView.ItemTemplate>
+            <DataTemplate>
+              <!-- Tarjeta del override -->
+              <Border Style="{StaticResource SectionCard}">
+                <VerticalStackLayout Spacing="12">
+                  <Label Text="{Binding GroupName}"
+                         FontAttributes="Bold"
+                         FontSize="16"
+                         TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+
+                  <Label Text="{Binding DefaultSummary}"
+                         Style="{StaticResource HelperText}" />
+
+                  <!-- Inputs en columna para evitar amontonamiento -->
+                  <VerticalStackLayout Spacing="10">
+                    <VerticalStackLayout Spacing="6">
+                      <Label Text="Min requerido" Style="{StaticResource FormLabel}" />
+                      <Border Style="{StaticResource InputBorder}">
+                        <Entry Text="{Binding MinSelectText, Mode=TwoWay}"
+                               Keyboard="Numeric"
+                               Placeholder="0"
+                               HeightRequest="44"
+                               VerticalOptions="Center"
+                               ClearButtonVisibility="WhileEditing"
+                               TextColor="{AppThemeBinding Light=Black, Dark=White}"
+                               BackgroundColor="Transparent" />
+                      </Border>
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="6">
+                      <Label Text="Max permitido (vacío = sin límite)" Style="{StaticResource FormLabel}" />
+                      <Border Style="{StaticResource InputBorder}">
+                        <Entry Text="{Binding MaxSelectText, Mode=TwoWay}"
+                               Keyboard="Numeric"
+                               Placeholder="∞"
+                               HeightRequest="44"
+                               VerticalOptions="Center"
+                               ClearButtonVisibility="WhileEditing"
+                               TextColor="{AppThemeBinding Light=Black, Dark=White}"
+                               BackgroundColor="Transparent" />
+                      </Border>
+                    </VerticalStackLayout>
+                  </VerticalStackLayout>
+
+                  <!-- ¿Obligatorio? alineado y con respiro -->
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Margin="0,4,0,0">
+                    <Label Grid.Column="0" Text="¿Obligatorio?" Style="{StaticResource FormLabel}" VerticalOptions="Center" />
+                    <Switch Grid.Column="1" IsToggled="{Binding IsRequired, Mode=TwoWay}" HorizontalOptions="End" />
+                  </Grid>
+
+                  <!-- Mensaje de estado -->
+                  <Label Text="{Binding StatusMessage}"
+                         FontSize="12"
+                         Margin="0,2,0,0"
+                         TextColor="{Binding StatusColor}"
+                         IsVisible="{Binding HasStatusMessage}" />
+
+                  <!-- Acciones en columna -->
+                  <VerticalStackLayout Spacing="8" Margin="0,6,0,0">
+                    <Button Text="Guardar cambios"
+                            Style="{StaticResource PrimaryButton}"
+                            CommandParameter="{Binding .}"
+                            Clicked="OverrideSave_Clicked"
+                            IsEnabled="{Binding IsNotBusy}" />
+                    <Button Text="Quitar override"
+                            Style="{StaticResource DangerGhost}"
+                            CommandParameter="{Binding .}"
+                            Clicked="OverrideDelete_Clicked"
+                            IsEnabled="{Binding IsNotBusy}" />
+                  </VerticalStackLayout>
+                </VerticalStackLayout>
+              </Border>
+            </DataTemplate>
+          </CollectionView.ItemTemplate>
+        </CollectionView>
+      </RefreshView>
+
+      <!-- Estados sin variante / sin variantes -->
+      <Border IsVisible="{Binding NoVariantSelectedMessageVisible}" Style="{StaticResource SectionCard}">
+        <Label Text="Selecciona una variante para ver o crear overrides."
+               HorizontalTextAlignment="Center"
+               Style="{StaticResource HelperText}" />
+      </Border>
+
+      <Border IsVisible="{Binding NoVariantsAvailableVisible}" Style="{StaticResource SectionCard}">
+        <Label Text="Este producto no tiene variantes definidas."
+               HorizontalTextAlignment="Center"
+               Style="{StaticResource HelperText}" />
+      </Border>
+    </Grid>
+
+    <!-- Nota inferior -->
+    <Label Grid.Row="2"
+           Text="{Binding FooterNote}"
+           FontSize="11"
+           TextColor="{AppThemeBinding Light=#888888, Dark=#AAAAAA}"
+           HorizontalTextAlignment="Center"
+           Margin="8,6,8,0" />
+  </Grid>
+</ContentPage>
