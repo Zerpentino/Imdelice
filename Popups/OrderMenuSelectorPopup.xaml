@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<toolkit:Popup
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+    x:Class="Imdeliceapp.Popups.OrderMenuSelectorPopup"
+    Size="420,600"
+     Shell.NavBarIsVisible="True"
+    CanBeDismissedByTappingOutsideOfPopup="False">
+  <Border Stroke="{AppThemeBinding Light=#E5E5E5, Dark=#333333}"
+          StrokeShape="{RoundRectangle CornerRadius=24}"
+          BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1A1A1A}"
+          Padding="20">
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+      <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+        <Button Text="←"
+                WidthRequest="32"
+                HeightRequest="32"
+                Padding="0"
+                BackgroundColor="Transparent"
+                TextColor="{AppThemeBinding Light=Black, Dark=White}"
+                Clicked="BackButton_Clicked"/>
+        <Label Text="Selecciona un producto"
+               Grid.Column="1"
+               FontSize="20"
+               FontAttributes="Bold"/>
+        <Button Text="✕"
+                Grid.Column="2"
+                WidthRequest="32"
+                HeightRequest="32"
+                Padding="0"
+                BackgroundColor="Transparent"
+                Clicked="CloseButton_Clicked"/>
+      </Grid>
+
+      <VerticalStackLayout Grid.Row="1"
+                           Spacing="6">
+        <Entry Placeholder="Buscar por nombre"
+               Text="{Binding SearchQuery}"/>
+        <Label Text="{Binding MenuName}"
+               FontSize="12"
+               TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"/>
+      </VerticalStackLayout>
+
+      <ScrollView Grid.Row="2">
+        <VerticalStackLayout BindableLayout.ItemsSource="{Binding Sections}"
+                             Spacing="18">
+          <BindableLayout.ItemTemplate>
+            <DataTemplate>
+              <VerticalStackLayout Spacing="6"
+                                    IsVisible="{Binding HasItems}">
+                <Label Text="{Binding Title}"
+                       FontAttributes="Bold"
+                       TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+                <VerticalStackLayout Spacing="6"
+                                      BindableLayout.ItemsSource="{Binding Items}">
+                  <BindableLayout.ItemTemplate>
+                    <DataTemplate>
+                      <Border Stroke="{AppThemeBinding Light=#EEEEEE, Dark=#333333}"
+                              StrokeShape="{RoundRectangle CornerRadius=14}"
+                              BackgroundColor="{AppThemeBinding Light=#FBFBFB, Dark=#232323}"
+                              Padding="10">
+                        <Grid ColumnDefinitions="*,Auto">
+                          <StackLayout>
+                            <Label Text="{Binding Title}"
+                                   FontAttributes="Bold"
+                                   TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+                            <Label Text="{Binding Subtitle}"
+                                   IsVisible="{Binding HasSubtitle}"
+                                   FontSize="11"
+                                   TextColor="{AppThemeBinding Light=#777, Dark=#AAA}"/>
+                          </StackLayout>
+                          <Button Text="{Binding PriceLabel}"
+                                  Grid.Column="1"
+                                  HorizontalOptions="End"
+                                  CommandParameter="{Binding}"
+                                  Clicked="SelectProduct_Clicked"
+                                  Style="{StaticResource PrimaryPillSmButtonStyle}"/>
+                        </Grid>
+                      </Border>
+                    </DataTemplate>
+                  </BindableLayout.ItemTemplate>
+                </VerticalStackLayout>
+              </VerticalStackLayout>
+            </DataTemplate>
+          </BindableLayout.ItemTemplate>
+        </VerticalStackLayout>
+      </ScrollView>
+
+      <StackLayout Grid.Row="3"
+                   Spacing="4"
+                   IsVisible="{Binding ShowEmptyState}">
+        <Label Text="No se encontraron productos con ese filtro."
+               TextColor="{AppThemeBinding Light=#777, Dark=#AAA}"
+               HorizontalTextAlignment="Center"/>
+      </StackLayout>
+
+      <ActivityIndicator IsRunning="{Binding IsLoading}"
+                         IsVisible="{Binding IsLoading}"
+                         HorizontalOptions="Center"
+                         VerticalOptions="Center"
+                         Color="{StaticResource BrandPrimary}"/>
+    </Grid>
+  </Border>
+</toolkit:Popup>

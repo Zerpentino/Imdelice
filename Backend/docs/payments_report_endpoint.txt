@@ -1,0 +1,111 @@
+Endpoint: GET /api/reports/payments
+Auth: Bearer token
+Permiso: orders.read
+Descripción: Resume los pagos realizados en un rango de fechas, agrupados por método (CASH/CARD/TRANSFER/OTHER).
+
+Query params:
+- from (string, opcional): fecha u fecha-hora ISO. Si omites ambos, incluye todos los pagos.
+- to   (string, opcional): fecha u fecha-hora ISO. Si envías solo fecha, se expande al fin del día (23:59:59.999).
+- includeOrders (bool, opcional): si lo mandas en true/1, además del resumen regresamos el listado de órdenes cerradas en ese rango (con code, mesa, pagos, etc.).
+
+Respuesta:
+{
+  "error": null,
+  "data": {
+    "range": { "from": "2025-02-16T00:00:00.000Z", "to": "2025-02-16T23:59:59.999Z" },
+    "totalsByMethod": [
+      {
+        "method": "CASH",
+        "paymentsCount": 8,
+        "amountCents": 185000,
+        "tipCents": 12000,
+        "changeCents": 3500,
+        "receivedAmountCents": 198500
+      },
+      {
+        "method": "CARD",
+        "paymentsCount": 4,
+        "amountCents": 92000,
+        "tipCents": 5000,
+        "changeCents": 0,
+        "receivedAmountCents": 97000
+      }
+    ],
+    "grandTotals": {
+      "paymentsCount": 12,
+      "amountCents": 277000,
+      "tipCents": 17000,
+      "changeCents": 3500,
+      "receivedAmountCents": 295500,
+      "ordersClosed": 9,
+      "ordersCanceled": 2,
+      "ordersRefunded": 1
+    }
+  },
+  "message": "OK"
+}
+
+Si se manda `includeOrders=true` (las “notas” de ese día):
+
+```
+GET /api/reports/payments?from=2025-11-11&to=2025-11-11&includeOrders=true
+```
+
+Respuesta (fragmento):
+
+```
+{
+  "error": null,
+  "data": {
+    "range": { "from": "2025-11-11T00:00:00.000Z", "to": "2025-11-11T23:59:59.999Z" },
+    "totalsByMethod": [ ... ],
+    "grandTotals": { ... },
+    "orders": [
+      {
+        "orderId": 123,
+        "code": "NOTA 123 del 11 de noviembre ...",
+        "status": "CLOSED",
+        "serviceType": "DINE_IN",
+        "source": "POS",
+        "openedAt": "2025-11-11T15:21:00.000Z",
+        "closedAt": "2025-11-11T16:05:12.000Z",
+        "subtotalCents": 9500,
+        "totalCents": 9500,
+        "note": "Mesa terraza",
+        "table": { "id": 8, "name": "Terraza" },
+        "payments": [
+          { "id": 555, "method": "CASH", "amountCents": 9500, "tipCents": 500, "changeCents": 0, "paidAt": "2025-11-11T16:04:50.000Z" }
+        ]
+      },
+      {
+        "orderId": 130,
+        "code": "NOTA 130 del 11 de noviembre ...",
+        "status": "CANCELED",
+        "note": "Cliente devolvió producto",
+        "table": null,
+        "payments": []
+      },
+      {
+        "orderId": 131,
+        "code": "NOTA 131 del 11 de noviembre ...",
+        "status": "REFUNDED",
+        "note": "Producto defectuoso",
+        "payments": [
+          { "id": 777, "method": "CARD", "amountCents": -12000, "tipCents": 0, "changeCents": 0, "paidAt": "2025-11-11T17:32:10.000Z" }
+        ]
+      }
+    ]
+  }
+}
+```
+
+Notas:
+- `amountCents`: total del campo amount (lo que se aplica al saldo).
+- `tipCents`: suma de propinas registradas.
+- `changeCents`: cambio devuelto (solo efectivo).
+- `receivedAmountCents`: cuánto entregó el cliente (permite auditar sobrantes/faltantes).
+- `ordersClosed`: número de órdenes que se cerraron (status CLOSED) en ese rango.
+- `ordersCanceled`: número de órdenes que pasaron a CANCELED en ese rango (según canceledAt).
+- `ordersRefunded`: número de órdenes que se marcaron como REFUNDED en ese rango.
+- Si no hay pagos en el rango, `totalsByMethod` será [] y los totales quedarán en 0.
+- Usa el mismo timezone que tu servidor (las fechas llegan en ISO UTC).

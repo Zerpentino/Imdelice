@@ -1,0 +1,427 @@
+6. Listado para KDS
+GET /api/orders/kds/listPermiso: orders.read
+Query
+	•	statuses: CSV, ej. NEW,READY
+	•	El backend:
+	•	lo pasa a mayúsculas
+	•	ignora estados inválidos
+Respuesta
+Tarjetas KDS con:
+	•	itemId
+	•	orderId
+	•	status
+	•	quantity
+	•	name
+	•	variant
+	•	tableName
+	•	code
+	•	serviceType
+	•	parentItemId
+entonces /api/orders/kds/list es la versión recortada para KDS: solo lo que la cocina necesita ver rápido, sin pagos, sin cliente de más, sin totales complejos, y enfocada en ítems que todavía no están servidos.
+Como tu ZIP no trae el nombre tal cual indexado, te lo armo siguiendo el mismo patrón que ya traes en órdenes (status, serviceType, source, items con modifiers, combos con hijos) para que lo puedas pegar.
+Te dejo todos los casos posibles que tendría sentido que devuelva este endpoint en tu backend.
+
+Endpoint
+
+GET /api/orders/kds/list
+permiso: orders.read   // o kds.read, pero en tu proyecto todo lo de orders está bajo orders.read
+Query params típicos (los mismos que usas en /api/orders, pero “kitchenizados”)
+	•	statuses → CSV de estados de ítems/órdenes que cocina quiere ver, ej: NEW,IN_PROGRESS
+	•	serviceType → DINE_IN | TAKEAWAY | DELIVERY
+	•	source → POS | UBER | DIDI | RAPPI
+	•	from / to → rango de fecha/hora de apertura
+	•	(opcional) tableId → para mostrar solo las mesas
+La idea: la cocina pide esta lista cada X segundos y la pantalla se refresca.
+
+Forma de la respuesta (propuesta coherente con tu API)
+Responde con wrapper como siempre:
+
+{
+  "error": null,
+  "data": [ /* tickets kds */ ],
+  "message": "OK"
+}
+y cada ticket de KDS así:
+
+{
+  "orderId": 71,
+  "code": "A-2025-000071",
+  "status": "OPEN",
+  "serviceType": "DINE_IN",
+  "source": "POS",
+  "openedAt": "2025-10-30T17:32:00.000Z",
+  "table": { "id": 2, "name": "M2" },
+  "note": "Mesa de la entrada",
+  "prepEtaMinutes": null,
+  "customerName": null,
+  "items": [
+    {
+      "id": 9001,
+      "productId": 12,
+      "name": "Torta ahogada",
+      "variantName": null,
+      "quantity": 2,
+      "status": "NEW",              // para cocina
+      "notes": "Poquita salsa",
+      "modifiers": [
+        { "name": "Sin cebolla", "quantity": 1 }
+      ],
+      "isComboParent": false,
+      "children": []
+    }
+  ]
+}
+Fíjate que:
+	•	no mando pagos
+	•	no mando totales en centavos (cocina no los necesita)
+	•	sí mando items ya “traducidos” (con nombreSnapshot)
+
+CASOS 🧪
+1. DINE_IN sencillo, 1 item
+
+{
+  "error": null,
+  "data": [
+    {
+      "orderId": 71,
+      "code": "A-2025-000071",
+      "status": "OPEN",
+      "serviceType": "DINE_IN",
+      "source": "POS",
+      "openedAt": "2025-10-30T17:32:00.000Z",
+      "table": { "id": 2, "name": "M2" },
+      "note": "Mesa de la entrada",
+      "prepEtaMinutes": null,
+      "customerName": null,
+      "items": [
+        {
+          "id": 9001,
+          "productId": 12,
+          "name": "Torta ahogada",
+          "variantName": null,
+          "quantity": 2,
+          "status": "NEW",
+          "notes": "Poquita salsa",
+          "modifiers": [],
+          "isComboParent": false,
+          "children": []
+        }
+      ]
+    }
+  ],
+    "message": "OK"
+}
+👉 Úsalo para la pantalla principal de cocina.
+
+2. DELIVERY (no mesa) con variante y modifier
+
+{
+  "error": null,
+  "data": [
+    {
+      "orderId": 88,
+      "code": "DLV-2025-000088",
+      "status": "OPEN",
+      "serviceType": "DELIVERY",
+      "source": "UBER",
+      "openedAt": "2025-10-30T17:40:00.000Z",
+      "table": null,
+      "note": "Dejar en recepción",
+      "prepEtaMinutes": 25,
+      "customerName": "Carlos Pacheco",
+      "items": [
+        {
+          "id": 9100,
+          "productId": 40,
+          "name": "Ensalada César",
+          "variantName": "Grande",
+          "quantity": 1,
+          "status": "NEW",
+          "notes": "Aderezo aparte",
+          "modifiers": [
+            { "name": "Aderezo extra", "quantity": 1 }
+          ],
+          "isComboParent": false,
+          "children": []
+        }
+      ]
+    }
+  ],
+  "message": "OK"
+}
+👉 Aquí cocina ve: es delivery, es Uber, cliente, nota, y qué preparar.
+
+3. Pedido con COMBO (papá + hijos)
+Este es el que más confunde al front, así que así debe verse en KDS:
+
+{
+  "error": null,
+  "data": [
+    {
+      "orderId": 90,
+      "code": "A-2025-000090",
+      "status": "OPEN",
+      "serviceType": "DINE_IN",
+      "source": "POS",
+      "openedAt": "2025-10-30T17:45:00.000Z",
+      "table": { "id": 4, "name": "M4" },
+      "note": null,
+      "prepEtaMinutes": null,
+      "customerName": null,
+      "items": [
+        {
+          "id": 9200,
+          "productId": 30,
+          "name": "Combo burger + papas",
+          "variantName": null,
+          "quantity": 1,
+          "status": "NEW",
+          "notes": null,
+          "modifiers": [],
+          "isComboParent": true,
+          "children": [
+            {
+              "id": 9201,
+              "name": "Hamburguesa sencilla",
+              "quantity": 1,
+              "status": "NEW",
+              "notes": null,
+              "modifiers": []
+            },
+            {
+              "id": 9202,
+              "name": "Papas fritas",
+              "quantity": 1,
+              "status": "NEW",
+              "notes": null,
+              "modifiers": []
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "message": "OK"
+}
+👉 Nota: en tu repo los childItems venían sin product, por eso en KDS conviene mandarlos ya “planchados” con name.
+
+4. Pedido con 2 ítems en distintos estados (NEW y IN_PROGRESS)
+Esto es típico de KDS:
+
+{
+  "error": null,
+  "data": [
+    {
+      "orderId": 91,
+      "code": "A-2025-000091",
+      "status": "OPEN",
+      "serviceType": "DINE_IN",
+      "source": "POS",
+      "openedAt": "2025-10-30T17:55:00.000Z",
+      "table": { "id": 7, "name": "M7" },
+      "items": [
+        {
+          "id": 9300,
+          "productId": 18,
+          "name": "Chilaquiles rojos",
+          "variantName": null,
+          "quantity": 1,
+          "status": "IN_PROGRESS",
+          "notes": "Extra pollo",
+          "modifiers": [
+            { "name": "Pollo extra", "quantity": 1 }
+          ],
+          "isComboParent": false,
+          "children": []
+        },
+        {
+          "id": 9301,
+          "productId": 51,
+          "name": "Limonada",
+          "variantName": null,
+          "quantity": 1,
+          "status": "NEW",
+          "notes": null,
+          "modifiers": [],
+          "isComboParent": false,
+          "children": []
+        }
+      ]
+    }
+  ],
+  "message": "OK"
+}
+👉 Así el front puede pintar columnas por estado.
+
+5. Filtro por estado
+Request
+
+GET /api/orders/kds/list?statuses=NEW,IN_PROGRESS
+Response
+
+{
+  "error": null,
+  "data": [
+    { "orderId": 71, "...": "..." },
+    { "orderId": 90, "...": "..." }
+  ],
+  "message": "OK"
+}
+👉 Cocina no ve los que ya están READY/SERVED.
+
+6. Filtro por tipo de servicio (solo delivery)
+Request
+
+GET /api/orders/kds/list?serviceType=DELIVERY
+Response
+
+{
+  "error": null,
+  "data": [
+    {
+      "orderId": 88,
+      "code": "DLV-2025-000088",
+      "serviceType": "DELIVERY",
+      "source": "UBER",
+      "items": [ /* ... */ ]
+    }
+  ],
+  "message": "OK"
+}
+
+7. Pedido ya listo (READY) que igual se muestra
+Si tu KDS muestra los que ya están listos para que el mesero los recoja:
+
+{
+  "error": null,
+  "data": [
+    {
+      "orderId": 95,
+      "code": "A-2025-000095",
+      "status": "OPEN",
+      "serviceType": "DINE_IN",
+      "source": "POS",
+      "openedAt": "2025-10-30T18:05:00.000Z",
+      "table": { "id": 9, "name": "Terraza" },
+      "items": [
+        {
+          "id": 9400,
+          "name": "Molletes",
+          "quantity": 1,
+          "status": "READY",
+          "notes": null,
+          "modifiers": [],
+          "isComboParent": false,
+          "children": []
+        }
+      ]
+    }
+  ],
+  "message": "OK"
+}
+
+8. Pedido con nota general + nota en ítem
+
+{
+  "error": null,
+  "data": [
+    {
+      "orderId": 99,
+      "code": "A-2025-000099",
+      "status": "OPEN",
+      "serviceType": "DINE_IN",
+      "table": { "id": 10, "name": "M10" },
+      "note": "Alergia a mariscos",         // nota del pedido
+      "items": [
+        {
+          "id": 9500,
+          "name": "Pasta Alfredo",
+          "quantity": 1,
+          "status": "NEW",
+          "notes": "Sin camarón",           // nota del ítem
+          "modifiers": [],
+          "isComboParent": false,
+          "children": []
+        }
+      ]
+    }
+  ],
+  "message": "OK"
+}
+👉 Esto es importante que lo pintes doble en cocina.
+
+9. Sin resultados (filtro muy cerrado)
+
+{
+  "error": null,
+  "data": [],
+  "message": "OK"
+}
+👉 El front tiene que mostrar “no hay tickets”.
+
+
+10. Notas funcionales clave
+	•	Los totales siempre se recalculan ignorando ítems cancelados.
+	•	Se respetan descuentos / impuestos / service fee ya guardados.
+	•	prepEtaMinutes sirve para mostrar ETA en front / kiosko.
+	•	source y externalRef diferencian interno vs plataforma.
+	•	Con esto el front puede hacer todo el flujo:
+	0.	creación
+	0.	agregar / editar ítems
+	0.	KDS
+	0.	cobros
+	0.	cierre
+	0.	listado con filtros
+
+11. Glosario para el front
+Permisos
+	•	orders.read: puede listar y ver
+	•	orders.create: puede crear
+	•	orders.update: puede editar, pagar, mover estado
+serviceType (tipo de servicio)
+	•	DINE_IN: consumo en mesa
+	•	TAKEAWAY: para llevar
+	•	DELIVERY: a domicilio
+source (canal)
+	•	POS: pedido directo
+	•	UBER, DIDI, RAPPI: plataformas externas
+status del pedido
+	•	DRAFT: borrador, no cocina
+	•	OPEN: activo
+	•	HOLD: en pausa
+	•	CLOSED: cobrado y cerrado
+	•	CANCELED: cancelado
+OrderItem.status
+	•	NEW
+	•	IN_PROGRESS
+	•	READY
+	•	SERVED
+	•	CANCELED
+Timestamps
+	•	acceptedAt: el pedido salió de borrador / cocina lo tomó
+	•	readyAt: todos los ítems están listos
+	•	servedAt: todos servidos o cancelados
+	•	closedAt: se cobró
+	•	canceledAt: se canceló
+Totales (centavos)
+	•	subtotalCents: suma de renglones
+	•	discountCents: descuentos
+	•	serviceFeeCents: propina/fee fijo
+	•	taxCents: impuestos
+	•	totalCents: subtotal - descuento + service + tax
+	•	paymentsTotalCents: suma de pagos
+	•	paymentsTipCents: suma de propinas
+Pagos (payments[])
+	•	method: CASH | CARD | TRANSFER | OTHER
+	•	amountCents
+	•	tipCents
+	•	paidAt
+	•	note
+Mesa
+	•	tableId: id de la mesa
+	•	table: { id, name } para mostrar “Mesa 12”
+	•	covers: número de comensales
+DTOs clave
+	•	ListOrdersQueryDto: filtros del GET
+	•	UpdateOrderMetaDto: para editar nota, mesa, cubiertos, ETA
+	•	UpdateOrderStatusDto: para mover el pedido validando pagos

@@ -1,0 +1,202 @@
+{
+  "info": {
+    "name": "Orders Module",
+    "_postman_id": "e2d7e0d4-9d0f-4ccf-859d-3c3c31b6b51b",
+    "description": "Flujo base de pedidos: crear, gestionar items, actualizar estados y registrar pagos.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "token", "value": "" },
+    { "key": "orderId", "value": "" },
+    { "key": "itemId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Create Order",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"serviceType\": \"DINE_IN\",\n  \"table\": \"Mesa 5\",\n  \"customerName\": \"Juan Pérez\",\n  \"notes\": \"Sin cilantro\",\n  \"items\": [\n    {\n      \"productId\": 1,\n      \"variantId\": null,\n      \"quantity\": 1,\n      \"notes\": \"Con extra queso\",\n      \"modifiers\": [\n        { \"optionId\": 10 },\n        { \"optionId\": 11 }\n      ]\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/orders",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "orders"]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "let jsonData;",
+              "try { jsonData = pm.response.json(); } catch (e) {",
+              "  pm.test('JSON válido', () => pm.expect.fail('Respuesta no es JSON'));",
+              "  return;",
+              "}",
+              "pm.test('Pedido creado', function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "  pm.expect(jsonData?.data?.id).to.exist;",
+              "});",
+              "if (jsonData?.data?.id) { pm.environment.set('orderId', jsonData.data.id); }",
+              "if (jsonData?.data?.items?.length) { pm.environment.set('itemId', jsonData.data.items[0].id); }"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get Order Detail",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/orders/{{orderId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "orders", "{{orderId}}"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Add Order Item",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"productId\": 2,\n  \"variantId\": 5,\n  \"quantity\": 2,\n  \"notes\": \"Sin picante\",\n  \"modifiers\": []\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/orders/{{orderId}}/items",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "orders", "{{orderId}}", "items"]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "let jsonData;",
+              "try { jsonData = pm.response.json(); } catch (e) {",
+              "  return;",
+              "}",
+              "if (jsonData?.data?.id) { pm.environment.set('itemId', jsonData.data.id); }"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Update Order Item Status",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"IN_PROGRESS\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/orders/items/{{itemId}}/status",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "orders", "items", "{{itemId}}", "status"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Update Order Item",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"quantity\": 1,\n  \"notes\": \"Servir rápido\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/orders/items/{{itemId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "orders", "items", "{{itemId}}"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Add Payment",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"amountCents\": 45900,\n  \"method\": \"CARD\",\n  \"reference\": \"TPV-123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/orders/{{orderId}}/payments",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "orders", "{{orderId}}", "payments"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Set Order Status",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"CLOSED\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/orders/{{orderId}}/status",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "orders", "{{orderId}}", "status"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "KDS List",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/orders/kds/list",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "orders", "kds", "list"]
+        }
+      },
+      "response": []
+    }
+  ]
+}

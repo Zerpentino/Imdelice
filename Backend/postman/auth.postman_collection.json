@@ -1,0 +1,122 @@
+{
+  "info": {
+    "name": "Auth Module",
+    "_postman_id": "b4f016b7-6c45-4d5d-8d4d-04a1b3d7f5fd",
+    "description": "Endpoints básicos de autenticación (email y PIN). Incluye script para guardar el token en variables de entorno.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "email", "value": "admin@example.com" },
+    { "key": "password", "value": "secret123" },
+    { "key": "pinCode", "value": "1234" },
+    { "key": "token", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Login by Email",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login-email",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "login-email"]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "let jsonData;",
+              "try {",
+              "  jsonData = pm.response.json();",
+              "} catch (e) {",
+              "  pm.test('Respuesta JSON válida', function () {",
+              "    pm.expect.fail('No se pudo parsear JSON');",
+              "  });",
+              "  return;",
+              "}",
+              "pm.test('Login exitoso', function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "  pm.expect(jsonData).to.have.property('data');",
+              "  pm.expect(jsonData.data).to.have.property('token');",
+              "});",
+              "if (jsonData?.data?.token) {",
+              "  pm.environment.set('token', jsonData.data.token);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Login by PIN",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"pinCode\": \"{{pinCode}}\",\n  \"password\": \"{{password}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login-pin",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "login-pin"]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "let jsonData;",
+              "try {",
+              "  jsonData = pm.response.json();",
+              "} catch (e) {",
+              "  pm.test('Respuesta JSON válida', function () {",
+              "    pm.expect.fail('No se pudo parsear JSON');",
+              "  });",
+              "  return;",
+              "}",
+              "pm.test('Login PIN exitoso', function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "  pm.expect(jsonData).to.have.property('data');",
+              "  pm.expect(jsonData.data).to.have.property('token');",
+              "});",
+              "if (jsonData?.data?.token) {",
+              "  pm.environment.set('token', jsonData.data.token);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health (opcional)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/",
+          "host": ["{{baseUrl}}"],
+          "path": [""]
+        }
+      },
+      "response": []
+    }
+  ]
+}

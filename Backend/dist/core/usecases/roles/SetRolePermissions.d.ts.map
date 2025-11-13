@@ -1,0 +1,1 @@
+{"version":3,"file":"SetRolePermissions.d.ts","sourceRoot":"","sources":["../../../../src/core/usecases/roles/SetRolePermissions.ts"],"names":[],"mappings":"AACA,OAAO,EAAE,qBAAqB,EAAE,MAAM,iDAAiD,CAAA;AACvF,qBAAa,kBAAkB;IACjB,OAAO,CAAC,IAAI;gBAAJ,IAAI,EAAE,qBAAqB;IAC/C,OAAO,CAAC,MAAM,EAAE,MAAM,EAAE,KAAK,EAAE,MAAM,EAAE;CAGxC"}

@@ -55,27 +55,21 @@
                   BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E1E1E}">
               <!-- contenido -->
               <VerticalStackLayout Spacing="4">
-                <Label Text="{Binding name}" FontAttributes="Bold"
+                <Label Text="{Binding Name}" FontAttributes="Bold"
                        TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
                 <HorizontalStackLayout Spacing="8">
                   <Border StrokeThickness="0" BackgroundColor="#EEE" Padding="6,2"
                           StrokeShape="{RoundRectangle CornerRadius=8}">
-                    <Label Text="{Binding type}" FontSize="11"/>
+                    <Label Text="{Binding Type}" FontSize="11"/>
                   </Border>
                   <Border StrokeThickness="0" BackgroundColor="#EEE" Padding="6,2"
                           StrokeShape="{RoundRectangle CornerRadius=8}">
-                    <Label Text="{Binding priceCents, StringFormat='${0:F2}'}" FontSize="11">
-                      <Label.Triggers>
-                        <DataTrigger TargetType="Label" Binding="{Binding priceCents}" Value="{x:Null}">
-                          <Setter Property="Text" Value="—"/>
-                        </DataTrigger>
-                      </Label.Triggers>
-                    </Label>
+                    <Label Text="{Binding PriceDisplay}" FontSize="11"/>
                   </Border>
                   <Border StrokeThickness="0" BackgroundColor="#FAD7D7" Padding="6,2"
                           StrokeShape="{RoundRectangle CornerRadius=8}">
                     <Border.Triggers>
-                      <DataTrigger TargetType="Border" Binding="{Binding isActive}" Value="True">
+                      <DataTrigger TargetType="Border" Binding="{Binding IsActive}" Value="True">
                         <Setter Property="IsVisible" Value="False"/>
                       </DataTrigger>
                     </Border.Triggers>
@@ -95,7 +89,38 @@
                       TextColor="White"
                       CornerRadius="8"
                       HorizontalOptions="End"
-                      VerticalOptions="Center"/>
+                      VerticalOptions="Center">
+                <Button.Triggers>
+                  <DataTrigger TargetType="Button" Binding="{Binding IsLinked}" Value="True">
+                    <Setter Property="IsVisible" Value="False"/>
+                  </DataTrigger>
+                </Button.Triggers>
+              </Button>
+
+              <Border Grid.Column="1"
+                      StrokeThickness="0"
+                      BackgroundColor="{AppThemeBinding Light=#E6F4EA, Dark=#1F3323}"
+                      Padding="10,6"
+                      HorizontalOptions="End"
+                      VerticalOptions="Center"
+                      IsVisible="False"
+                      StrokeShape="{RoundRectangle CornerRadius=8}">
+                <Border.Triggers>
+                  <DataTrigger TargetType="Border" Binding="{Binding IsLinked}" Value="True">
+                    <Setter Property="IsVisible" Value="True"/>
+                  </DataTrigger>
+                </Border.Triggers>
+                <HorizontalStackLayout Spacing="4"
+                                        HorizontalOptions="Center"
+                                        VerticalOptions="Center">
+                  <Label Text="✓"
+                         FontSize="14"
+                         TextColor="{AppThemeBinding Light=#1B5E20, Dark=#9CCC65}"/>
+                  <Label Text="Adjuntado"
+                         FontSize="13"
+                         TextColor="{AppThemeBinding Light=#1B5E20, Dark=#C8E6C9}"/>
+                </HorizontalStackLayout>
+              </Border>
             </Grid>
           </DataTemplate>
         </CollectionView.ItemTemplate>

@@ -1,0 +1,105 @@
+Endpoint: PATCH /api/orders/items/:itemId
+Auth: Bearer token
+Permiso: orders.update
+Descripción: actualiza un renglón existente del pedido (cantidad, notas y/o modificadores). No crea ni elimina ítems; para eso usa los endpoints de add/remove item.
+
+Parámetros:
+- Path `itemId` (int > 0): ID del orderItem.
+- Body JSON (todos opcionales, pero al menos uno debe venir):
+  {
+    "quantity": number?,            // entero > 0
+    "notes": string|null?,          // texto o null para limpiar
+    "replaceModifiers": [
+      { "optionId": number (>0), "quantity": number (>0, default 1) }
+    ]?
+  }
+
+Validaciones clave:
+- Si mandas `quantity`, el repo recalcula base/extras/total y ajusta el subtotal del pedido.
+- `replaceModifiers` reemplaza COMPLETAMENTE los modifiers del item. Si necesitas sumar uno nuevo, envía la lista completa (actuales + nuevos).
+- Las opciones deben existir y estar activas; si no, responde 400.
+- Si el item es combo padre, al cambiar `quantity` se escalan los hijos proporcionalmente.
+
+Flujo interno:
+1. Controller (`OrdersController.updateItem`) parsea `itemId` y valida body con `UpdateOrderItemDto`.
+2. Usecase `UpdateOrderItem` llama a `PrismaOrderRepository.updateItem`.
+3. El repo aplica cambios, re-calcula extras (aplicando markup cuando aplica) y actualiza totales del pedido.
+4. Respuesta estándar: `{ error: null, data: null, message: "Updated" }`.
+
+Casos de uso:
+1) Cambiar cantidad
+   PATCH /api/orders/items/45
+   { "quantity": 3 }
+   - Ajusta `quantity` a 3, recalcula `totalPriceCents` y el total del pedido.
+
+2) Añadir/actualizar nota
+   PATCH /api/orders/items/52
+   { "notes": "Bien cocido" }
+   - Guarda la nota. Para quitarla, manda `{ "notes": null }`.
+
+3) Reemplazar modifiers
+   PATCH /api/orders/items/60
+   {
+     "replaceModifiers": [
+       { "optionId": 7, "quantity": 1 },
+       { "optionId": 15, "quantity": 2 }
+     ]
+   }
+   - Borra los modifiers anteriores y crea los nuevos. Extras/totales se recalculan.
+
+4) Combinar todo
+   PATCH /api/orders/items/80
+   {
+     "quantity": 2,
+     "notes": "Compartir",
+     "replaceModifiers": [ { "optionId": 9, "quantity": 1 } ]
+   }
+   - Cambia cantidad a 2, asigna nueva nota y deja un solo modifier.
+
+5) Item hijo de combo
+   PATCH /api/orders/items/95
+   { "replaceModifiers": [ { "optionId": 21 } ] }
+   - Los hijos también admiten notas/modifiers. Los cambios solo afectan ese componente.
+
+Respuestas de ejemplo:
+200 OK
+{
+  "error": null,
+  "data": null,
+  "message": "Updated"
+}
+
+Errores comunes:
+- 400 "Id inválido" si el path no es numérico.
+- 400 "Modifier option X inválido" si mandas un optionId inexistente o inactivo.
+- 404 si el orderItem no existe o fue eliminado.
+- 401/403 si el token es inválido o el rol no tiene `orders.update`.
+
+Notas para Front
+- Este endpoint no retorna el item actualizado. Si necesitas refrescar la vista, vuelve a pedir el detalle del pedido (`GET /api/orders/:id`).
+- `replaceModifiers` espera la lista completa. Pista: trae el item, manipula los modifiers en memoria y re-envía el arreglo final.
+- Si el pedido tiene markup (Uber/Didi), los extras que envíes se recalculan dentro del repo;
+  no necesitas ajustar precios en el front.
+
+Glosario / Siglas para el Front:
+- KDS: Kitchen Display System (pantalla de cocina).
+- POS: Punto de Venta interno.
+- `orderId`: identificador del pedido (tabla Order).
+- `orderItem` (itemId): renglón del pedido (producto + cantidad + modifiers).
+- `combo parent`: renglón que representa un combo; sus componentes están ligados vía `childItems`.
+- `modifier`: opción adicional asociada al producto (ej. “Sin cebolla”).
+- `markup`: recargo porcentual aplicado a pedidos de plataformas externas para cubrir comisiones.
+- `extrasTotalCents`: monto acumulado por modifiers en centavos.
+- `platformMarkupPct`: porcentaje de recargo almacenado en la orden.
+- `subtotalCents` / `totalPriceCents`: montos en centavos (sin decimales). Divide entre 100 para mostrar en pesos/dólares.
+- `notes` (del item): comentario específico del renglón. Distinto de `order.note` (nota general del pedido).
+- `OrderStatus`: estados del pedido (DRAFT, OPEN, HOLD, CLOSED, CANCELED).
+- `OrderItemStatus`: estados del renglón (NEW, IN_PROGRESS, READY, SERVED, CANCELED).
+- `childItems`: arreglo de componentes cuando el renglón es combo.
+- `parentItemId`: apunta al combo padre; `null` cuando es un renglón independiente.
+- `DTO`: Data Transfer Object (esquema Zod que valida la entrada).
+- `UseCase`: capa de aplicación que orquesta la lógica (p. ej., `UpdateOrderItem`).
+- `Repository`: capa que accede a la base de datos (Prisma).
+- `Bearer token`: token JWT en el header `Authorization`.
+- `HTTP 4xx/5xx`: códigos de error estándar (400 = Bad Request, 401 = Unauthorized, 500 = Internal Server Error, etc.).
+- `quantity`: número entero de renglones (porciones) que se van a preparar/servir para ese producto.

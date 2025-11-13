@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Class="Imdeliceapp.Pages.TableEditorPage"
+    Title="Mesa"
+    BackgroundColor="{AppThemeBinding Light=White, Dark=Black}"
+    Shell.NavBarIsVisible="True"
+    Shell.BackgroundColor="{StaticResource BrandPrimary}"
+    Shell.ForegroundColor="{StaticResource BrandOnPrimary}"
+    Shell.TitleColor="{StaticResource BrandOnPrimary}">
+
+  <ContentPage.Resources>
+    <Style TargetType="Entry" x:Key="EditorEntryStyle">
+      <Setter Property="HeightRequest" Value="44" />
+      <Setter Property="FontSize" Value="14" />
+      <Setter Property="ClearButtonVisibility" Value="WhileEditing" />
+    </Style>
+  </ContentPage.Resources>
+
+  <ScrollView>
+    <VerticalStackLayout Padding="20" Spacing="14">
+
+      <Label x:Name="TitleLabel"
+             Text="Crear mesa"
+             FontSize="20"
+             FontAttributes="Bold"
+             TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+
+      <Label x:Name="HintEdit"
+             Text="En edición: sólo se actualizarán los campos modificados."
+             FontSize="12"
+             Opacity="0.7"
+             IsVisible="False"
+             TextColor="{AppThemeBinding Light=#555, Dark=#CCC}" />
+
+      <VerticalStackLayout Spacing="2">
+        <Border x:Name="BdrName"
+                StrokeThickness="1"
+                Stroke="{AppThemeBinding Light=#DDDDDD, Dark=#444444}"
+                StrokeShape="{RoundRectangle CornerRadius=6}"
+                Padding="8,0">
+          <Entry x:Name="TxtName"
+                 Style="{StaticResource EditorEntryStyle}"
+                 Placeholder="Nombre de la mesa (ej. Mesa 1)"/>
+        </Border>
+        <Label x:Name="ErrName"
+               Text="Ingresa un nombre válido."
+               TextColor="Red"
+               FontSize="12"
+               IsVisible="False"/>
+      </VerticalStackLayout>
+
+      <VerticalStackLayout Spacing="2">
+        <Border x:Name="BdrSeats"
+                StrokeThickness="1"
+                Stroke="{AppThemeBinding Light=#DDDDDD, Dark=#444444}"
+                StrokeShape="{RoundRectangle CornerRadius=6}"
+                Padding="8,0">
+          <Entry x:Name="TxtSeats"
+                 Style="{StaticResource EditorEntryStyle}"
+                 Placeholder="Número de asientos"
+                 Keyboard="Numeric"/>
+        </Border>
+        <Label x:Name="ErrSeats"
+               Text="Ingresa un número de asientos mayor a 0."
+               TextColor="Red"
+               FontSize="12"
+               IsVisible="False"/>
+      </VerticalStackLayout>
+
+      <Grid ColumnDefinitions="Auto,*"
+            ColumnSpacing="12"
+            Padding="4,0">
+        <Label Text="Activa"
+               VerticalOptions="Center"
+               TextColor="{AppThemeBinding Light=#444, Dark=#DDD}"/>
+        <Switch x:Name="SwIsActive"
+                Grid.Column="1"
+                HorizontalOptions="Start"/>
+      </Grid>
+
+      <HorizontalStackLayout Spacing="12" Margin="0,16,0,0">
+        <Button x:Name="BtnGuardar"
+                Text="Guardar"
+                Clicked="Guardar_Clicked"
+                Style="{StaticResource PrimaryButtonStyle}"/>
+        <Button Text="Cancelar"
+                Clicked="Cancelar_Clicked"/>
+      </HorizontalStackLayout>
+    </VerticalStackLayout>
+  </ScrollView>
+</ContentPage>

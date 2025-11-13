@@ -1,0 +1,24 @@
+import { UsersController } from '../presentation/controllers/UsersController';
+import { RolesController } from '../presentation/controllers/RolesController';
+import { AuthController } from '../presentation/controllers/AuthController';
+import { CategoriesController } from '../presentation/controllers/CategoriesController';
+import { ProductsController } from '../presentation/controllers/ProductsController';
+import { ModifiersController } from '../presentation/controllers/ModifiersController';
+import { MenuController } from '../presentation/controllers/MenuController';
+import { OrdersController } from "../presentation/controllers/OrdersController";
+import { ReportsController } from "../presentation/controllers/ReportsController";
+import { ChannelConfigController } from "../presentation/controllers/ChannelConfigController";
+import { TablesController } from '../presentation/controllers/TablesController';
+declare const usersController: UsersController;
+declare const rolesController: RolesController;
+declare const authController: AuthController;
+export declare const categoriesController: CategoriesController;
+export declare const productsController: ProductsController;
+export declare const modifiersController: ModifiersController;
+export declare const tablesController: TablesController;
+export declare const menuController: MenuController;
+export declare const ordersController: OrdersController;
+export declare const channelConfigController: ChannelConfigController;
+export declare const reportsController: ReportsController;
+export { usersController, rolesController, authController };
+//# sourceMappingURL=index.d.ts.map

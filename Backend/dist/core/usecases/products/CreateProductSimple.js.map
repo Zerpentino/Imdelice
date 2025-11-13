@@ -1,0 +1,1 @@
+{"version":3,"file":"CreateProductSimple.js","sourceRoot":"","sources":["../../../../src/core/usecases/products/CreateProductSimple.ts"],"names":[],"mappings":";;;AAEA,MAAa,mBAAmB;IAC9B,YAAoB,IAAwB;QAAxB,SAAI,GAAJ,IAAI,CAAoB;IAAG,CAAC;IAChD,IAAI,CAAC,KAOJ;QACC,OAAO,IAAI,CAAC,IAAI,CAAC,YAAY,CAAC,KAAK,CAAC,CAAC;IACvC,CAAC;CACF;AAZD,kDAYC"}

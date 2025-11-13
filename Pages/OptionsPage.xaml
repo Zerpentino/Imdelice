@@ -5,10 +5,11 @@
        x:Class="Imdeliceapp.Pages.OptionsPage"
        BackgroundColor="{AppThemeBinding Light=White, Dark=Black}">
 
-       <Grid Padding="24">
-              <VerticalStackLayout Spacing="16"
-                                   HorizontalOptions="Center"
-                                   VerticalOptions="Center">
+       <ScrollView>
+              <Grid Padding="24">
+                     <VerticalStackLayout Spacing="16"
+                                          HorizontalOptions="Center"
+                                          VerticalOptions="Center">
                      <Label Text="Opciones"
                             FontAttributes="Bold"
                             FontSize="20"
@@ -37,9 +38,21 @@
                              Clicked="OpenModifierGroups_Clicked"
                              Style="{StaticResource PrimaryButtonStyle}"
                              IsVisible="False"/>
-
-
-
+                     <Button x:Name="BtnTables"
+                             Text="Mesas"
+                             Clicked="OpenTables_Clicked"
+                             Style="{StaticResource PrimaryButtonStyle}"
+                             IsVisible="False"/>
+                     <Button x:Name="BtnChannelConfig"
+                             Text="Markup por canal"
+                             Clicked="OpenChannelConfig_Clicked"
+                             Style="{StaticResource PrimaryButtonStyle}"
+                             IsVisible="False"/>
+                     <Button x:Name="BtnPaymentsReport"
+                             Text="Reporte de pagos"
+                             Clicked="OpenPaymentsReport_Clicked"
+                             Style="{StaticResource PrimaryButtonStyle}"
+                             IsVisible="False"/>
                      <Button x:Name="BtnMenu"
                              Text="Editar menú"
                              IsVisible="False"
@@ -54,4 +67,5 @@
                              Style="{StaticResource PrimaryButtonStyle}"/>
               </VerticalStackLayout>
        </Grid>
+       </ScrollView>
 </ContentPage>

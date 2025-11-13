@@ -1,0 +1,1 @@
+{"version":3,"file":"roles.dto.d.ts","sourceRoot":"","sources":["../../../src/presentation/dtos/roles.dto.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,CAAC,EAAE,MAAM,KAAK,CAAC;AAExB,eAAO,MAAM,aAAa;;;;iBAIxB,CAAA;AAEF,eAAO,MAAM,aAAa;;;;iBAIxB,CAAA;AAEF,MAAM,MAAM,iBAAiB,GAAG,CAAC,CAAC,KAAK,CAAC,OAAO,aAAa,CAAC,CAAC;AAC9D,MAAM,MAAM,iBAAiB,GAAG,CAAC,CAAC,KAAK,CAAC,OAAO,aAAa,CAAC,CAAC"}

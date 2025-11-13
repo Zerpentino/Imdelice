@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<toolkit:Popup
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+    x:Class="Imdeliceapp.Popups.OrderItemPickerPopup"
+    Size="420,600"
+    CanBeDismissedByTappingOutsideOfPopup="True">
+    <Border Stroke="{AppThemeBinding Light=#E5E5E5, Dark=#333333}"
+            StrokeShape="{RoundRectangle CornerRadius=24}"
+            BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1A1A1A}"
+            Padding="20">
+        <VerticalStackLayout Spacing="16">
+            <Label Text="{Binding Title}"
+                   FontSize="18"
+                   FontAttributes="Bold"/>
+            <Label Text="{Binding Subtitle}"
+                   FontSize="13"
+                   TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"/>
+
+            <CollectionView ItemsSource="{Binding Items}"
+                            SelectionMode="Single"
+                            SelectionChanged="Items_SelectionChanged">
+                <CollectionView.EmptyView>
+                    <Label Text="Sin productos disponibles."
+                           FontSize="14"
+                           TextColor="{AppThemeBinding Light=#777, Dark=#AAA}"
+                           HorizontalTextAlignment="Center"/>
+                </CollectionView.EmptyView>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Border Stroke="{AppThemeBinding Light=#EEEEEE, Dark=#333333}"
+                                StrokeShape="{RoundRectangle CornerRadius=16}"
+                                BackgroundColor="{AppThemeBinding Light=#FDFDFD, Dark=#232323}"
+                                Padding="12"
+                                Margin="{Binding Margin}">
+                            <VerticalStackLayout Spacing="4">
+                                <Label Text="{Binding DisplayTitle}"
+                                       FontAttributes="Bold"
+                                       TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+                                <Label Text="{Binding Detail}"
+                                       FontSize="12"
+                                       TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"/>
+                                <HorizontalStackLayout HorizontalOptions="End">
+                                    <Button Text="Seleccionar"
+                                            Style="{StaticResource PrimaryPillSmButtonStyle}"
+                                            Clicked="SelectButton_Clicked"
+                                            CommandParameter="{Binding}"/>
+                                </HorizontalStackLayout>
+                            </VerticalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <Button Text="Cerrar"
+                    Style="{StaticResource SecondaryPillButtonStyle}"
+                    Clicked="CloseButton_Clicked"/>
+        </VerticalStackLayout>
+    </Border>
+</toolkit:Popup>

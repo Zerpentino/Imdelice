@@ -1,0 +1,1 @@
+{"version":3,"file":"GetPermissionsByRole.js","sourceRoot":"","sources":["../../../../src/core/usecases/roles/GetPermissionsByRole.ts"],"names":[],"mappings":";;;AAEA,MAAa,oBAAoB;IAC/B,YAAoB,IAA2B;QAA3B,SAAI,GAAJ,IAAI,CAAuB;IAAG,CAAC;IACnD,OAAO,CAAC,MAAc;QACpB,OAAO,IAAI,CAAC,IAAI,CAAC,UAAU,CAAC,MAAM,CAAC,CAAA;IACrC,CAAC;CACF;AALD,oDAKC"}

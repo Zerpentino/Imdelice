@@ -1,0 +1,1 @@
+{"version":3,"file":"UpdateRole.d.ts","sourceRoot":"","sources":["../../../../src/core/usecases/roles/UpdateRole.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,eAAe,EAAE,MAAM,2CAA2C,CAAC;AAE5E,qBAAa,UAAU;IACT,OAAO,CAAC,IAAI;gBAAJ,IAAI,EAAE,eAAe;IACnC,OAAO,CAAC,KAAK,EAAE;QAAE,EAAE,EAAE,MAAM,CAAC;QAAC,IAAI,CAAC,EAAE,MAAM,CAAC;QAAC,WAAW,CAAC,EAAE,MAAM,GAAG,IAAI,CAAA;KAAE;CAYhF"}

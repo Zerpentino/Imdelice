@@ -1,0 +1,1 @@
+{"version":3,"file":"CreateMenu.js","sourceRoot":"","sources":["../../../../src/core/usecases/menu/CreateMenu.ts"],"names":[],"mappings":";;;AASA,MAAa,UAAU;IACrB,YAA6B,IAAqB;QAArB,SAAI,GAAJ,IAAI,CAAiB;IAAG,CAAC;IAEtD,IAAI,CAAC,KAAsB;QACzB,OAAO,IAAI,CAAC,IAAI,CAAC,UAAU,CAAC,KAAK,CAAC,CAAC;IACrC,CAAC;CACF;AAND,gCAMC"}

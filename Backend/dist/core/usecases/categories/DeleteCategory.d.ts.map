@@ -1,0 +1,1 @@
+{"version":3,"file":"DeleteCategory.d.ts","sourceRoot":"","sources":["../../../../src/core/usecases/categories/DeleteCategory.ts"],"names":[],"mappings":"AACA,OAAO,KAAK,EAAE,mBAAmB,EAAE,MAAM,+CAA+C,CAAC;AACzF,qBAAa,cAAc;IACb,OAAO,CAAC,IAAI;gBAAJ,IAAI,EAAE,mBAAmB;IACvC,IAAI,CAAC,EAAE,EAAE,MAAM,EAAE,IAAI,UAAQ;CAGpC"}

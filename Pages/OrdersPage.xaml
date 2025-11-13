@@ -3,14 +3,120 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     x:Class="Imdeliceapp.Pages.OrdersPage"
-   
+    x:Name="ThisPage"
     Title="Órdenes"
     BackgroundColor="{AppThemeBinding Light=White, Dark=Black}">
-  <Grid>
-    <Label Text="Aquí estará OrdersPage (lista de órdenes)"
-           HorizontalOptions="Center"
-           VerticalOptions="Center"
-           FontAttributes="Bold"
-           TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+
+  <Grid RowDefinitions="Auto,*">
+
+    <VerticalStackLayout Grid.Row="0"
+                         Padding="16,8"
+                         Spacing="6">
+      <Grid ColumnDefinitions="*,Auto"
+            ColumnSpacing="12">
+        <SearchBar x:Name="SearchBox"
+                   Placeholder="Buscar por código, mesa o nota"
+                   SearchButtonPressed="SearchBox_SearchButtonPressed"
+                   TextChanged="SearchBox_TextChanged"/>
+        <ImageButton Grid.Column="1"
+                     Source="{AppThemeBinding Light=filtrar_light.png, Dark=filtrar_dark.png}"
+                     WidthRequest="44"
+                     HeightRequest="44"
+                     BackgroundColor="Transparent"
+                     Padding="8"
+                     Clicked="OpenFilters_Clicked"
+                     HorizontalOptions="End"
+                     VerticalOptions="Center"
+                     AutomationProperties.Name="Abrir filtros"/>
+      </Grid>
+      <Grid ColumnDefinitions="*,Auto"
+            ColumnSpacing="12">
+        <Label Text="{Binding FiltersSummary}"
+               FontSize="12"
+               TextColor="{AppThemeBinding Light=#666666, Dark=#AAAAAA}"
+               VerticalOptions="Center"/>
+        <Button Grid.Column="1"
+                x:Name="BtnOpenKds"
+                Text="Cocina"
+                Clicked="OpenKds_Clicked"
+                IsVisible="False"
+                FontSize="12"
+                Padding="14,6"
+                MinimumHeightRequest="32"
+                HeightRequest="32"
+                CornerRadius="18"
+                BackgroundColor="{AppThemeBinding Light=#FFE0B2, Dark=#4E342E}"
+                TextColor="{AppThemeBinding Light=#4E342E, Dark=#FFE0B2}"
+                HorizontalOptions="End"
+                VerticalOptions="Center"/>
+      </Grid>
+    </VerticalStackLayout>
+
+    <RefreshView Grid.Row="1"
+                 x:Name="OrdersRefresh"
+                 IsRefreshing="{Binding IsRefreshing}"
+                 Refreshing="OrdersRefresh_Refreshing">
+      <CollectionView x:Name="OrdersCollection"
+                      ItemsSource="{Binding Orders}"
+                      SelectionMode="Single"
+                      SelectionChanged="OrdersCollection_SelectionChanged"
+                      Margin="12,0"
+                      BackgroundColor="Transparent">
+        <CollectionView.EmptyView>
+          <VerticalStackLayout Padding="32"
+                               Spacing="8"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center">
+            <Label Text="{Binding EmptyMessage}"
+                   FontAttributes="Bold"
+                   TextColor="{AppThemeBinding Light=Black, Dark=White}"
+                   HorizontalTextAlignment="Center"/>
+            <Button Text="Reintentar"
+                    Clicked="Retry_Clicked"/>
+          </VerticalStackLayout>
+        </CollectionView.EmptyView>
+
+        <CollectionView.ItemTemplate>
+          <DataTemplate>
+            <Border Stroke="{AppThemeBinding Light=#EEEEEE, Dark=#333333}"
+                    StrokeShape="{RoundRectangle CornerRadius=12}"
+                    BackgroundColor="{Binding CardBackgroundColor}"
+                    Margin="0,6">
+              <Grid Padding="14"
+                    ColumnDefinitions="*,Auto"
+                    RowDefinitions="Auto,Auto,Auto"
+                    ColumnSpacing="12">
+                <Label Text="{Binding Code}"
+                       FontAttributes="Bold"
+                       FontSize="16"
+                       TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+                <Label Grid.Row="1"
+                       Text="{Binding Subtitle}"
+                       TextColor="{AppThemeBinding Light=#555555, Dark=#BBBBBB}"
+                       FontSize="13"/>
+                <Label Grid.Row="2"
+                       Text="{Binding PaymentsSummary}"
+                       TextColor="{AppThemeBinding Light=#777777, Dark=#AAAAAA}"
+                       FontSize="12"/>
+
+                <VerticalStackLayout Grid.Column="1"
+                                      HorizontalOptions="End"
+                                      Spacing="6">
+                  <Label Text="{Binding TotalFormatted}"
+                         FontAttributes="Bold"
+                         HorizontalTextAlignment="End"
+                         TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+                  <Label Text="{Binding StatusBadge}"
+                         FontSize="12"
+                         TextColor="{Binding StatusColor}"
+                         HorizontalTextAlignment="End"/>
+                </VerticalStackLayout>
+              </Grid>
+            </Border>
+          </DataTemplate>
+        </CollectionView.ItemTemplate>
+      </CollectionView>
+    </RefreshView>
+
   </Grid>
 </ContentPage>

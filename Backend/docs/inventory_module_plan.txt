@@ -1,0 +1,174 @@
+Estado Actual
+- Catálogo completo (categorías, productos, variantes, combos y modificadores) ya vive en prisma/schema.prisma:58-170, con control de disponibilidad (isActive, isAvailable) pero sin campos de stock ni código de barras.
+- Pedidos, renglones y pagos están modelados en prisma/schema.prisma:354-472; la API para pedidos (src/routes/orders.routes.ts:4-22) y el controlador (src/presentation/controllers/OrdersController.ts:1-150) ya administran creación, items, estados y cobros, pero no tocan inventario.
+- Los repositorios y casos de uso (src/infra/repositories/PrismaOrderRepository.ts:1-200, src/presentation/controllers/ProductsController.ts:1-156) muestran un patrón limpio (Use Case + Repository + Controller) que podemos reutilizar para Inventario.
+- No existe ninguna tabla/archivo relacionado a “inventory/stock”, así que partimos desde cero y podemos mantener coherencia con Prisma y Express 5.
+
+Modelo Propuesto
+- Product / ProductVariant: añadir barcode (string único) y banderas isStockTracked, trackByRecipe para encender el flujo solo en productos que consumen inventario. Esto permite que la “pistolita” trabaje con lo que ya vendes.
+- Nuevas tablas Prisma:
+  - InventoryLocation: catálogos como “Bodega seca”, “Cocina fría”.
+  - InventoryItem: definición del insumo o SKU (nombre, sku, barcode, uom, productId?, variantId?, defaultLocationId, minQty, isPurchasable, isComposite).
+  - InventoryStock: cantidades por inventoryItemId + locationId, campos quantityOnHand, quantityReserved.
+  - InventoryMovement: ledger con type (PURCHASE, SALE, ADJUSTMENT, WASTE, TRANSFER_IN, TRANSFER_OUT), quantity, note, referenceType (ORDER, PURCHASE, etc.), referenceId, createdByUserId.
+  - RecipeComponent: mapea productId/variantId ⇢ inventoryItemId con quantityPerUnit y yieldQty. Combos se resuelven transitivamente porque cada hijo ya tiene su receta.
+- Mantener “existencias actuales + movimientos”: InventoryStock da lecturas rápidas para POS/móvil; InventoryMovement conserva el historial e impulsa reportes y re-procesamientos. En un restaurante con muchos tickets por hora, recalcular solo con movimientos sería costoso y arriesga disponibilidad en caliente.
+
+Integración de Flujos
+- Ventas/órdenes: en PrismaOrderRepository.addItem (src/infra/repositories/PrismaOrderRepository.ts:166) puedes inyectar un InventoryService.reserveItems(orderId, childItems) que lea la receta y reste de quantityOnHand (o marque quantityReserved hasta que el pedido pase a READY/SERVED). En OrdersController.updateStatus (src/presentation/controllers/OrdersController.ts:74-90) liquidas la reserva cuando el estado pasa a CLOSED o devuelves stock si se cancela.
+- Compras y ajustes: usa POST /inventory/movements (ver abajo) para entradas manuales, compras o mermas; cada movimiento actualiza InventoryStock.
+- Productos/menú: al crear o actualizar producto (ProductsController.createSimple/createVarianted, src/presentation/controllers/ProductsController.ts:100-124), permite capturar barcode, isStockTracked, receta y, si aplica, generar automáticamente un InventoryItem ligado al producto.
+- Reportes: el módulo ReportsController ya expone endpoints financieros; puedes añadir un reporte de inventario que lea de InventoryMovement para cortes de turno o auditorías.
+
+Endpoints y Flujos
+- Catálogo / búsqueda por código
+  - GET /products/by-barcode/:barcode → retorna producto, variante, inventario asociado y quantityOnHand.
+  - POST /products/simple y POST /products/varianted (rutas existentes) → extender DTOs para aceptar barcode, isStockTracked, receta.
+- Inventario
+  - POST /inventory/items → crea SKU o insumo. Payload: nombre, uom, barcode?, defaultLocationId, productId?.
+  - GET /inventory/items → lista con filtros por ubicación, baja existencia o sin receta.
+  - PATCH /inventory/items/:id → actualiza datos base (uom, mínimos, código).
+  - POST /inventory/movements → registra entrada/salida/merma. Payload: inventoryItemId | barcode, type, quantity, locationId, note, reference.
+  - GET /inventory/movements → historial con filtros de fecha, tipo, usuario.
+  - POST /inventory/recipes y PATCH /inventory/recipes/:productId → define o actualiza componentes por producto/variante.
+  - POST /inventory/scan (opcional) → alias de createMovement aceptando barcode + delta.
+- Hooks en órdenes
+  - POST /orders y POST /orders/:id/items → después de cada alta, disparar InventoryService.reserveFromOrder.
+  - PATCH /orders/:id/status → según transición, consolidar o revertir movimiento tipo SALE.
+  - DELETE /orders/items/:itemId → liberar reservas previas.
+
+Flujo para lector de códigos
+- Backend:
+  - GET /products/by-barcode/:barcode: busca primero variante (productVariant.barcode), luego producto (product.barcode), regresa información y InventoryStock.
+  - POST /inventory/movement acepta { barcode, quantity, type }; si no encuentra InventoryItem, responde 404 para que el front abra el flujo de alta.
+  - POST /products/simple (u otro endpoint) permite crear producto + InventoryItem en una sola transacción cuando llega un código nuevo.
+- Frontend (flujo POS):
+  - Usuario enfoca un input; la pistola envía dígitos + Enter → dispara GET /products/by-barcode/:barcode.
+  - Si existe: mostrar ficha (nombre, foto, stock, ubicaciones) con botones +/− que llaman POST /inventory/movement tipo ADJUSTMENT o PURCHASE según contexto.
+  - Si no existe: mostrar modal “Nuevo producto” precargado con el código; al guardar, llamar POST /products/simple (o POST /inventory/items si solo es insumo) y luego refrescar stock.
+
+Relación de Datos
+- Recomendación: reutilizar Product/ProductVariant como entidad de negocio (lo que vendes) y crear un módulo de inventario separado que se relaciona vía productId/variantId. Así evitas sobrecargar Product con campos logísticos (lotes, ubicaciones) y aún puedes manejar insumos que jamás se venden. Para combos o recetas complejas, RecipeComponent actúa de “puente” entre el catálogo y el inventario físico, manteniendo una sola fuente de verdad para stock.
+
+Cambios Sugeridos
+- Base de datos (prisma/schema.prisma):
+  - Añadir campos barcode, isStockTracked, trackByRecipe a Product/ProductVariant.
+  - Definir InventoryLocation, InventoryItem, InventoryStock, InventoryMovement, RecipeComponent, InventoryMovementType.
+  - Migración inicial que cree ubicaciones básicas y genere un InventoryItem por cada producto con isStockTracked=true.
+- Dominio/casos de uso:
+  - Nuevas interfaces IInventoryRepository, IRecipeRepository.
+  - Casos de uso: CreateInventoryItem, AdjustInventory, ListInventoryItems, DefineRecipe, ReserveStockFromOrder, ReleaseStockFromOrder.
+- Infraestructura:
+  - PrismaInventoryRepository con métodos para lecturas/actualizaciones atómicas (usar prisma.$transaction).
+  - Servicio InventoryService inyectado en los use cases de órdenes para disparar reservas.
+- Presentación/Routes:
+  - inventory.routes.ts con endpoints mencionados.
+  - Extender products.routes.ts para exponer GET /products/by-barcode/:barcode.
+  - Ajustar DTOs (src/presentation/dtos/products.dto.ts) para incluir campos de inventario/código.
+- Documentación/Postman:
+  - Nuevas colecciones para inventario, ejemplos de scanner y reporte de movimientos.
+
+Ejemplos de Código
+Crear un movimiento y actualizar stock
+```ts
+export class CreateInventoryMovement {
+  constructor(private inventoryRepo: IInventoryRepository) {}
+
+  async exec(input: CreateInventoryMovementDto, userId: number) {
+    const item = await this.inventoryRepo.ensureItem(input);
+    return this.inventoryRepo.registerMovement({
+      inventoryItemId: item.id,
+      locationId: input.locationId ?? item.defaultLocationId,
+      type: input.type,
+      quantity: input.quantity,
+      note: input.note,
+      referenceType: input.referenceType,
+      referenceId: input.referenceId,
+      createdByUserId: userId,
+    });
+  }
+}
+
+async registerMovement(data: RegisterMovementInput) {
+  return prisma.$transaction(async (tx) => {
+    const stock = await tx.inventoryStock.upsert({
+      where: { inventoryItemId_locationId: { inventoryItemId: data.inventoryItemId, locationId: data.locationId } },
+      update: {},
+      create: { inventoryItemId: data.inventoryItemId, locationId: data.locationId, quantityOnHand: 0, quantityReserved: 0 },
+    });
+
+    const delta = data.type === 'SALE' || data.type === 'WASTE' || data.type === 'TRANSFER_OUT'
+      ? -Math.abs(data.quantity)
+      : Math.abs(data.quantity);
+
+    if (stock.quantityOnHand + delta < 0) throw new Error('Inventario insuficiente');
+
+    await tx.inventoryStock.update({
+      where: { id: stock.id },
+      data: { quantityOnHand: { increment: delta } },
+    });
+
+    return tx.inventoryMovement.create({ data });
+  });
+}
+```
+
+Buscar producto por código de barras
+```ts
+async findByBarcode(barcode: string) {
+  const variant = await prisma.productVariant.findFirst({
+    where: { barcode },
+    include: { product: true },
+  });
+  if (variant) return { product: variant.product, variant };
+
+  const product = await prisma.product findFirst({ where: { barcode } });
+  return product ? { product, variant: null } : null;
+}
+
+getByBarcode = async (req: Request, res: Response) => {
+  const { barcode } = req.params;
+  const data = await this.productsLookupUC.exec(barcode);
+  if (!data) return fail(res, 'No existe', 404);
+  const stock = await this.inventoryService.getStockForProduct(data.product.id, data.variant?.id);
+  return success(res, { ...data, stock });
+};
+```
+
+Registrar un producto con código de barras
+```ts
+export class CreateProductSimple {
+  constructor(private repo: IProductRepository, private inventoryRepo: IInventoryRepository) {}
+
+  async exec(input: CreateProductSimpleDto & { barcode?: string; stockConfig?: StockConfig }) {
+    const product = await this.repo.createSimple({
+      name: input.name,
+      categoryId: input.categoryId,
+      priceCents: input.priceCents,
+      description: input.description,
+      sku: input.sku,
+      barcode: input.barcode,
+      image: input.image,
+      isStockTracked: input.stockConfig?.track ?? false,
+    });
+
+    if (input.stockConfig?.track) {
+      await this.inventoryRepo.createItemFromProduct({
+        productId: product.id,
+        barcode: input.barcode,
+        uom: input.stockConfig.uom,
+        defaultLocationId: input.stockConfig.defaultLocationId,
+        minQty: input.stockConfig.minQty,
+      });
+    }
+
+    return product;
+  }
+}
+```
+
+Próximos pasos sugeridos
+1) Crear migración Prisma con las nuevas tablas/campos y sembrar ubicaciones básicas.
+2) Construir IInventoryRepository + PrismaInventoryRepository y casos de uso mínimos (listar items, movimientos, crear movimiento).
+3) Integrar el servicio en OrdersController/PrismaOrderRepository para reservar/restar stock al procesar pedidos antes de abrir endpoints públicos.
+4) Documentar en Postman el flujo de scanner y capacitar al equipo en el alta rápida de productos por código.

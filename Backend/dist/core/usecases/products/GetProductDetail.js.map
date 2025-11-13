@@ -1,0 +1,1 @@
+{"version":3,"file":"GetProductDetail.js","sourceRoot":"","sources":["../../../../src/core/usecases/products/GetProductDetail.ts"],"names":[],"mappings":";;;AACA,MAAa,gBAAgB;IAC3B,YAAoB,IAAwB;QAAxB,SAAI,GAAJ,IAAI,CAAoB;IAAG,CAAC;IAChD,IAAI,CAAC,EAAU,IAAI,OAAO,IAAI,CAAC,IAAI,CAAC,OAAO,CAAC,EAAE,CAAC,CAAC,CAAC,CAAC;CACnD;AAHD,4CAGC"}

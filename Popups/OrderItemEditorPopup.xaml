@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<toolkit:Popup
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+    x:Class="Imdeliceapp.Popups.OrderItemEditorPopup"
+    Size="420,650"
+    CanBeDismissedByTappingOutsideOfPopup="False">
+    <Border Stroke="{AppThemeBinding Light=#E5E5E5, Dark=#333333}"
+            StrokeShape="{RoundRectangle CornerRadius=24}"
+            BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1A1A1A}"
+            Padding="20">
+        <ScrollView>
+            <VerticalStackLayout Spacing="18">
+                <VerticalStackLayout Spacing="4">
+                    <Label Text="{Binding HeaderTitle}"
+                           FontSize="20"
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+                    <Label Text="{Binding Subtitle}"
+                           FontSize="13"
+                           TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"/>
+                </VerticalStackLayout>
+
+                <VerticalStackLayout Spacing="6">
+                    <Label Text="Cantidad"
+                           FontAttributes="Bold"
+                           FontSize="14"/>
+                    <Grid ColumnDefinitions="Auto,*"
+                          ColumnSpacing="12">
+                        <Stepper Minimum="1"
+                                 Maximum="99"
+                                 Increment="1"
+                                 Value="{Binding QuantityValue}"
+                                 HorizontalOptions="Start"
+                                 IsVisible="{Binding IsQuantityEditable}"
+                                 IsEnabled="{Binding IsQuantityEditable}"/>
+                        <Label Grid.Column="1"
+                               Text="{Binding QuantityDisplay}"
+                               FontSize="20"
+                               FontAttributes="Bold"
+                               HorizontalTextAlignment="Center"
+                               VerticalTextAlignment="Center"
+                               IsVisible="{Binding IsQuantityEditable}"/>
+                        <Label Grid.ColumnSpan="2"
+                               Text="{Binding QuantityLockedLabel}"
+                               FontAttributes="Bold"
+                               FontSize="16"
+                               IsVisible="{Binding IsQuantityLocked}"/>
+                    </Grid>
+                </VerticalStackLayout>
+
+                <VerticalStackLayout Spacing="6">
+                    <Label Text="Nota"
+                           FontAttributes="Bold"
+                           FontSize="14"/>
+                    <Editor Text="{Binding Notes}"
+                            AutoSize="TextChanges"
+                            Placeholder="Sin nota"
+                            BackgroundColor="{AppThemeBinding Light=#FAFAFA, Dark=#2C2C2C}"
+                            HeightRequest="90"/>
+                    <HorizontalStackLayout Spacing="8">
+                        <Button Text="Limpiar nota"
+                                Style="{StaticResource SecondaryPillSmButtonStyle}"
+                                Clicked="ClearNote_Clicked"/>
+                        <Label Text="{Binding NoteHint}"
+                               FontSize="12"
+                               TextColor="{AppThemeBinding Light=#888, Dark=#AAA}"
+                               VerticalOptions="Center"/>
+                    </HorizontalStackLayout>
+                </VerticalStackLayout>
+
+                <VerticalStackLayout Spacing="6">
+                    <Label Text="Extras (replaceModifiers)"
+                           FontAttributes="Bold"
+                           FontSize="14"/>
+                    <Label Text="Los extras se reemplazan por completo. Si dejas la lista vacía se eliminarán todos."
+                           FontSize="12"
+                           TextColor="{AppThemeBinding Light=#8D6E63, Dark=#D7CCC8}"/>
+                    <CollectionView ItemsSource="{Binding ModifierEntries}"
+                                    Margin="0,4,0,0">
+                        <CollectionView.EmptyView>
+                            <Label Text="Sin extras registrados."
+                                   FontSize="12"
+                                   TextColor="{AppThemeBinding Light=#777, Dark=#AAA}"
+                                   HorizontalTextAlignment="Center"
+                                   Margin="0,4"/>
+                        </CollectionView.EmptyView>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Border Stroke="{AppThemeBinding Light=#EEEEEE, Dark=#333333}"
+                                        StrokeShape="{RoundRectangle CornerRadius=14}"
+                                        BackgroundColor="{AppThemeBinding Light=#FDFDFD, Dark=#2B2B2B}"
+                                        Padding="14"
+                                        Margin="0,10">
+                                    <Grid ColumnDefinitions="*,Auto"
+                                          ColumnSpacing="12">
+                                        <VerticalStackLayout Spacing="12">
+                                            <VerticalStackLayout Spacing="4">
+                                                <Label Text="Extra"
+                                                       FontSize="12"
+                                                       TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"/>
+                                                <Picker ItemsSource="{Binding AvailableOptions}"
+                                                        ItemDisplayBinding="{Binding Display}"
+                                                        SelectedItem="{Binding SelectedOption}"
+                                                        IsVisible="{Binding HasOptionCatalog}"/>
+                                                <Entry Text="{Binding ManualOptionIdText}"
+                                                       Keyboard="Numeric"
+                                                       Placeholder="ID del extra"
+                                                       IsVisible="{Binding ShowManualOptionId}"
+                                                       HorizontalTextAlignment="Center"
+                                                       HeightRequest="44"/>
+                                                <Label Text="{Binding DisplayName}"
+                                                       FontSize="12"
+                                                       TextColor="{AppThemeBinding Light=#9E9E9E, Dark=#BDBDBD}"/>
+                                            </VerticalStackLayout>
+                                            <VerticalStackLayout Spacing="4">
+                                                <Label Text="Cantidad"
+                                                       FontSize="12"
+                                                       TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"/>
+                                                <Entry Text="{Binding QuantityText}"
+                                                       Keyboard="Numeric"
+                                                       HorizontalTextAlignment="Center"
+                                                       HeightRequest="44"/>
+                                            </VerticalStackLayout>
+                                        </VerticalStackLayout>
+                                        <Button Grid.Column="1"
+                                                Text="Quitar"
+                                                Style="{StaticResource SecondaryPillSmButtonStyle}"
+                                                VerticalOptions="Start"
+                                                Clicked="RemoveModifier_Clicked"
+                                                CommandParameter="{Binding}"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                    <HorizontalStackLayout Spacing="8">
+                        <Button Text="Agregar extra"
+                                Style="{StaticResource PrimaryPillSmButtonStyle}"
+                                Clicked="AddModifier_Clicked"/>
+                        <Button Text="Limpiar lista"
+                                Style="{StaticResource SecondaryPillSmButtonStyle}"
+                                Clicked="ClearModifiers_Clicked"/>
+                    </HorizontalStackLayout>
+                </VerticalStackLayout>
+
+                <Label Text="{Binding ValidationMessage}"
+                       TextColor="{AppThemeBinding Light=#D84315, Dark=#FFAB91}"
+                       IsVisible="{Binding HasValidationMessage}"/>
+
+                <HorizontalStackLayout Spacing="12">
+                    <Button Text="Cancelar"
+                            Style="{StaticResource SecondaryPillButtonStyle}"
+                            HorizontalOptions="FillAndExpand"
+                            Clicked="Cancel_Clicked"/>
+                    <Button Text="Guardar"
+                            Style="{StaticResource PrimaryPillButtonStyle}"
+                            HorizontalOptions="FillAndExpand"
+                            Clicked="Save_Clicked"/>
+                </HorizontalStackLayout>
+            </VerticalStackLayout>
+        </ScrollView>
+    </Border>
+</toolkit:Popup>

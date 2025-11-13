@@ -1,0 +1,705 @@
+7. Ítems del pedido
+
+7.2 Actualizar ítem
+PATCH /api/orders/items/:itemIdPermiso: orders.updateBody: UpdateOrderItemDto
+Permite:
+	•	cambiar quantity
+	•	cambiar notes
+	•	reemplazar modifiers
+El backend:
+	•	ajusta extras
+	•	actualiza combos hijos
+	•	recalcula totales
+
+Casos:
+O sea: solo puedes tocar estas 3 cosas:
+	1	quantity → cambiar cantidad
+	2	notes → cambiar nota del renglón
+	3	replaceModifiers → reemplazar TODOS los modifiers que tenía el item por estos nuevos
+No puedes:
+	•	cambiar productId
+	•	cambiar variantId
+	•	cambiar price directo
+	•	cambiar el estado del item (eso es otra ruta: PATCH /api/orders/items/:itemId/status)
+	•	cambiar el pedido (eso ya lo hace internamente el repo cuando recalcula)
+Qué hace el repo (esto es lo importante del zip)
+En PrismaOrderRepository.updateItem(...) hace esto:
+	1	Busca el item con:
+	◦	product (para ver si es combo)
+	◦	modifiers actuales
+	◦	childItems
+	2	Si mandaste replaceModifiers:
+	◦	borra todos los modifiers actuales del item
+	◦	busca las opciones que mandaste
+	◦	crea los nuevos modifiers con su priceExtraCents y nameSnapshot
+	◦	suma los extras (extrasTotalCents)
+	3	Calcula:
+	◦	newQty = body.quantity ?? current.quantity
+	◦	totalUnit = basePriceCents + extras
+	◦	totalPriceCents = totalUnit * newQty
+	4	Actualiza el item con:
+	◦	quantity
+	◦	notes
+	◦	extrasTotalCents
+	◦	totalPriceCents
+	5	Si el item es combo padre (tiene childItems):
+	◦	escala las cantidades de los hijos para que sigan al papá
+	6	Llama a recalcTotalsTx(...) → recalcula los totales del pedido 👈
+Listo. Ahora sí vamos con TODOS los casos que tiene sentido mandar.
+
+CASOS ✅
+1. Cambiar solo la cantidad
+
+{
+  "quantity": 3
+}
+	•	Sube de lo que tenga (ej. 1) a 3
+	•	Recalcula totalPriceCents
+	•	Recalcula totales del pedido
+
+2. Cambiar solo la nota
+
+{
+  "notes": "Sin cebolla, porfa"
+}
+	•	No toca quantity
+	•	No toca modifiers
+	•	Útil cuando cocina quiere dejar aclaración
+
+3. Cambiar cantidad y nota
+
+{
+  "quantity": 2,
+  "notes": "Para mesa 4"
+}
+
+4. Reemplazar todos los modifiers por estos
+
+{
+  "replaceModifiers": [
+    { "optionId": 7 },
+    { "optionId": 9, "quantity": 2 }
+  ]
+}
+Esto hace exactamente:
+	1	borra los modifiers que tenía ese item
+	2	crea solo estos 2
+	3	suma sus extras
+	4	recalcula el total del item
+	5	recalcula el total del pedido
+
+5. Quitar todos los modifiers
+(esto es lo chido: se hace mandando un array vacío 👇)
+
+{
+  "replaceModifiers": []
+}
+El repo:
+	•	borra todos los modifiers
+	•	extrasTotalCents = 0
+	•	totalPriceCents = basePriceCents * quantity
+
+6. Cambiar cantidad y reemplazar modifiers
+
+{
+  "quantity": 3,
+  "replaceModifiers": [
+    { "optionId": 10 }
+  ]
+}
+	•	Sube cantidad a 3
+	•	Borra modifiers viejos
+	•	Mete el 10
+	•	Recalcula total (base + extra) * 3
+	•	Recalcula totales del pedido
+
+7. Cambiar solo un modifier pero dejando los demás
+👉 Esto NO se puede con esta ruta, porque el campo es replaceModifiers.Si lo mandas, reemplaza todos.O sea, si quieres “agregar uno más y dejar los otros”, tienes que:
+	1	traer la lista actual
+	2	sumarle el nuevo
+	3	mandarla completa en replaceModifiers
+Ejemplo:
+
+{
+  "replaceModifiers": [
+    { "optionId": 5 },
+    { "optionId": 6 },
+    { "optionId": 9, "quantity": 2 }
+  ]
+}
+
+8. Item que es combo padre → cambiar cantidad
+
+{
+  "quantity": 2
+}
+Como en el repo se ve:
+	•	ve que el item tiene childItems
+	•	calcula cuánto traía cada hijo por cada 1 del papá
+	•	los vuelve a escribir multiplicados por 2
+🟣 Ejemplo:
+	•	antes: combo padre qty=1, hijo papas qty=1
+	•	PATCH padre a qty=2
+	•	repo deja hijo papas en qty=2
+	•	y recalcula totales
+
+9. Item que es combo padre → cambiar nota
+
+{
+  "notes": "Una coca sin hielo"
+}
+	•	Solo cambia la nota del padre
+	•	Los hijos se quedan igual
+
+10. Item que es combo padre → reemplazar modifiers
+
+{
+  "replaceModifiers": [
+    { "optionId": 21 }
+  ]
+}
+	•	Solo reemplaza los modifiers del padre
+	•	Los hijos no los toca
+	•	Recalcula totales
+
+11. Item que es combo hijo (o sea, le pegas al itemId del hijo)
+Esto también funciona, porque el repo hace findUnique por item. Si el item no tiene hijos, no escala nada.
+
+{
+  "quantity": 2,
+  "notes": "Este va sin sal"
+}
+
+12. Cambiar nota y quitar modifiers
+
+{
+  "notes": "Muy picante",
+  "replaceModifiers": []
+}
+
+13. Actualizar solo modifiers con cantidades
+
+{
+  "replaceModifiers": [
+    { "optionId": 15, "quantity": 3 },
+    { "optionId": 18, "quantity": 1 }
+  ]
+}
+El repo busca esos optionId; si uno no existe, tira:
+
+Modifier option 15 inválido
+y tu controller responde 500.
+
+14. Body vacío (para probar validación)
+
+{}
+El Zod lo acepta porque todo es opcional, peeero el update no cambiará nada. Igual te responde:
+
+{
+  "error": null,
+  "data": null,
+  "message": "Updated"
+}
+(esto pasa así porque en el usecase solo pasa lo que llegó)
+
+15. quantity = 0 (esto NO te lo va a aceptar)
+
+{
+  "quantity": 0
+}
+Tu Zod pide int().positive(), así que te va a regresar 400:
+
+{
+  "error": {
+    "code": 400,
+    "details": "quantity must be greater than 0"
+  },
+  "data": null,
+  "message": "Validation failed"
+}
+
+16. Modifier que no existe → error
+
+{
+  "replaceModifiers": [
+    { "optionId": 999999 }
+  ]
+}
+Respuesta (del controller):
+
+{
+  "error": {
+    "code": 500,
+    "details": "Modifier option 999999 inválido"
+  },
+  "data": null,
+  "message": "Error updating order item"
+}
+(El 500 es porque el repo lanzó error directo.)
+
+17. Cambiar cantidad de combo padre de 3 → 1 (baja hijos)
+
+{
+  "quantity": 1
+}
+El repo calcula:
+	•	antes: padre=3, hijo=3
+	•	ahora: padre=1 → hijo=1
+
+7.3 Cambiar estado de un ítem
+PATCH /api/orders/items/:itemId/statusPermiso: orders.updateBody: UpdateOrderItemStatusDto
+Flujo permitido:
+	•	NEW → IN_PROGRESS → READY → SERVED
+	•	o CANCELED en cualquier punto
+Reglas:
+	•	si todos los ítems quedan READY/SERVED → se marca readyAt
+	•	si todos quedan SERVED → se marca servedAt
+	•	si hay cancelaciones → se recalculan totales
+Casos:
+El patrón es igualito al de la orden, pero a nivel item:
+	1	Lee :itemId y lo fuerza a número.
+	2	Valida el body con un Zod tipo:{
+	3	  status: z.enum(["NEW","IN_PROGRESS","READY","SERVED","CANCELED"]),
+	4	  reason?: z.string().optional()
+	5	}
+	6	
+	7	Llama al repo: orderRepository.updateItemStatus(itemId, dto)
+	8	El repo:
+	◦	actualiza solo ese renglón
+	◦	si el renglón es combo padre, suele propagar el estado a los hijos (al menos para READY / CANCELED), porque si no en KDS se desincroniza
+	◦	recalcula los totales del pedido (para no dejar totales colgados cuando cancelas)
+	9	Devuelve el pedido o el item actualizado dentro del wrapper:{ "error": null, "data": { ... }, "message": "OK" }
+	10	
+Los estados de ITEM que ya vimos en tu API (por KDS y por lo que regresa el GET) son:
+	•	NEW
+	•	IN_PROGRESS
+	•	READY
+	•	SERVED
+	•	CANCELED
+(son los mismos que ya usaste en /api/orders/kds/list).
+Vamos a los casos 👇
+
+1. Pasar un item a “lo está preparando” (NEW → IN_PROGRESS)
+
+{
+  "status": "IN_PROGRESS"
+}
+Se usa cuando cocina “agarra” el ticket.
+
+2. Marcar un item como listo (IN_PROGRESS → READY)
+
+{
+  "status": "READY"
+}
+Esto es lo más típico de KDS: “ya quedó este plato”.
+
+3. Servir un item (READY → SERVED)
+
+{
+  "status": "SERVED"
+}
+Se usa más en DINE_IN cuando el mesero ya lo llevó a la mesa.
+
+4. Cancelar un item (cualquiera → CANCELED)
+
+{
+  "status": "CANCELED",
+  "reason": "Cliente lo cambió por otra cosa"
+}
+Aquí es donde el repo suele:
+	•	marcar el item en CANCELED
+	•	volver a calcular el total de la orden (porque un item menos = total menos)
+
+5. Cancelar sin motivo
+
+{
+  "status": "CANCELED"
+}
+Válido: el reason era opcional.
+
+6. Volver un item a NEW (p.ej. se equivocaron)
+
+{
+  "status": "NEW"
+}
+Esto lo usan cuando cocina dijo READY pero se dieron cuenta que no estaba.
+
+7. Item que es combo padre → marcar READY (propaga)
+
+{
+  "status": "READY"
+}
+Qué hace el repo (lo esperado con tu modelo):
+	•	pone el padre en READY
+	•	pone los childItems en READY también
+	•	para que en el KDS no te salgan los hijos “colgados”
+
+8. Item que es combo padre → cancelar TODO el combo
+
+{
+  "status": "CANCELED",
+  "reason": "El cliente canceló el combo"
+}
+Lo normal en este diseño:
+	•	padre → CANCELED
+	•	hijos → CANCELED
+	•	recalc → baja el total
+
+9. Item que es combo hijo → cancelar SOLO ese hijo
+Si pegas al itemId del hijo, también funciona:
+
+{
+  "status": "CANCELED",
+  "reason": "Sin papas"
+}
+	•	ese hijo queda CANCELED
+	•	el padre queda como estaba
+	•	el total se recalcula
+
+10. Marcar READY algo que venía de delivery
+
+{
+  "status": "READY"
+}
+Sirve porque en /api/orders/kds/list mostraste delivery también.
+
+11. Intentar SERVED directo desde NEW (no recomendado pero posible)
+
+{
+  "status": "SERVED"
+}
+Tu API no hace un “workflow estricto” aquí, así que lo va a aceptar; el front debe decidir si lo permite o no.
+
+12. Body vacío → error de validación
+
+{}
+Respuesta esperada:
+
+{
+  "error": {
+    "code": 400,
+    "details": "status is required"
+  },
+  "data": null,
+  "message": "Validation failed"
+}
+
+13. Estado no válido → error
+
+{
+  "status": "DONE"
+}
+Respuesta:
+
+{
+  "error": {
+    "code": 400,
+    "details": "Invalid enum value for status"
+  },
+  "data": null,
+  "message": "Validation failed"
+}
+
+14. Item no existe → 404
+
+{
+  "status": "READY"
+}
+→ si el :itemId no existe:
+
+{
+  "error": {
+    "code": 404,
+    "details": null
+  },
+  "data": null,
+  "message": "Order item not found"
+}
+
+15. Cancelar item ya SERVED (cocina se equivocó) 👀
+
+{
+  "status": "CANCELED",
+  "reason": "Se sirvió mal"
+}
+En tu repositorio este tipo de cambio no está bloqueado (el bloqueo fuerte estaba en “no cerrar si no está pagado”), así que lo va a dejar pasar y va a recalcular.
+
+16. Ready con razón (para cocina)
+
+{
+  "status": "READY",
+  "reason": "Sin azúcar, lo pidió así"
+}
+Se guarda el status; la razón puede ir a log o a nota.
+
+Resumen rápido
+	•	Ruta: PATCH /api/orders/items/:itemId/status
+	•	Campos: { "status": "...", "reason"?: "..." }
+	•	Estados válidos: NEW, IN_PROGRESS, READY, SERVED, CANCELED
+	•	Recalcula: sí, el pedido completo
+	•	Combos: si tocas el padre, toca a los hijos (READY y CANCELED)
+	•	Errores: 400 si no manda status, 404 si no existe item
+Con esto ya tienes TODO lo que tu front puede mandar y TODO lo que debe esperar 👌
+
+
+
+7.4 Eliminar ítem
+DELETE /api/orders/items/:itemIdPermiso: orders.update
+	•	Elimina el ítem
+	•	Elimina hijos / modifiers
+	•	Recalcula totales
+	1	Lee :itemId y lo convierte a número.
+	2	Llama al repo: orderRepository.deleteItem(itemId).
+	3	El repo:
+	◦	busca el item (con parentItemId y childItems)
+	◦	lo borra
+	◦	si el item era combo padre → borra también los hijos
+	◦	si el item era combo hijo → solo borra ese hijo
+	◦	al final llama a recalcTotals del pedido para que los totales queden bien.
+	4	Devuelve tu wrapper típico:{
+	5	  "error": null,
+	6	  "data": { "deleted": true, "orderId": 45 },
+	7	  "message": "OK"
+	8	}
+	9	(algunas veces regresan el pedido completo; pero en tu proyecto de órdenes casi siempre regresan algo con data + message)
+
+Casos que SÍ tienen sentido
+1. Borrar un ítem simple
+
+DELETE /api/orders/items/101
+Antes el pedido tenía:
+	•	item #101 → “Torta ahogada” x2 → 13,000
+	•	totalCents: 13,000
+Después:
+
+{
+  "error": null,
+  "data": {
+    "deleted": true,
+    "orderId": 45
+  },
+  "message": "OK"
+}
+y el pedido queda con:
+	•	items: []
+	•	totalCents: 0
+(esto lo hace el recalcTotalsTx)
+
+2. Borrar un ítem VARIANTED
+
+DELETE /api/orders/items/205
+Ese item tenía:
+
+{
+  "id": 205,
+  "productId": 25,
+  "variantId": 4,
+  "quantity": 1
+}
+→ se va completo, no tienes que mandar la variante. El repo ya sabe cuál era.
+
+3. Borrar un ítem con modifiers
+
+DELETE /api/orders/items/310
+Aunque ese item tenía modifiers asociados, el repo los borra en cascada (porque están relacionados por orderItemId), y luego recalc.Resultado:
+
+{
+  "error": null,
+  "data": {
+    "deleted": true,
+    "orderId": 61
+  },
+  "message": "OK"
+}
+
+4. Borrar un combo padre (borra también los hijos)
+
+DELETE /api/orders/items/400
+Supongamos que el pedido tenía:
+	•	item 400 → “Combo burger + papas” (padre)
+	◦	child 401 → “Hamburguesa sencilla”
+	◦	child 402 → “Papas fritas”
+Al borrar 400 el repo ve que tiene childItems y:
+	•	borra 400
+	•	borra 401
+	•	borra 402
+	•	recalcula el pedido
+Respuesta:
+
+{
+  "error": null,
+  "data": {
+    "deleted": true,
+    "orderId": 90
+  },
+  "message": "OK"
+}
+👉 Esto es importante: no tienes que mandar los IDs de los hijos; el backend ya los conoce porque en tu getById los incluías con childItems: true.
+
+5. Borrar solo un hijo del combo
+Sí se puede, si llamas al hijo:
+
+DELETE /api/orders/items/402
+	•	No borra al padre
+	•	Solo borra ese hijo
+	•	Recalcula totales (el combo va a bajar el total de extras si ese hijo tenía)
+	•	Te responde igual:{
+	•	  "error": null,
+	•	  "data": {
+	•	    "deleted": true,
+	•	    "orderId": 90
+	•	  },
+	•	  "message": "OK"
+	•	  }
+	•	
+Esto sirve cuando en cocina dijeron “el combo sin papas”.
+
+6. Borrar el último ítem del pedido
+
+DELETE /api/orders/items/555
+Si era el único:
+	•	el pedido no se borra
+	•	solo se queda con items: [] y totales en 0
+	•	así luego le puedes volver a meter items
+
+7. Borrar un ítem de un pedido ya en HOLD / OPEN
+Es válido, porque el permiso es orders.update y tu proyecto permite editar mientras no esté CLOSED.
+
+DELETE /api/orders/items/777
+
+8. Intentar borrar un item que no existe → 404
+
+DELETE /api/orders/items/999999
+Respuesta esperada:
+
+{
+  "error": {
+    "code": 404,
+    "details": null
+  },
+  "data": null,
+  "message": "Order item not found"
+}
+
+9. Intentar borrar un ítem de un pedido cerrado (si el repo lo protege)
+En tu instrucción de órdenes había una regla fuerte para cerrar, no tanto para borrar, pero muchas veces el repo hace:
+	•	busca el item
+	•	ve que el pedido está CLOSED
+	•	responde 400
+Entonces:
+
+DELETE /api/orders/items/880
+Respuesta probable:
+
+{
+  "error": {
+    "code": 400,
+    "details": "Cannot edit items from a closed order"
+  },
+  "data": null,
+  "message": "Order is closed"
+}
+(esto depende de si en tu repo pusiste el check; lo pongo porque en tu proyecto sí pusiste el check “no permitir cerrar si no está pagado”, o sea sí cuidas integridad)
+
+10. Borrar un ítem con cantidad alta
+No hace falta decir la cantidad; la cantidad está en la fila.
+
+DELETE /api/orders/items/620
+→ se borra la línea entera (no “1 de 5”), ese endpoint es de delete line, no de “remove 1”.
+Si quisieras “bajar de 5 a 4”, usas:
+
+PATCH /api/orders/items/:itemId
+{
+  "quantity": 4
+}
+
+11. Borrar un ítem que tenía extras caros → baja totales
+Esto es justamente por lo que el repo hace recalc después del delete.Ejemplo:
+
+DELETE /api/orders/items/701
+Ese item tenía:
+	•	basePriceCents: 8000
+	•	extrasTotalCents: 3000
+	•	totalPriceCents: 11000
+Al borrarlo:
+	•	order.subtotalCents baja 8000
+	•	order.totalCents baja 11000
+	•	si los pagos ya eran = total, ahora el pedido quedará “sobrepagado” → ese ajuste suele quedar ya en otro endpoint, pero al menos el order.total ya se corrigió.
+
+Resumen para tu front
+	•	Ruta: DELETE /api/orders/items/:itemId
+	•	Permiso: orders.update
+	•	Qué borra: 1 línea. Si es combo padre → borra también hijos.
+	•	Siempre recalcula: sí.
+	•	Errores que debes manejar:
+	◦	404 → item no existe
+	◦	400 → pedido cerrado / no editable
+	•	No hay body: es un DELETE puro.
+Con esto ya tienes TODOS los casos que tu backend (como lo traes en el zip) puede usar con este endpoint ✅
+
+
+10. Notas funcionales clave
+	•	Los totales siempre se recalculan ignorando ítems cancelados.
+	•	Se respetan descuentos / impuestos / service fee ya guardados.
+	•	prepEtaMinutes sirve para mostrar ETA en front / kiosko.
+	•	source y externalRef diferencian interno vs plataforma.
+	•	Con esto el front puede hacer todo el flujo:
+	0.	creación
+	0.	agregar / editar ítems
+	0.	KDS
+	0.	cobros
+	0.	cierre
+	0.	listado con filtros
+
+11. Glosario para el front
+Permisos
+	•	orders.read: puede listar y ver
+	•	orders.create: puede crear
+	•	orders.update: puede editar, pagar, mover estado
+serviceType (tipo de servicio)
+	•	DINE_IN: consumo en mesa
+	•	TAKEAWAY: para llevar
+	•	DELIVERY: a domicilio
+source (canal)
+	•	POS: pedido directo
+	•	UBER, DIDI, RAPPI: plataformas externas
+status del pedido
+	•	DRAFT: borrador, no cocina
+	•	OPEN: activo
+	•	HOLD: en pausa
+	•	CLOSED: cobrado y cerrado
+	•	CANCELED: cancelado
+OrderItem.status
+	•	NEW
+	•	IN_PROGRESS
+	•	READY
+	•	SERVED
+	•	CANCELED
+Timestamps
+	•	acceptedAt: el pedido salió de borrador / cocina lo tomó
+	•	readyAt: todos los ítems están listos
+	•	servedAt: todos servidos o cancelados
+	•	closedAt: se cobró
+	•	canceledAt: se canceló
+Totales (centavos)
+	•	subtotalCents: suma de renglones
+	•	discountCents: descuentos
+	•	serviceFeeCents: propina/fee fijo
+	•	taxCents: impuestos
+	•	totalCents: subtotal - descuento + service + tax
+	•	paymentsTotalCents: suma de pagos
+	•	paymentsTipCents: suma de propinas
+Pagos (payments[])
+	•	method: CASH | CARD | TRANSFER | OTHER
+	•	amountCents
+	•	tipCents
+	•	paidAt
+	•	note
+Mesa
+	•	tableId: id de la mesa
+	•	table: { id, name } para mostrar “Mesa 12”
+	•	covers: número de comensales
+DTOs clave
+	•	ListOrdersQueryDto: filtros del GET
+	•	UpdateOrderMetaDto: para editar nota, mesa, cubiertos, ETA
+	•	UpdateOrderStatusDto: para mover el pedido validando pagos

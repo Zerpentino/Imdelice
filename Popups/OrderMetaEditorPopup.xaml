@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<toolkit:Popup xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+               xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+               xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+               x:Class="Imdeliceapp.Popups.OrderMetaEditorPopup"
+               CanBeDismissedByTappingOutsideOfPopup="False">
+  <Border Stroke="{AppThemeBinding Light=#DDDDDD, Dark=#333333}"
+          StrokeShape="{RoundRectangle CornerRadius=22}"
+          BackgroundColor="{AppThemeBinding Light=White, Dark=#181818}"
+          Padding="0">
+    <ScrollView>
+      <VerticalStackLayout Padding="20"
+                           Spacing="16"
+                           WidthRequest="360">
+        <Grid ColumnDefinitions="*,Auto"
+              ColumnSpacing="8"
+              VerticalOptions="Center">
+          <Label Text="Editar encabezado"
+                 FontSize="20"
+                 FontAttributes="Bold"/>
+          <Button Text="✕"
+                  Grid.Column="1"
+                  WidthRequest="32"
+                  HeightRequest="32"
+                  Padding="0"
+                  BackgroundColor="Transparent"
+                  Clicked="Cancel_Clicked"/>
+        </Grid>
+
+        <VerticalStackLayout x:Name="TableSection"
+                             Spacing="6">
+          <Label Text="Mesa"
+                 FontAttributes="Bold"
+                 FontSize="14"/>
+          <Picker x:Name="TablePicker"
+                  ItemDisplayBinding="{Binding DisplayName}"
+                  Title="Selecciona una mesa"/>
+        </VerticalStackLayout>
+
+        <VerticalStackLayout Spacing="6">
+          <Label Text="Número de comensales"
+                 FontAttributes="Bold"
+                 FontSize="14"/>
+          <Entry x:Name="CoversEntry"
+                 Keyboard="Numeric"
+                 Placeholder="Ej. 4"/>
+        </VerticalStackLayout>
+
+        <VerticalStackLayout Spacing="6">
+          <Label Text="Tiempo estimado (min)"
+                 FontAttributes="Bold"
+                 FontSize="14"/>
+          <Entry x:Name="PrepEtaEntry"
+                 Keyboard="Numeric"
+                 Placeholder="Ej. 20"/>
+        </VerticalStackLayout>
+
+        <VerticalStackLayout Spacing="6">
+          <Label Text="Nota"
+                 FontAttributes="Bold"
+                 FontSize="14"/>
+          <Editor x:Name="NoteEditor"
+                  AutoSize="TextChanges"
+                  Placeholder="Ej. Cliente frecuente"/>
+        </VerticalStackLayout>
+
+        <Label x:Name="ValidationLabel"
+               TextColor="#E53935"
+               FontSize="12"
+               IsVisible="False"/>
+
+        <Grid ColumnDefinitions="*,*"
+              ColumnSpacing="12">
+          <Button Text="Cancelar"
+                  Clicked="Cancel_Clicked"
+                  BackgroundColor="{AppThemeBinding Light=#F1E9F1, Dark=#2B1D29}"
+                  TextColor="{AppThemeBinding Light=#894164, Dark=#D5B2C2}"/>
+          <Button Grid.Column="1"
+                  Text="Guardar"
+                  BackgroundColor="#894164"
+                  TextColor="White"
+                  Clicked="Save_Clicked"/>
+        </Grid>
+      </VerticalStackLayout>
+    </ScrollView>
+  </Border>
+</toolkit:Popup>

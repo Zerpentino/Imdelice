@@ -1,0 +1,303 @@
+8. Pagos
+POST /api/orders/:id/paymentsPermiso: orders.updateBody: AddPaymentDto
+	•	Registra pago + propina
+	•	Revisa el acumulado
+	•	Si ya cubre el total → cierra automáticamente el pedido
+DTO exacto (de tu zip)
+
+export const AddPaymentDto = z.object({
+  method: z.enum(["CASH", "CARD", "TRANSFER", "OTHER"]),
+  amountCents: z.number().int().nonnegative(),
+  tipCents: z.number().int().nonnegative().default(0),
+  note: z.string().optional()
+});
+Traducción:
+	•	method → obligatorio → CASH | CARD | TRANSFER | OTHER
+	•	amountCents → obligatorio → entero ≥ 0 (en centavos)
+	•	tipCents → opcional → entero ≥ 0 (default 0)
+	•	note → opcional
+
+Qué hace el repo (esto es lo chido)
+En PrismaOrderRepository.addPayment(...) hace:
+	1	Crea el pago:
+	◦	orderId: el que viene en la ruta
+	◦	method: el que mandaste
+	◦	amountCents
+	◦	tipCents (o 0)
+	◦	receivedByUserId: el user que sacó del token
+	◦	note
+	2	Luego agrega todos los pagos de la orden:const agg = await tx.payment.aggregate({
+	3	  where: { orderId },
+	4	  _sum: { amountCents: true, tipCents: true },
+	5	});
+	6	const ord = await tx.order.findUnique({ where: { id: orderId } });
+	7	const paid = (agg._sum.amountCents || 0) + (agg._sum.tipCents || 0);
+	8	if (ord && paid >= (ord.totalCents || 0)) {
+	9	  await tx.order.update({
+	10	    where: { id: orderId },
+	11	    data: { status: "CLOSED", closedAt: new Date() },
+	12	  });
+	13	}
+	14	🔴 Eso significa: si con este pago ya alcanzaste o superaste el total, la orden se cierra sola (status: "CLOSED").
+	15	Te regresa el pago que creó.
+
+Respuesta típica
+
+{
+  "error": null,
+  "data": {
+    "id": 25,
+    "orderId": 70,
+    "method": "CASH",
+    "amountCents": 20000,
+    "tipCents": 0,
+    "paidAt": "2025-10-30T18:20:00.000Z",
+    "receivedByUserId": 1,
+    "note": null
+  },
+  "message": "Paid"
+}
+status HTTP: 201
+Ojo: NO te devuelve la orden; te devuelve el pago. Si el front quiere ver que se cerró, hace luego GET /api/orders/:id.
+
+TODOS los casos que puedes mandar 💰
+1. Pago en efectivo (simple)
+
+{
+  "method": "CASH",
+  "amountCents": 15000
+}
+	•	tip = 0
+	•	si el total de la orden ≤ 150.00 → la cierra
+
+2. Pago con propina
+
+{
+  "method": "CASH",
+  "amountCents": 15000,
+  "tipCents": 2000
+}
+Aquí el repo suma amountCents + tipCents para ver si cierra.O sea, si la orden costaba 17,000 → con esto la cierra.
+
+3. Pago con tarjeta
+
+{
+  "method": "CARD",
+  "amountCents": 23000
+}
+Sirve igual. El método solo se guarda.
+
+4. Pago por transferencia con nota
+
+{
+  "method": "TRANSFER",
+  "amountCents": 12000,
+  "note": "Transferencia BBVA ref 123"
+}
+
+5. Pago “otro” (vales, etc.)
+
+{
+  "method": "OTHER",
+  "amountCents": 5000,
+  "note": "Vale restaurante"
+}
+
+6. Pago parcial (para luego complementar)
+
+{
+  "method": "CASH",
+  "amountCents": 10000
+}
+	•	Si el pedido era de 23,000 → NO la cierra
+	•	El front puede mostrar: pagado 100.00 / total 230.00
+	•	Luego mandas otro pago (ver caso 7)
+
+7. Segundo pago que completa la orden
+1er pago:
+
+{
+  "method": "CASH",
+  "amountCents": 10000
+}
+2do pago:
+
+{
+  "method": "CARD",
+  "amountCents": 13000
+}
+	•	El 2do pago hace que paid >= totalCents → el repo cierra la orden.
+
+8. Pago que supera el total (pago “de más”)
+
+{
+  "method": "CASH",
+  "amountCents": 30000
+}
+Si la orden era 23,000:
+	•	paid = 30,000
+	•	30,000 ≥ 23,000 → se cierra
+	•	NO hace cambio, solo guarda el pago así
+
+9. Pago solo de propina (amount 0, tip > 0)
+Como tu DTO permite amountCents = 0 y tipCents ≥ 0:
+
+{
+  "method": "CASH",
+  "amountCents": 0,
+  "tipCents": 500
+}
+	•	Guarda el pago
+	•	Suma 500 al “paid”
+	•	Si con eso alcanza → cierra (raro, pero posible)
+
+10. Pago en 0 total (para probar validación)
+
+{
+  "method": "CASH",
+  "amountCents": 0
+}
+Lo acepta porque es nonnegative().No va a cerrar a menos que la orden sea 0.
+
+11. Pago con nota larga
+
+{
+  "method": "CARD",
+  "amountCents": 8000,
+  "note": "Pagó con tarjeta física, aprobaron en terminal"
+}
+
+12. Intentar pagar sin method → 400
+
+{
+  "amountCents": 10000
+}
+Respuesta:
+
+{
+  "error": {
+    "code": 500,
+    "details": {}
+  },
+  "data": null,
+  "message": "Error adding payment"
+}
+(el 500 te lo da porque Zod lanzó error y tu controller lo está mapeando a 500 salvo que sea “Id inválido”; si quieres 400 aquí, hay que ajustar el controller)
+
+13. Intentar pagar sin auth → 401
+Porque el controller hace:
+
+if (!receivedByUserId) return fail(res, "Unauthorized", 401);
+Respuesta:
+
+{
+  "error": {
+    "code": 401,
+    "details": null
+  },
+  "data": null,
+  "message": "Unauthorized"
+}
+
+14. Intentar pagar una orden que NO existe → 500 (desde repo)
+
+{
+  "method": "CASH",
+  "amountCents": 10000
+}
+si el :id no existe, Prisma truena dentro de la tx → el controller responde:
+
+{
+  "error": {
+    "code": 500,
+    "details": {}
+  },
+  "data": null,
+  "message": "Error adding payment"
+}
+(si quieres 404, hay que envolver el create y checar existencia antes)
+
+15. Pagar una orden que ya estaba CLOSED
+Tu repo no bloquea el create de pago si ya está CLOSED: lo que hace es crear el pago y volver a checar.O sea, esto va a funcionar igual:
+
+{
+  "method": "CASH",
+  "amountCents": 1000
+}
+pero la orden seguirá CLOSED.
+
+Cosas importantes para tu front
+	1	Siempre manda method y amountCents.
+	2	El usuario autenticado es el que se guarda en receivedByUserId (no lo mandes tú).
+	3	Después de pagar, si quieres ver que la orden se cerró, haz:GET /api/orders/:id
+	4	porque el POST te regresa solo el pago.
+	5	Los montos son en centavos.
+	6	Si quieres “pago mixto”, solo llamas varias veces a este endpoint.
+
+
+10. Notas funcionales clave
+	•	Los totales siempre se recalculan ignorando ítems cancelados.
+	•	Se respetan descuentos / impuestos / service fee ya guardados.
+	•	prepEtaMinutes sirve para mostrar ETA en front / kiosko.
+	•	source y externalRef diferencian interno vs plataforma.
+	•	Con esto el front puede hacer todo el flujo:
+	0.	creación
+	0.	agregar / editar ítems
+	0.	KDS
+	0.	cobros
+	0.	cierre
+	0.	listado con filtros
+
+11. Glosario para el front
+Permisos
+	•	orders.read: puede listar y ver
+	•	orders.create: puede crear
+	•	orders.update: puede editar, pagar, mover estado
+serviceType (tipo de servicio)
+	•	DINE_IN: consumo en mesa
+	•	TAKEAWAY: para llevar
+	•	DELIVERY: a domicilio
+source (canal)
+	•	POS: pedido directo
+	•	UBER, DIDI, RAPPI: plataformas externas
+status del pedido
+	•	DRAFT: borrador, no cocina
+	•	OPEN: activo
+	•	HOLD: en pausa
+	•	CLOSED: cobrado y cerrado
+	•	CANCELED: cancelado
+OrderItem.status
+	•	NEW
+	•	IN_PROGRESS
+	•	READY
+	•	SERVED
+	•	CANCELED
+Timestamps
+	•	acceptedAt: el pedido salió de borrador / cocina lo tomó
+	•	readyAt: todos los ítems están listos
+	•	servedAt: todos servidos o cancelados
+	•	closedAt: se cobró
+	•	canceledAt: se canceló
+Totales (centavos)
+	•	subtotalCents: suma de renglones
+	•	discountCents: descuentos
+	•	serviceFeeCents: propina/fee fijo
+	•	taxCents: impuestos
+	•	totalCents: subtotal - descuento + service + tax
+	•	paymentsTotalCents: suma de pagos
+	•	paymentsTipCents: suma de propinas
+Pagos (payments[])
+	•	method: CASH | CARD | TRANSFER | OTHER
+	•	amountCents
+	•	tipCents
+	•	paidAt
+	•	note
+Mesa
+	•	tableId: id de la mesa
+	•	table: { id, name } para mostrar “Mesa 12”
+	•	covers: número de comensales
+DTOs clave
+	•	ListOrdersQueryDto: filtros del GET
+	•	UpdateOrderMetaDto: para editar nota, mesa, cubiertos, ETA
+	•	UpdateOrderStatusDto: para mover el pedido validando pagos
+

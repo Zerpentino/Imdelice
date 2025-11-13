@@ -1,0 +1,1 @@
+{"version":3,"file":"DeleteProduct.d.ts","sourceRoot":"","sources":["../../../../src/core/usecases/products/DeleteProduct.ts"],"names":[],"mappings":"AACA,OAAO,KAAK,EAAE,kBAAkB,EAAE,MAAM,8CAA8C,CAAC;AACvF,qBAAa,aAAa;IACZ,OAAO,CAAC,IAAI;gBAAJ,IAAI,EAAE,kBAAkB;IACtC,IAAI,CAAC,EAAE,EAAE,MAAM,EAAE,IAAI,UAAQ;CAGpC"}

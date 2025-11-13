@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Class="Imdeliceapp.Pages.TablesPage"
+    x:Name="ThisPage"
+    Title="Mesas"
+    BackgroundColor="{AppThemeBinding Light=White, Dark=Black}"
+    Shell.NavBarIsVisible="True"
+    Shell.BackgroundColor="{StaticResource BrandPrimary}"
+    Shell.ForegroundColor="{StaticResource BrandOnPrimary}"
+    Shell.TitleColor="{StaticResource BrandOnPrimary}">
+
+  <Grid RowDefinitions="Auto,*">
+
+    <SearchBar Grid.Row="0"
+               x:Name="SearchBox"
+               Placeholder="Buscar mesa..."
+               Margin="12"
+               TextChanged="SearchBox_TextChanged" />
+
+    <RefreshView Grid.Row="1"
+                 x:Name="TablesRefresh"
+                 IsRefreshing="{Binding IsRefreshing}"
+                 Refreshing="TablesRefresh_Refreshing">
+      <CollectionView x:Name="TablesCV"
+                      ItemsSource="{Binding Tables}"
+                      SelectionMode="None"
+                      Margin="12,4"
+                      BackgroundColor="Transparent">
+        <CollectionView.EmptyView>
+          <VerticalStackLayout Padding="32" Spacing="8"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center">
+            <Label Text="{Binding EmptyMessage}"
+                   FontAttributes="Bold"
+                   TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+            <Button Text="Reintentar"
+                    Clicked="Retry_Clicked"
+                    Margin="0,8,0,0"/>
+          </VerticalStackLayout>
+        </CollectionView.EmptyView>
+
+        <CollectionView.ItemTemplate>
+          <DataTemplate>
+            <SwipeView>
+
+              <SwipeView.LeftItems>
+                <SwipeItems Mode="Reveal" SwipeBehaviorOnInvoked="Close">
+                  <SwipeItem Text="Eliminar"
+                             BackgroundColor="#E53935"
+                             Invoked="DeleteSwipe_Invoked"
+                             IsVisible="{Binding Source={x:Reference ThisPage}, Path=CanDelete}"
+                             IsEnabled="{Binding Source={x:Reference ThisPage}, Path=CanDelete}"/>
+                </SwipeItems>
+              </SwipeView.LeftItems>
+
+              <SwipeView.RightItems>
+                <SwipeItems Mode="Reveal" SwipeBehaviorOnInvoked="Close">
+                  <SwipeItem Text="Editar"
+                             BackgroundColor="#4CAF50"
+                             Invoked="EditSwipe_Invoked"
+                             IsVisible="{Binding Source={x:Reference ThisPage}, Path=CanUpdate}"
+                             IsEnabled="{Binding Source={x:Reference ThisPage}, Path=CanUpdate}"/>
+                </SwipeItems>
+              </SwipeView.RightItems>
+
+              <Grid Padding="14"
+                    RowDefinitions="Auto,Auto"
+                    ColumnDefinitions="*"
+                    Margin="0,6"
+                    BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E1E1E}">
+                <Label Text="{Binding name}"
+                       FontAttributes="Bold"
+                       TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+                <Label Grid.Row="1"
+                       Text="{Binding StatusText}"
+                       FontSize="12"
+                       TextColor="{Binding StatusColor}"
+                       />
+              </Grid>
+            </SwipeView>
+          </DataTemplate>
+        </CollectionView.ItemTemplate>
+      </CollectionView>
+    </RefreshView>
+
+    <Button Grid.RowSpan="2"
+            Text="+"
+            Clicked="AddTable_Clicked"
+            CornerRadius="28"
+            WidthRequest="56" HeightRequest="56"
+            BackgroundColor="{AppThemeBinding Light=#894164, Dark=#894164}"
+            TextColor="White"
+            HorizontalOptions="End"
+            VerticalOptions="End"
+            Margin="16"
+            IsVisible="{Binding Source={x:Reference ThisPage}, Path=CanCreate}"/>
+  </Grid>
+</ContentPage>

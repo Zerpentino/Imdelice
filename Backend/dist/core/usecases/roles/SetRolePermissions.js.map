@@ -1,0 +1,1 @@
+{"version":3,"file":"SetRolePermissions.js","sourceRoot":"","sources":["../../../../src/core/usecases/roles/SetRolePermissions.ts"],"names":[],"mappings":";;;AAEA,MAAa,kBAAkB;IAC7B,YAAoB,IAA2B;QAA3B,SAAI,GAAJ,IAAI,CAAuB;IAAG,CAAC;IACnD,OAAO,CAAC,MAAc,EAAE,KAAe;QACrC,OAAO,IAAI,CAAC,IAAI,CAAC,sBAAsB,CAAC,MAAM,EAAE,KAAK,CAAC,CAAA;IACxD,CAAC;CACF;AALD,gDAKC"}

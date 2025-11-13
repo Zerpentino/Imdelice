@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Class="Imdeliceapp.Pages.ChannelConfigPage"
+    Title="Markups por canal"
+      Shell.NavBarIsVisible="True"
+
+    BackgroundColor="{AppThemeBinding Light=White, Dark=Black}">
+
+  <ContentPage.ToolbarItems>
+    <ToolbarItem Text="Actualizar"
+                 Order="Primary"
+                 Priority="0"
+                 Clicked="Refresh_Clicked"/>
+  </ContentPage.ToolbarItems>
+
+  <Grid Padding="16"
+        RowDefinitions="Auto,Auto,*">
+    <Label Grid.Row="0"
+           Text="Define el porcentaje adicional que se aplica a cada canal de pedidos."
+           FontSize="14"
+           TextColor="{AppThemeBinding Light=#444444, Dark=#DDDDDD}"/>
+
+    <Label Grid.Row="1"
+           Text="{Binding StatusMessage}"
+           TextColor="{AppThemeBinding Light=#D32F2F, Dark=#FFABAB}"
+           FontSize="12"
+           IsVisible="{Binding HasStatusMessage}"
+           Margin="0,8,0,0"/>
+
+    <CollectionView Grid.Row="2"
+                    ItemsSource="{Binding Configs}"
+                    Margin="0,12,0,0"
+                    SelectionMode="None">
+      <CollectionView.ItemTemplate>
+        <DataTemplate>
+          <Border Stroke="{AppThemeBinding Light=#E0E0E0, Dark=#333333}"
+                  StrokeShape="{RoundRectangle CornerRadius=12}"
+                  BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E1E1E}"
+                  Padding="14"
+                  Margin="0,6">
+            <Grid RowDefinitions="Auto,Auto,Auto"
+                  ColumnDefinitions="*,Auto"
+                  ColumnSpacing="12"
+                  RowSpacing="6">
+              <Label Text="{Binding DisplayName}"
+                     FontAttributes="Bold"
+                     FontSize="15"
+                     TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+              <Entry Grid.Column="1"
+                     Text="{Binding MarkupText}"
+                     Placeholder="0"
+                     WidthRequest="80"
+                     Keyboard="Numeric"
+                     HorizontalTextAlignment="Center"
+                     IsEnabled="{Binding IsEntryEnabled}"/>
+
+              <Label Grid.Row="1"
+                     Text="{Binding Description}"
+                     FontSize="12"
+                     TextColor="{AppThemeBinding Light=#555555, Dark=#BBBBBB}"
+                     LineBreakMode="WordWrap"/>
+              <HorizontalStackLayout Grid.Row="1"
+                                     Grid.Column="1"
+                                     Spacing="8"
+                                     VerticalOptions="Center">
+                <ActivityIndicator IsRunning="{Binding IsSaving}"
+                                   IsVisible="{Binding IsSaving}"
+                                   WidthRequest="20"
+                                   HeightRequest="20"/>
+                <Button Text="{Binding SaveButtonText}"
+                        Clicked="SaveConfig_Clicked"
+                        CommandParameter="{Binding}"
+                        IsEnabled="{Binding CanSave}"/>
+              </HorizontalStackLayout>
+
+              <Label Grid.Row="2"
+                     Text="{Binding ValidationMessage}"
+                     TextColor="#D32F2F"
+                     FontSize="11"
+                     IsVisible="{Binding HasValidationMessage}"/>
+              <Label Grid.Row="2"
+                     Grid.Column="1"
+                     Text="{Binding UpdatedSummary}"
+                     FontSize="11"
+                     HorizontalTextAlignment="End"
+                     TextColor="{AppThemeBinding Light=#777777, Dark=#AAAAAA}"/>
+            </Grid>
+          </Border>
+        </DataTemplate>
+      </CollectionView.ItemTemplate>
+    </CollectionView>
+
+    <ActivityIndicator Grid.RowSpan="3"
+                       IsRunning="{Binding IsLoading}"
+                       IsVisible="{Binding IsLoading}"
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center"/>
+  </Grid>
+</ContentPage>

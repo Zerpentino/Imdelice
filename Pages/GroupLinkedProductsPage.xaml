@@ -49,28 +49,28 @@
 
               <Grid Padding="12" ColumnDefinitions="*,Auto" BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E1E1E}" Margin="0,6">
                 <VerticalStackLayout Spacing="2">
-                  <Label Text="{Binding product.name}" FontAttributes="Bold"
+                  <Label Text="{Binding Product.name}" FontAttributes="Bold"
                          TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
                   <HorizontalStackLayout Spacing="8">
                     <Border StrokeThickness="0" BackgroundColor="#E3F2FD" Padding="6,2" StrokeShape="{RoundRectangle CornerRadius=8}">
-                      <Label Text="{Binding product.type}" FontSize="11" TextColor="#1565C0"/>
+                      <Label Text="{Binding Product.type}" FontSize="11" TextColor="#1565C0"/>
                     </Border>
                     <Border StrokeThickness="0" BackgroundColor="#FFE0B2" Padding="6,2" StrokeShape="{RoundRectangle CornerRadius=8}">
                       <Border.Triggers>
-                        <DataTrigger TargetType="Border" Binding="{Binding product.isActive}" Value="True">
+                        <DataTrigger TargetType="Border" Binding="{Binding Product.isActive}" Value="True">
                           <Setter Property="IsVisible" Value="False"/>
                         </DataTrigger>
                       </Border.Triggers>
                       <Label Text="Inactivo" FontSize="11" TextColor="#E65100"/>
                     </Border>
                   </HorizontalStackLayout>
-                  <Label FontSize="12" Text="{Binding position, StringFormat='Posición: {0}'}"
+                  <Label FontSize="12" Text="{Binding PositionDisplay}"
                          TextColor="{AppThemeBinding Light=#666, Dark=#CCC}"/>
                 </VerticalStackLayout>
 
                 <Label Grid.Column="1"
-                       Text="{Binding product.priceCents, StringFormat='${0:F2}'}"
-                       IsVisible="{Binding product.priceCents}"
+                       Text="{Binding PriceDisplay}"
+                       IsVisible="{Binding Product.priceCents}"
                        VerticalTextAlignment="Center"/>
               </Grid>
             </SwipeView>

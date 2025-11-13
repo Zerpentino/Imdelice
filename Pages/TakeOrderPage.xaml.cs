@@ -6,6 +6,7 @@ using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
@@ -14,14 +15,15 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using System.Diagnostics;
 using CommunityToolkit.Maui.Views;
 using Imdeliceapp;
+using Imdeliceapp.Helpers;
 using Imdeliceapp.Models;
-using System.Text.Json;
-
 using Imdeliceapp.Popups;
 using Imdeliceapp.Services;
 using Microsoft.Maui.Controls;
+using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Graphics;
 using Microsoft.Maui.Networking;
 using Microsoft.Maui.Storage;
@@ -32,12 +34,18 @@ public partial class TakeOrderPage : ContentPage
 {
     readonly MenusApi _menusApi = new();
     readonly ModifiersApi _modifiersApi = new();
+    readonly OrdersApi _ordersApi = new();
 
     readonly Dictionary<int, List<MenuItemVm>> _itemsByProduct = new();
+    readonly Dictionary<int, List<MenuItemVm>> _productVariantsCache = new();
     readonly Dictionary<int, List<ModifierGroupDTO>> _modifierCache = new();
     static readonly ConcurrentDictionary<string, ImageSource> _menuImageCache = new();
     readonly List<MenuSectionVm> _allSections = new();
     readonly List<CartEntry> _cart = new();
+    OrderHeaderState _orderHeaderState;
+
+    const string DefaultServiceType = "DINE_IN";
+    const string DefaultSource = "POS";
 
     bool _hasLoaded;
     bool _isInitializingMenu;
@@ -114,6 +122,8 @@ public partial class TakeOrderPage : ContentPage
         MenuOptions.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasMenuOptions));
 
         ConfigureItemCommand = new Command<MenuItemVm>(async item => await ConfigureItemAsync(item!), item => item != null);
+
+        _orderHeaderState = OrderHeaderState.CreateDefault();
 
         UpdateCartBadge();
     }
@@ -231,6 +241,7 @@ public partial class TakeOrderPage : ContentPage
                 : menu.name;
 
             _itemsByProduct.Clear();
+            _productVariantsCache.Clear();
             _allSections.Clear();
 
             foreach (var section in menu.sections
@@ -446,27 +457,54 @@ public partial class TakeOrderPage : ContentPage
         if (item == null)
             return;
 
-        var baseItem = editingEntry?.BaseItem ?? item;
-        var targetProductId = baseItem.ProductId ?? item.ProductId;
+#if DEBUG
+        var debugInfo = BuildItemDebugInfo(item);
+        System.Diagnostics.Debug.WriteLine(debugInfo);
+        _ = Clipboard.Default.SetTextAsync(debugInfo);
+#endif
+
+        var result = await OpenConfiguratorAsync(item, editingEntry);
+        if (result is null)
+            return;
+
+        AddOrUpdateCart(result);
+    }
+
+    async Task<ConfigureMenuItemResult?> OpenConfiguratorAsync(
+        MenuItemVm triggerItem,
+        CartEntry? editingEntry = null,
+        bool lockQuantity = false,
+        int? lockedQuantity = null,
+        string? confirmButtonText = null)
+    {
+        var baseItem = editingEntry?.BaseItem ?? triggerItem;
+        var targetProductId = baseItem.ProductId ?? triggerItem.ProductId;
 
         var relatedVariants = new List<MenuItemVm>();
         if (targetProductId.HasValue && _itemsByProduct.TryGetValue(targetProductId.Value, out var set))
             relatedVariants = set.Where(v => v != null).ToList();
 
         relatedVariants.Add(baseItem);
-        relatedVariants = relatedVariants
+        var groupedVariants = relatedVariants
             .GroupBy(v => v.Id)
             .Select(g => g.First())
             .OrderBy(v => v.DisplaySortOrder)
             .ThenBy(v => v.Title)
             .ToList();
 
+        if ((baseItem.IsCombo || triggerItem.IsCombo) && groupedVariants.Count > 0)
+        {
+            groupedVariants = groupedVariants.Where(v => v.Id == baseItem.Id).ToList();
+        }
+
+        relatedVariants = groupedVariants;
+
         var modifierGroups = new List<ModifierGroupDTO>();
         if (targetProductId.HasValue)
             modifierGroups = await GetModifierGroupsAsync(targetProductId.Value);
 
         Func<int, Task<IReadOnlyList<VariantModifierGroupLinkDTO>>>? variantRulesLoader = null;
-        if (relatedVariants.Any(v => v.VariantId.HasValue) || item.VariantId.HasValue)
+        if (relatedVariants.Any(v => v.VariantId.HasValue) || triggerItem.VariantId.HasValue)
         {
             variantRulesLoader = async variantId =>
             {
@@ -481,13 +519,484 @@ public partial class TakeOrderPage : ContentPage
             };
         }
 
-        var popup = new ConfigureMenuItemPopup(baseItem, relatedVariants, modifierGroups, editingEntry, variantRulesLoader);
-        var result = await this.ShowPopupAsync(popup) as ConfigureMenuItemResult;
-        if (result is null)
-            return;
+        var childConfigs = await BuildComboChildConfigurationsAsync(baseItem, editingEntry);
 
-        AddOrUpdateCart(result);
+        var popup = new ConfigureMenuItemPopup(
+            baseItem,
+            relatedVariants,
+            modifierGroups,
+            editingEntry,
+            variantRulesLoader,
+            lockQuantity,
+            lockedQuantity,
+            confirmButtonText,
+            childConfigs);
+
+        var result = await this.ShowPopupAsync(popup) as ConfigureMenuItemResult;
+        return result;
     }
+
+    async Task<List<ComboChildConfiguration>> BuildComboChildConfigurationsAsync(
+        MenuItemVm baseItem,
+        CartEntry? existingEntry)
+    {
+        var configs = new List<ComboChildConfiguration>();
+        if (baseItem?.ComboComponents == null || baseItem.ComboComponents.Count == 0)
+            return configs;
+
+        var selections = existingEntry?.ComboChildren?
+            .GroupBy(c => (c.ProductId, c.VariantId))
+            .ToDictionary(g => g.Key, g => g.First())
+            ?? new Dictionary<(int, int?), ComboChildSelection>();
+
+        foreach (var component in baseItem.ComboComponents)
+        {
+            if (component.ProductId <= 0)
+                continue;
+
+            selections.TryGetValue((component.ProductId, component.VariantId), out var existing);
+            if (existing == null)
+            {
+                existing = selections.Values.FirstOrDefault(s => s.ProductId == component.ProductId);
+            }
+
+            var variants = await ResolveComboChildVariantsAsync(component);
+            IReadOnlyList<MenuItemVm> filteredVariants = variants;
+            if (component.VariantId.HasValue)
+            {
+                var desiredVariantId = component.VariantId.Value;
+                var onlyVariant = variants
+                    .Where(v => v.VariantId == desiredVariantId)
+                    .ToList();
+
+                if (onlyVariant.Count > 0)
+                {
+                    filteredVariants = onlyVariant;
+                }
+                else if (variants.Count > 0)
+                {
+                    filteredVariants = new List<MenuItemVm> { variants[0] };
+                }
+            }
+
+            var modifierGroups = await GetModifierGroupsAsync(component.ProductId);
+
+            Dictionary<int, IReadOnlyList<VariantModifierGroupLinkDTO>>? variantInlineRules = null;
+            foreach (var variant in filteredVariants)
+            {
+                if (!variant.VariantId.HasValue)
+                    continue;
+                var inline = variant.Raw?.@ref?.variant?.modifierGroups;
+                if (inline == null || inline.Count == 0)
+                    continue;
+                variantInlineRules ??= new Dictionary<int, IReadOnlyList<VariantModifierGroupLinkDTO>>();
+                variantInlineRules[variant.VariantId.Value] = inline;
+            }
+
+            IReadOnlyList<VariantModifierGroupLinkDTO>? inlineVariantRules =
+                component.VariantReference?.modifierGroups?.Count > 0
+                    ? component.VariantReference.modifierGroups
+                    : null;
+
+            Func<int, Task<IReadOnlyList<VariantModifierGroupLinkDTO>>>? loader = null;
+            if (inlineVariantRules != null)
+            {
+                loader = _ => Task.FromResult(inlineVariantRules);
+            }
+            else if (variantInlineRules != null || filteredVariants.Any(v => v.VariantId.HasValue))
+            {
+                loader = async variantId =>
+                {
+                    if (variantInlineRules != null && variantInlineRules.TryGetValue(variantId, out var cachedRules))
+                        return cachedRules;
+                    try
+                    {
+                        return await _menusApi.GetVariantModifierGroupsAsync(variantId);
+                    }
+                    catch
+                    {
+                        return Array.Empty<VariantModifierGroupLinkDTO>();
+                    }
+                };
+            }
+
+            var notesMetadata = ParseComboComponentNotes(component.Notes);
+            var allowVariantSelection = notesMetadata.AllowVariantSelection;
+
+            if (!allowVariantSelection && !component.VariantId.HasValue && component.VariantReference == null && filteredVariants.Count > 1)
+            {
+                var preferred = ResolvePreferredVariantForComponent(component, filteredVariants);
+                if (preferred != null)
+                    filteredVariants = new List<MenuItemVm> { preferred };
+                else
+                    filteredVariants = new List<MenuItemVm> { filteredVariants[0] };
+            }
+
+            configs.Add(new ComboChildConfiguration(
+                component,
+                filteredVariants,
+                modifierGroups,
+                loader,
+                existing,
+                allowVariantSelection,
+                notesMetadata.DisplayNotes));
+        }
+
+        return configs;
+    }
+
+    async Task<List<MenuItemVm>> ResolveComboChildVariantsAsync(MenuItemVm.ComboComponent component)
+    {
+        if (component.ProductId <= 0)
+            return new List<MenuItemVm>();
+
+        var virtualItems = BuildVirtualMenuItemsFromComponent(component);
+        if (component.VariantReference != null && virtualItems.Count > 0)
+        {
+            await PrefetchImagesAsync(virtualItems);
+            return virtualItems;
+        }
+        var virtualFallback = virtualItems.Count > 0 ? virtualItems : null;
+
+        if (_itemsByProduct.TryGetValue(component.ProductId, out var cached) && cached?.Count > 0)
+        {
+            return cached
+                .GroupBy(v => v.Id)
+                .Select(g => g.First())
+                .OrderBy(v => v.DisplaySortOrder)
+                .ThenBy(v => v.Title)
+                .ToList();
+        }
+
+        var fallbackVariants = await FetchProductVariantsAsync(component.ProductId);
+        if (fallbackVariants.Count > 0)
+            return fallbackVariants;
+
+        if (virtualFallback != null)
+        {
+            await PrefetchImagesAsync(virtualFallback);
+            return virtualFallback;
+        }
+
+        return new List<MenuItemVm>();
+    }
+
+    async Task<List<MenuItemVm>> FetchProductVariantsAsync(int productId)
+    {
+        if (productId <= 0)
+            return new List<MenuItemVm>();
+
+        if (_productVariantsCache.TryGetValue(productId, out var cached) && cached.Count > 0)
+            return cached;
+
+        try
+        {
+            var product = await _menusApi.GetProductAsync(productId);
+            if (product == null)
+                return new List<MenuItemVm>();
+
+            var section = new MenusApi.MenuPublicSectionDto
+            {
+                id = -product.id,
+                menuId = -1,
+                name = product.name ?? $"Producto #{product.id}",
+                position = 0,
+                isActive = product.isActive,
+                items = new List<MenusApi.MenuPublicItemDto>()
+            };
+
+            var productRef = new MenusApi.MenuPublicProductReference
+            {
+                id = product.id,
+                name = product.name ?? $"Producto #{product.id}",
+                type = product.type,
+                description = null,
+                priceCents = product.priceCents,
+                isActive = product.isActive,
+                isAvailable = product.isAvailable ?? true,
+                imageUrl = null,
+                hasImage = false
+            };
+
+            var list = new List<MenuItemVm>();
+            if (product.variants != null && product.variants.Count > 0)
+            {
+                foreach (var variant in product.variants.Where(v => v?.id > 0 && (v.isActive ?? true)))
+                {
+                    var variantRef = new MenusApi.MenuPublicVariantReference
+                    {
+                        id = variant.id,
+                        name = variant.name,
+                        priceCents = variant.priceCents,
+                        isActive = variant.isActive ?? true,
+                        isAvailable = variant.isAvailable ?? true,
+                        product = productRef,
+                        imageUrl = variant.imageUrl,
+                        hasImage = variant.hasImage ?? false,
+                        modifierGroups = variant.modifierGroups ?? new List<VariantModifierGroupLinkDTO>()
+                    };
+
+                    var item = new MenusApi.MenuPublicItemDto
+                    {
+                        id = variant.id,
+                        sectionId = section.id,
+                        refType = "VARIANT",
+                        refId = variant.id,
+                        displayName = variant.name ?? product.name,
+                        displayPriceCents = variant.priceCents ?? product.priceCents,
+                        position = 0,
+                        isFeatured = false,
+                        isActive = variant.isActive ?? true,
+                        @ref = new MenusApi.MenuPublicReferenceDto
+                        {
+                            kind = "VARIANT",
+                            product = productRef,
+                            variant = variantRef,
+                            components = new List<MenusApi.MenuPublicComboComponent>()
+                        }
+                    };
+
+                    var vm = MenuItemVm.From(section, item);
+                    if (vm != null)
+                        list.Add(vm);
+                }
+            }
+
+            if (list.Count == 0)
+            {
+                var item = new MenusApi.MenuPublicItemDto
+                {
+                    id = product.id,
+                    sectionId = section.id,
+                    refType = "PRODUCT",
+                    refId = product.id,
+                    displayName = product.name ?? $"Producto #{product.id}",
+                    displayPriceCents = product.priceCents,
+                    position = 0,
+                    isFeatured = false,
+                    isActive = product.isActive,
+                    @ref = new MenusApi.MenuPublicReferenceDto
+                    {
+                        kind = "PRODUCT",
+                        product = productRef,
+                        components = new List<MenusApi.MenuPublicComboComponent>()
+                    }
+                };
+
+                var vm = MenuItemVm.From(section, item);
+                if (vm != null)
+                    list.Add(vm);
+            }
+
+            await PrefetchImagesAsync(list);
+            _productVariantsCache[productId] = list;
+            return list;
+        }
+        catch
+        {
+            return new List<MenuItemVm>();
+        }
+    }
+
+    static ComboNotesMetadata ParseComboComponentNotes(string? rawNotes)
+    {
+        if (string.IsNullOrWhiteSpace(rawNotes))
+            return new ComboNotesMetadata(null, false);
+
+        var tokens = new[]
+        {
+            "[allow-variants]", "[allow-variant]", "[allowvariants]", "{allow-variants}", "{allowvariants}",
+            "(allow-variants)", "(allowvariants)", "<allow-variants>", "<allowvariants>", "allow-variants",
+            "allowvariants", "[permitir-variantes]", "permitir-variantes"
+        };
+
+        var normalized = rawNotes;
+        var allow = false;
+        foreach (var token in tokens)
+        {
+            if (normalized.IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                allow = true;
+                normalized = ReplaceIgnoreCase(normalized, token, string.Empty);
+            }
+        }
+
+        normalized = normalized
+            .Replace("[]", string.Empty)
+            .Replace("{}", string.Empty)
+            .Replace("()", string.Empty)
+            .Replace("<>", string.Empty)
+            .Trim('-', '.', ',', ';', ':', ' ')
+            .Trim();
+
+        return new ComboNotesMetadata(
+            string.IsNullOrWhiteSpace(normalized) ? null : normalized,
+            allow);
+    }
+
+    static MenuItemVm? ResolvePreferredVariantForComponent(MenuItemVm.ComboComponent component, IReadOnlyList<MenuItemVm> variants)
+    {
+        if (variants == null || variants.Count == 0)
+            return null;
+
+        var expectedPrice = component.ProductReference?.priceCents;
+        if (expectedPrice.HasValue)
+        {
+            var priceMatch = variants.FirstOrDefault(v => GetVariantPriceCents(v) == expectedPrice.Value);
+            if (priceMatch != null)
+                return priceMatch;
+        }
+
+        var preferredName = component.ProductReference?.name;
+        if (!string.IsNullOrWhiteSpace(preferredName))
+        {
+            var normalizedName = NormalizeInvariant(preferredName);
+            var nameMatch = variants.FirstOrDefault(v =>
+                NormalizeInvariant(v.Raw?.@ref?.variant?.name ?? v.Title) == normalizedName);
+            if (nameMatch != null)
+                return nameMatch;
+        }
+
+        return variants[0];
+    }
+
+    static int? GetVariantPriceCents(MenuItemVm item)
+    {
+        if (item.Raw?.displayPriceCents.HasValue == true)
+            return item.Raw.displayPriceCents.Value;
+        if (item.Raw?.@ref?.variant?.priceCents.HasValue == true)
+            return item.Raw.@ref.variant.priceCents.Value;
+        if (item.Raw?.@ref?.product?.priceCents.HasValue == true)
+            return item.Raw.@ref.product.priceCents.Value;
+        return (int?)Math.Round(item.UnitPrice * 100m, MidpointRounding.AwayFromZero);
+    }
+
+    static string ReplaceIgnoreCase(string source, string target, string replacement)
+    {
+        if (string.IsNullOrEmpty(source) || string.IsNullOrEmpty(target))
+            return source ?? string.Empty;
+        int index;
+        var builder = new StringBuilder();
+        int previousIndex = 0;
+        while ((index = source.IndexOf(target, previousIndex, StringComparison.OrdinalIgnoreCase)) >= 0)
+        {
+            builder.Append(source, previousIndex, index - previousIndex);
+            builder.Append(replacement);
+            previousIndex = index + target.Length;
+        }
+        builder.Append(source, previousIndex, source.Length - previousIndex);
+        return builder.ToString();
+    }
+
+    static string NormalizeInvariant(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? string.Empty
+            : value.Trim().ToLowerInvariant();
+    }
+
+    readonly record struct ComboNotesMetadata(string? DisplayNotes, bool AllowVariantSelection);
+
+    List<MenuItemVm> BuildVirtualMenuItemsFromComponent(MenuItemVm.ComboComponent? component)
+    {
+        var list = new List<MenuItemVm>();
+        if (component == null)
+            return list;
+
+        var productRef = component.ProductReference ?? component.VariantReference?.product;
+        if (productRef == null)
+            return list;
+
+        if (component.VariantReference != null)
+        {
+            list.Add(CreateVirtualMenuItem(productRef, component.VariantReference));
+        }
+        else
+        {
+            list.Add(CreateVirtualMenuItem(productRef, null));
+        }
+
+        return list;
+    }
+
+    static MenuItemVm CreateVirtualMenuItem(
+        MenusApi.MenuPublicProductReference productRef,
+        MenusApi.MenuPublicVariantReference? variantRef)
+    {
+        var priceValue = (variantRef?.priceCents ?? productRef.priceCents)?.ToCurrency();
+        var title = variantRef?.name ?? productRef.name;
+        var subtitle = variantRef?.product?.name ?? productRef.name;
+
+        return new MenuItemVm
+        {
+            Id = -(variantRef?.id ?? productRef.id),
+            SectionId = -1,
+            DisplaySortOrder = 0,
+            Kind = variantRef != null ? "VARIANT" : "PRODUCT",
+            ProductId = productRef.id,
+            VariantId = variantRef?.id,
+            Title = string.IsNullOrWhiteSpace(title) ? productRef.name : title,
+            Subtitle = subtitle,
+            Description = productRef.description,
+            PriceLabel = priceValue.HasValue
+                ? priceValue.Value.ToString("$0.00", CultureInfo.CurrentCulture)
+                : "Precio base",
+            ReferenceLabel = variantRef != null
+                ? $"Variante #{variantRef.id}"
+                : $"Producto #{productRef.id}",
+            UnitPrice = priceValue ?? 0m,
+            Raw = new MenusApi.MenuPublicItemDto
+            {
+                id = variantRef?.id ?? productRef.id,
+                sectionId = -1,
+                refType = variantRef != null ? "VARIANT" : "PRODUCT",
+                refId = variantRef?.id ?? productRef.id,
+                displayName = title,
+                displayPriceCents = variantRef?.priceCents ?? productRef.priceCents,
+                position = 0,
+                isFeatured = false,
+                isActive = productRef.isActive,
+                @ref = new MenusApi.MenuPublicReferenceDto
+                {
+                    product = productRef,
+                    variant = variantRef
+                }
+            },
+            ComboComponents = Array.Empty<MenuItemVm.ComboComponent>()
+        };
+    }
+
+#if DEBUG
+    static string BuildItemDebugInfo(MenuItemVm item)
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine("=== DEBUG: Abrir configurador ===");
+        sb.AppendLine($"Item: {item.Title} (Id={item.Id}, ProductId={item.ProductId}, VariantId={item.VariantId})");
+        sb.AppendLine($"Tipo: {item.Kind}");
+        sb.AppendLine($"Precio: {item.PriceLabel}");
+        if (!string.IsNullOrWhiteSpace(item.Description))
+            sb.AppendLine($"Descripción: {item.Description}");
+
+        if (item.ComboComponents != null && item.ComboComponents.Count > 0)
+        {
+            sb.AppendLine("Componentes del combo:");
+            foreach (var component in item.ComboComponents)
+            {
+                var variantLabel = component.VariantName ?? "(sin variante)";
+                sb.AppendLine($" - {component.ProductName} · {variantLabel} | Qty={component.Quantity} | Req={component.IsRequired}");
+                if (!string.IsNullOrWhiteSpace(component.Notes))
+                    sb.AppendLine($"   Notas: {component.Notes}");
+            }
+        }
+        else
+        {
+            sb.AppendLine("Componentes del combo: ninguno");
+        }
+
+        sb.AppendLine("=== FIN DEBUG ===");
+        return sb.ToString();
+    }
+#endif
 
     async Task<List<ModifierGroupDTO>> GetModifierGroupsAsync(int productId)
     {
@@ -546,13 +1055,7 @@ public partial class TakeOrderPage : ContentPage
 
     async void OpenCart_Clicked(object sender, EventArgs e)
     {
-        if (_cart.Count == 0)
-        {
-            await DisplayAlert("Carrito", "No has agregado productos aún.", "OK");
-            return;
-        }
-
-        var popup = new CartReviewPopup(_cart);
+        var popup = new CartReviewPopup(_cart, _orderHeaderState.Clone(), _ordersApi);
         var action = await this.ShowPopupAsync(popup) as CartPopupResult;
 
         UpdateCartBadge();
@@ -563,7 +1066,14 @@ public partial class TakeOrderPage : ContentPage
         switch (action.Action)
         {
             case CartPopupAction.Checkout:
-                await DisplayAlert("Orden", "Aquí iría el flujo para enviar la orden.", "OK");
+                if (action.Header is null)
+                {
+                    await DisplayAlert("Orden", "Completa los detalles del pedido antes de enviar.", "OK");
+                    return;
+                }
+
+                _orderHeaderState = action.Header.Clone();
+                await CheckoutAsync(action.Header);
                 break;
             case CartPopupAction.EditLine when action.LineToEdit != null:
                 await EditCartEntryAsync(action.LineToEdit);
@@ -579,7 +1089,222 @@ public partial class TakeOrderPage : ContentPage
         await ConfigureItemAsync(entry.SelectedItem, entry);
     }
 
+    async Task CheckoutAsync(OrderHeaderState header)
+    {
+        if (!Perms.OrdersCreate)
+        {
+            await DisplayAlert("Acceso restringido", "No tienes permiso para crear órdenes.", "OK");
+            return;
+        }
+
+        if (Connectivity.Current.NetworkAccess != NetworkAccess.Internet)
+        {
+            await DisplayAlert("Sin conexión", "Necesitas Internet para crear la orden.", "OK");
+            return;
+        }
+
+        static string? Normalize(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+        var payload = new CreateOrderDTO
+        {
+            serviceType = string.IsNullOrWhiteSpace(header.ServiceType) ? DefaultServiceType : header.ServiceType,
+            source = string.IsNullOrWhiteSpace(header.Source) ? DefaultSource : header.Source,
+            status = Normalize(header.Status),
+            platformMarkupPct = header.PlatformMarkupPct.HasValue
+                ? (int?)decimal.ToInt32(decimal.Round(header.PlatformMarkupPct.Value, MidpointRounding.AwayFromZero))
+                : null,
+            tableId = header.TableId,
+            covers = header.Covers,
+            note = Normalize(header.Note),
+            customerName = Normalize(header.CustomerName),
+            customerPhone = Normalize(header.CustomerPhone),
+            externalRef = Normalize(header.ExternalRef),
+            prepEtaMinutes = header.PrepEtaMinutes,
+            servedByUserId = header.ServedByUserId
+        };
+
+        foreach (var entry in _cart)
+        {
+            var item = CreateOrderItemFromEntry(entry);
+            if (item != null)
+                payload.items.Add(item);
+        }
+
+        if (payload.items.Count == 0)
+        {
+            var confirmar = await DisplayAlert(
+                "Orden sin productos",
+                "La orden no tiene productos. Puedes crearla como borrador o agregar los ítems después. ¿Deseas continuar?",
+                "Crear orden",
+                "Cancelar");
+            if (!confirmar)
+                return;
+        }
+
+        try
+        {
+#if DEBUG
+            try
+            {
+                var debugJson = JsonSerializer.Serialize(payload, new JsonSerializerOptions
+                {
+                    WriteIndented = true,
+                    DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+                });
+                await Clipboard.Default.SetTextAsync(debugJson);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[Checkout] No se pudo copiar el body al portapapeles: {ex.Message}");
+            }
+#endif
+            SetLoading(true);
+            var created = await _ordersApi.CreateAsync(payload);
+            if (created == null)
+            {
+                await DisplayAlert("Orden", "No se pudo crear la orden. Inténtalo nuevamente.", "OK");
+                return;
+            }
+
+            var orderId = created.id;
+            var orderCode = created.code;
+
+            _cart.Clear();
+            UpdateCartBadge();
+
+            await DisplayAlert("Orden creada", $"Se generó la orden {orderCode}.", "OK");
+            await Shell.Current.GoToAsync($"{nameof(OrderDetailPage)}?orderId={orderId}");
+        }
+        catch (HttpRequestException ex)
+        {
+            var msg = ErrorHandler.ObtenerMensajeHttp(new HttpResponseMessage(ex.StatusCode ?? HttpStatusCode.InternalServerError), ex.Message);
+            await ErrorHandler.MostrarErrorUsuario(msg);
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandler.MostrarErrorTecnico(ex, "Orden – Crear desde carrito");
+        }
+        finally
+        {
+            SetLoading(false);
+        }
+    }
+
+    static CreateOrderItemDTO? CreateOrderItemFromEntry(CartEntry entry)
+    {
+        var productId = entry.SelectedItem?.ProductId ?? entry.BaseItem?.ProductId;
+        if (!productId.HasValue)
+            return null;
+
+        var dto = new CreateOrderItemDTO
+        {
+            productId = productId.Value,
+            quantity = entry.Quantity,
+            notes = string.IsNullOrWhiteSpace(entry.Notes) ? null : entry.Notes,
+            modifiers = new List<OrderModifierSelectionInput>()
+        };
+
+        if (entry.SelectedItem?.VariantId.HasValue == true)
+            dto.variantId = entry.SelectedItem.VariantId.Value;
+
+        foreach (var modifier in entry.Modifiers)
+        {
+            foreach (var opt in modifier.Options)
+            {
+                if (opt.Quantity <= 0) continue;
+                dto.modifiers.Add(new OrderModifierSelectionInput
+                {
+                    optionId = opt.OptionId,
+                    quantity = opt.Quantity > 1 ? opt.Quantity : null
+                });
+            }
+        }
+
+        if (entry.HasComboChildren)
+        {
+            dto.children = entry.ComboChildren
+                .Select(child =>
+                {
+                    var childInput = new ComboChildSelectionInput
+                    {
+                        productId = child.ProductId,
+                        variantId = child.VariantId,
+                        quantity = child.Quantity,
+                        notes = string.IsNullOrWhiteSpace(child.Notes) ? null : child.Notes.Trim()
+                    };
+
+                    var childModifiers = new List<OrderModifierSelectionInput>();
+                    foreach (var group in child.Modifiers ?? Array.Empty<CartModifierSelection>())
+                    {
+                        foreach (var opt in group.Options)
+                        {
+                            if (opt.Quantity <= 0) continue;
+                            childModifiers.Add(new OrderModifierSelectionInput
+                            {
+                                optionId = opt.OptionId,
+                                quantity = opt.Quantity > 1 ? opt.Quantity : null
+                            });
+                        }
+                    }
+
+                    if (childModifiers.Count > 0)
+                        childInput.modifiers = childModifiers;
+
+                    return childInput;
+                })
+                .ToList();
+        }
+
+        return dto;
+    }
+
     #region Nested view models
+
+    public class OrderHeaderState
+    {
+        public string ServiceType { get; set; } = DefaultServiceType;
+        public string Source { get; set; } = DefaultSource;
+        public string Status { get; set; } = "OPEN";
+        public decimal? PlatformMarkupPct { get; set; }
+        public int? TableId { get; set; }
+        public string? TableName { get; set; }
+        public int? Covers { get; set; }
+        public string? Note { get; set; }
+        public string? CustomerName { get; set; }
+        public string? CustomerPhone { get; set; }
+        public string? ExternalRef { get; set; }
+        public int? PrepEtaMinutes { get; set; }
+        public int? ServedByUserId { get; set; }
+
+        public OrderHeaderState Clone()
+        {
+            return new OrderHeaderState
+            {
+                ServiceType = ServiceType,
+                Source = Source,
+                Status = Status,
+                PlatformMarkupPct = PlatformMarkupPct,
+                TableId = TableId,
+                TableName = TableName,
+                Covers = Covers,
+                Note = Note,
+                CustomerName = CustomerName,
+                CustomerPhone = CustomerPhone,
+                ExternalRef = ExternalRef,
+                PrepEtaMinutes = PrepEtaMinutes,
+                ServedByUserId = ServedByUserId
+            };
+        }
+
+        public static OrderHeaderState CreateDefault()
+        {
+            var state = new OrderHeaderState();
+            var userId = Preferences.Default.Get("user_id", 0);
+            if (userId > 0)
+                state.ServedByUserId = userId;
+            return state;
+        }
+    }
 
     public class MenuOptionVm
     {
@@ -712,6 +1437,7 @@ public partial class TakeOrderPage : ContentPage
         public bool IsVariant => string.Equals(Kind, "VARIANT", StringComparison.OrdinalIgnoreCase);
         public bool IsProduct => string.Equals(Kind, "PRODUCT", StringComparison.OrdinalIgnoreCase);
         public bool IsCombo => string.Equals(Kind, "COMBO", StringComparison.OrdinalIgnoreCase);
+        public IReadOnlyList<ComboComponent> ComboComponents { get; init; } = Array.Empty<ComboComponent>();
 
         public bool Matches(string query)
         {
@@ -731,6 +1457,12 @@ public partial class TakeOrderPage : ContentPage
             int? variantId = null;
             int? optionId = null;
             ImageSource? image = null;
+
+            var components = reference?.components?
+                .Select(ComboComponent.From)
+                .Where(c => c != null)
+                .Cast<ComboComponent>()
+                .ToList() ?? new List<ComboComponent>();
 
             switch (dto.refType.ToUpperInvariant())
             {
@@ -803,7 +1535,8 @@ public partial class TakeOrderPage : ContentPage
                 ReferenceLabel = referenceLabel,
                 UnitPrice = price ?? 0m,
                 ImageSource = image,
-                Raw = dto
+                Raw = dto,
+                ComboComponents = components
             };
         }
 
@@ -845,7 +1578,8 @@ public partial class TakeOrderPage : ContentPage
                     kind = dto.refType,
                     product = dto.@ref?.product,
                     variant = dto.@ref?.variant,
-                    option = dto.@ref?.option
+                    option = dto.@ref?.option,
+                    components = dto.@ref?.components ?? new List<MenusApi.MenuPublicComboComponent>()
                 }
             };
 
@@ -860,11 +1594,74 @@ public partial class TakeOrderPage : ContentPage
         {
             ImageSource = source;
         }
+
+        public class ComboComponent
+        {
+            ComboComponent(
+                int productId,
+                int? variantId,
+                int quantity,
+                bool isRequired,
+                string productName,
+                string? variantName,
+                string? notes,
+                MenusApi.MenuPublicProductReference? productReference,
+                MenusApi.MenuPublicVariantReference? variantReference)
+            {
+                ProductId = productId;
+                VariantId = variantId;
+                Quantity = quantity;
+                IsRequired = isRequired;
+                ProductName = productName;
+                VariantName = variantName;
+                Notes = notes;
+                ProductReference = productReference;
+                VariantReference = variantReference;
+            }
+
+            public int ProductId { get; }
+            public int? VariantId { get; }
+            public int Quantity { get; }
+            public bool IsRequired { get; }
+            public string ProductName { get; }
+            public string? VariantName { get; }
+            public string? Notes { get; }
+            public MenusApi.MenuPublicProductReference? ProductReference { get; }
+            public MenusApi.MenuPublicVariantReference? VariantReference { get; }
+
+            public static ComboComponent? From(MenusApi.MenuPublicComboComponent source)
+            {
+                if (source == null)
+                    return null;
+
+                var productId = source.product?.id ?? source.variant?.product?.id ?? 0;
+                if (productId <= 0)
+                    return null;
+
+                var quantity = source.quantity <= 0 ? 1 : source.quantity;
+                var productReference = source.product ?? source.variant?.product;
+                var productName = productReference?.name ?? $"Producto #{productId}";
+                var variantName = source.variant?.name;
+                var variantId = source.variant?.id;
+
+                return new ComboComponent(
+                    productId,
+                    variantId,
+                    quantity,
+                    source.isRequired,
+                    productName,
+                    variantName,
+                    source.notes,
+                    productReference,
+                    source.variant);
+            }
+        }
     }
 
     public class CartEntry : INotifyPropertyChanged
     {
         readonly List<CartModifierSelection> _modifiers = new();
+        readonly List<ComboChildSelection> _comboChildren = new();
 
         public CartEntry(ConfigureMenuItemResult result)
         {
@@ -875,6 +1672,11 @@ public partial class TakeOrderPage : ContentPage
             Notes = result.Notes;
             foreach (var mod in result.Modifiers)
                 _modifiers.Add(mod);
+            if (result.Children != null)
+            {
+                foreach (var child in result.Children)
+                    _comboChildren.Add(child);
+            }
             RefreshTotals();
         }
 
@@ -926,6 +1728,8 @@ public partial class TakeOrderPage : ContentPage
         public decimal LineTotal { get; private set; }
 
         public IReadOnlyList<CartModifierSelection> Modifiers => _modifiers;
+        public IReadOnlyList<ComboChildSelection> ComboChildren => _comboChildren;
+        public bool HasComboChildren => _comboChildren.Count > 0;
 
         public string Title => SelectedItem.Title;
         public string Subtitle
@@ -935,13 +1739,19 @@ public partial class TakeOrderPage : ContentPage
                 var parts = new List<string>();
                 if (SelectedItem.IsVariant && SelectedItem.Subtitle != null)
                     parts.Add(SelectedItem.Subtitle);
-                if (_modifiers.Any())
-                    parts.AddRange(_modifiers.Select(m => m.Summary));
-                if (!string.IsNullOrWhiteSpace(Notes))
-                    parts.Add($"Notas: {Notes}");
-                return string.Join(" · ", parts);
+            if (_modifiers.Any())
+                parts.AddRange(_modifiers.Select(m => m.Summary));
+            if (BaseItem.IsCombo && _comboChildren.Any())
+            {
+                var childSummaries = _comboChildren
+                    .Select(c => c.HasDetail ? $"{c.DisplayLabel} ({c.Detail})" : c.DisplayLabel);
+                parts.Add("Incluye: " + string.Join(", ", childSummaries));
             }
+            if (!string.IsNullOrWhiteSpace(Notes))
+                parts.Add($"Notas: {Notes}");
+            return string.Join(" · ", parts);
         }
+    }
 
         public bool Matches(ConfigureMenuItemResult result)
         {
@@ -949,6 +1759,9 @@ public partial class TakeOrderPage : ContentPage
                 return false;
 
             if (!ModifierSummaryEquals(result.Modifiers))
+                return false;
+
+            if (!ComboChildrenEquals(result.Children))
                 return false;
 
             return string.Equals(Notes ?? string.Empty, result.Notes ?? string.Empty, StringComparison.OrdinalIgnoreCase);
@@ -969,10 +1782,66 @@ public partial class TakeOrderPage : ContentPage
             return true;
         }
 
+        bool ComboChildrenEquals(IReadOnlyList<ComboChildSelection>? other)
+        {
+            var otherList = other ?? Array.Empty<ComboChildSelection>();
+            if (_comboChildren.Count != otherList.Count)
+                return false;
+
+            var left = _comboChildren
+                .OrderBy(c => c.ProductId)
+                .ThenBy(c => c.VariantId ?? -1)
+                .ThenBy(c => c.Quantity)
+                .ToList();
+
+            var right = otherList
+                .OrderBy(c => c.ProductId)
+                .ThenBy(c => c.VariantId ?? -1)
+                .ThenBy(c => c.Quantity)
+                .ToList();
+
+            for (int i = 0; i < left.Count; i++)
+            {
+                var a = left[i];
+                var b = right[i];
+                if (a.ProductId != b.ProductId || a.VariantId != b.VariantId || a.Quantity != b.Quantity)
+                    return false;
+                if (!string.Equals(a.Notes ?? string.Empty, b.Notes ?? string.Empty, StringComparison.Ordinal))
+                    return false;
+                if (!ModifierSelectionsEqual(a.Modifiers, b.Modifiers))
+                    return false;
+            }
+
+            return true;
+        }
+
+        static bool ModifierSelectionsEqual(IReadOnlyList<CartModifierSelection>? left, IReadOnlyList<CartModifierSelection>? right)
+        {
+            if (ReferenceEquals(left, right))
+                return true;
+
+            left ??= Array.Empty<CartModifierSelection>();
+            right ??= Array.Empty<CartModifierSelection>();
+
+            if (left.Count != right.Count)
+                return false;
+
+            var orderedLeft = left.OrderBy(m => m.GroupId).ToList();
+            var orderedRight = right.OrderBy(m => m.GroupId).ToList();
+            for (int i = 0; i < orderedLeft.Count; i++)
+            {
+                if (!orderedLeft[i].Equals(orderedRight[i]))
+                    return false;
+            }
+
+            return true;
+        }
+
         public void RefreshTotals()
         {
             UnitPrice = SelectedItem.UnitPrice;
-            ExtrasTotal = _modifiers.Sum(m => m.TotalExtra);
+            var comboExtras = _comboChildren.Sum(child => child.Modifiers?.Sum(m => m.TotalExtra) ?? 0m);
+            ExtrasTotal = _modifiers.Sum(m => m.TotalExtra) + comboExtras;
             LineTotal = (UnitPrice + ExtrasTotal) * Quantity;
             OnPropertyChanged(nameof(UnitPrice));
             OnPropertyChanged(nameof(ExtrasTotal));
@@ -1033,6 +1902,40 @@ public partial class TakeOrderPage : ContentPage
                 hash.Add(opt);
             return hash.ToHashCode();
         }
+    }
+
+    public record ComboChildSelection(int ProductId, int? VariantId, int Quantity, bool IsRequired, string ProductName, string? VariantName, string? Notes, IReadOnlyList<CartModifierSelection> Modifiers)
+    {
+        public string DisplayLabel
+        {
+            get
+            {
+                var name = string.IsNullOrWhiteSpace(VariantName)
+                    ? ProductName
+                    : $"{ProductName} · {VariantName}";
+                return Quantity > 1 ? $"{Quantity} × {name}" : name;
+            }
+        }
+
+        public string? Detail
+        {
+            get
+            {
+                var parts = new List<string>();
+                if (Modifiers != null && Modifiers.Count > 0)
+                {
+                    parts.AddRange(
+                        Modifiers.Select(m => $"{m.GroupName}: {string.Join(", ", m.Options.Select(o => o.DisplayName))}"));
+                }
+
+                if (!string.IsNullOrWhiteSpace(Notes))
+                    parts.Add($"Notas: {Notes}");
+
+                return parts.Count == 0 ? null : string.Join(" • ", parts);
+            }
+        }
+
+        public bool HasDetail => !string.IsNullOrWhiteSpace(Detail);
     }
 
     public class ModifierOptionSelection : IEquatable<ModifierOptionSelection>

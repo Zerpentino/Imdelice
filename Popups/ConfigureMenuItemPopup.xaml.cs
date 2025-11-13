@@ -18,6 +18,15 @@ using Microsoft.Maui.Graphics;
 
 namespace Imdeliceapp.Popups;
 
+public record ComboChildConfiguration(
+        TakeOrderPage.MenuItemVm.ComboComponent Component,
+        IReadOnlyList<TakeOrderPage.MenuItemVm> Variants,
+        IReadOnlyList<ModifierGroupDTO> ModifierGroups,
+        Func<int, Task<IReadOnlyList<VariantModifierGroupLinkDTO>>>? VariantRulesLoader,
+        TakeOrderPage.ComboChildSelection? ExistingSelection,
+        bool AllowVariantSelection,
+        string? DisplayNotes);
+
 public partial class ConfigureMenuItemPopup : Popup
 {
     readonly ConfigureMenuItemViewModel _viewModel;
@@ -27,14 +36,38 @@ public partial class ConfigureMenuItemPopup : Popup
         IReadOnlyList<TakeOrderPage.MenuItemVm> variants,
         IReadOnlyList<ModifierGroupDTO> modifierGroups,
         TakeOrderPage.CartEntry? existingEntry = null,
-        Func<int, Task<IReadOnlyList<VariantModifierGroupLinkDTO>>>? variantRulesLoader = null)
+        Func<int, Task<IReadOnlyList<VariantModifierGroupLinkDTO>>>? variantRulesLoader = null,
+        bool lockQuantity = false,
+        int? lockedQuantity = null,
+        string? confirmButtonText = null,
+        IReadOnlyList<ComboChildConfiguration>? comboChildConfigurations = null,
+        bool showBackButton = false)
     {
         InitializeComponent();
-        _viewModel = new ConfigureMenuItemViewModel(baseItem, variants, modifierGroups, existingEntry, CloseWithResult, variantRulesLoader);
+        _viewModel = new ConfigureMenuItemViewModel(
+            baseItem,
+            variants,
+            modifierGroups,
+            existingEntry,
+            CloseWithResult,
+            variantRulesLoader,
+            lockQuantity,
+            lockedQuantity,
+            confirmButtonText,
+            comboChildConfigurations,
+            showBackButton);
         BindingContext = _viewModel;
     }
 
     void CloseButton_Clicked(object sender, EventArgs e) => Close();
+
+    public bool BackRequested { get; private set; }
+
+    void BackButton_Clicked(object sender, EventArgs e)
+    {
+        BackRequested = true;
+        Close();
+    }
 
     void CloseWithResult(ConfigureMenuItemResult? result) => Close(result);
 }
@@ -45,6 +78,10 @@ class ConfigureMenuItemViewModel : INotifyPropertyChanged
     readonly Guid? _existingLineId;
     readonly Func<int, Task<IReadOnlyList<VariantModifierGroupLinkDTO>>>? _variantRulesLoader;
     readonly Dictionary<int, IReadOnlyList<VariantModifierGroupLinkDTO>> _variantRulesCache = new();
+    readonly bool _isQuantityLocked;
+    readonly double? _lockedQuantityValue;
+    readonly string? _confirmButtonTextOverride;
+    readonly IReadOnlyList<ComboChildConfiguration>? _comboChildConfigurations;
 
     public ConfigureMenuItemViewModel(
         TakeOrderPage.MenuItemVm baseItem,
@@ -52,12 +89,24 @@ class ConfigureMenuItemViewModel : INotifyPropertyChanged
         IReadOnlyList<ModifierGroupDTO> modifierGroups,
         TakeOrderPage.CartEntry? existingEntry,
         Action<ConfigureMenuItemResult?> closeCallback,
-        Func<int, Task<IReadOnlyList<VariantModifierGroupLinkDTO>>>? variantRulesLoader)
+        Func<int, Task<IReadOnlyList<VariantModifierGroupLinkDTO>>>? variantRulesLoader,
+        bool lockQuantity,
+        int? lockedQuantity,
+        string? confirmButtonText,
+        IReadOnlyList<ComboChildConfiguration>? comboChildConfigurations,
+        bool showBackButton)
     {
         BaseItem = baseItem;
         _closeCallback = closeCallback;
         _existingLineId = existingEntry?.LineId;
         _variantRulesLoader = variantRulesLoader;
+        _confirmButtonTextOverride = confirmButtonText;
+        _isQuantityLocked = lockQuantity || (lockedQuantity.HasValue && lockedQuantity.Value > 0);
+        _lockedQuantityValue = lockedQuantity.HasValue && lockedQuantity.Value > 0
+            ? Math.Max(1, lockedQuantity.Value)
+            : (_isQuantityLocked ? existingEntry?.Quantity : null);
+        _comboChildConfigurations = comboChildConfigurations;
+        ShowBackButton = showBackButton;
 
         Title = baseItem.Title;
         Subtitle = baseItem.Subtitle;
@@ -69,10 +118,14 @@ class ConfigureMenuItemViewModel : INotifyPropertyChanged
         ModifierGroups = new ObservableCollection<ModifierGroupVm>(
             BuildModifierGroups(modifierGroups, existingEntry));
 
+        ComboChildren = new ObservableCollection<ComboChildVm>(
+            BuildComboChildren(BaseItem, existingEntry, comboChildConfigurations));
+
         var initialVariant = Variants.FirstOrDefault(v => v.IsSelected) ?? Variants.FirstOrDefault();
         SelectedVariant = initialVariant;
 
-        Quantity = existingEntry?.Quantity ?? 1;
+        var initialQuantity = _lockedQuantityValue ?? (existingEntry?.Quantity ?? 1);
+        Quantity = initialQuantity;
         Notes = existingEntry?.Notes ?? string.Empty;
 
         ConfirmCommand = new Command(Confirm);
@@ -80,6 +133,7 @@ class ConfigureMenuItemViewModel : INotifyPropertyChanged
 
         OnPropertyChanged(nameof(HasVariants));
         OnPropertyChanged(nameof(HasModifiers));
+        OnPropertyChanged(nameof(HasComboChildren));
         OnPropertyChanged(nameof(ConfirmButtonText));
     }
 
@@ -90,10 +144,14 @@ class ConfigureMenuItemViewModel : INotifyPropertyChanged
     public string? Description { get; }
     public bool HasSubtitle => !string.IsNullOrWhiteSpace(Subtitle);
     public bool HasDescription => !string.IsNullOrWhiteSpace(Description);
+    public bool ShowBackButton { get; }
 
     public ObservableCollection<VariantChoiceVm> Variants { get; }
 
-    public bool HasVariants => Variants.Count > 1;
+    public bool HasVariants => !BaseItem.IsCombo && Variants.Count > 1;
+
+    public ObservableCollection<ComboChildVm> ComboChildren { get; }
+    public bool HasComboChildren => ComboChildren.Count > 0;
 
     VariantChoiceVm? _selectedVariant;
     public VariantChoiceVm? SelectedVariant
@@ -121,6 +179,9 @@ class ConfigureMenuItemViewModel : INotifyPropertyChanged
 
     public bool HasModifiers => ModifierGroups.Count > 0;
 
+    public bool IsQuantityLocked => _isQuantityLocked;
+    public bool IsQuantityEditable => !_isQuantityLocked;
+
     double _quantity = 1;
     public double Quantity
     {
@@ -128,6 +189,8 @@ class ConfigureMenuItemViewModel : INotifyPropertyChanged
         set
         {
             var newValue = Math.Max(1, Math.Round(value));
+            if (_isQuantityLocked)
+                newValue = _lockedQuantityValue ?? newValue;
             if (Math.Abs(_quantity - newValue) < double.Epsilon) return;
             _quantity = newValue;
             OnPropertyChanged();
@@ -160,7 +223,8 @@ class ConfigureMenuItemViewModel : INotifyPropertyChanged
     }
 
     public bool HasValidationMessage => !string.IsNullOrWhiteSpace(ValidationMessage);
-    public string ConfirmButtonText => _existingLineId.HasValue ? "Actualizar" : "Agregar al carrito";
+    public string ConfirmButtonText => _confirmButtonTextOverride
+        ?? (_existingLineId.HasValue ? "Actualizar" : "Agregar al carrito");
 
     public ICommand ConfirmCommand { get; }
     public ICommand CancelCommand { get; }
@@ -238,8 +302,33 @@ class ConfigureMenuItemViewModel : INotifyPropertyChanged
             }
         }
 
+        foreach (var child in ComboChildren)
+        {
+            if (!child.IsSelected)
+            {
+                if (child.IsRequired)
+                {
+                    ValidationMessage = "Selecciona todos los elementos requeridos del combo.";
+                    return;
+                }
+                continue;
+            }
+
+            if (!child.TryValidate(out var childMessage))
+            {
+                ValidationMessage = childMessage;
+                return;
+            }
+        }
+
         var selectedModifiers = ModifierGroups
             .Select(group => group.ToCartSelection())
+            .Where(selection => selection != null)
+            .Select(selection => selection!)
+            .ToList();
+
+        var selectedChildren = ComboChildren
+            .Select(child => child.ToSelection())
             .Where(selection => selection != null)
             .Select(selection => selection!)
             .ToList();
@@ -250,6 +339,7 @@ class ConfigureMenuItemViewModel : INotifyPropertyChanged
             (int)Quantity,
             Notes?.Trim(),
             selectedModifiers,
+            selectedChildren,
             _existingLineId);
 
         _closeCallback(result);
@@ -288,6 +378,41 @@ class ConfigureMenuItemViewModel : INotifyPropertyChanged
             var existingSelection = existingEntry?.Modifiers.FirstOrDefault(m => m.GroupId == group.id);
             yield return new ModifierGroupVm(group, existingSelection);
         }
+    }
+
+    static IEnumerable<ComboChildVm> BuildComboChildren(
+        TakeOrderPage.MenuItemVm baseItem,
+        TakeOrderPage.CartEntry? existingEntry,
+        IReadOnlyList<ComboChildConfiguration>? comboChildConfigurations)
+    {
+        if (baseItem.ComboComponents == null || baseItem.ComboComponents.Count == 0)
+            return Enumerable.Empty<ComboChildVm>();
+
+        var selections = existingEntry?.ComboChildren?
+            .GroupBy(c => (c.ProductId, c.VariantId))
+            .ToDictionary(g => g.Key, g => g.First())
+            ?? new Dictionary<(int, int?), TakeOrderPage.ComboChildSelection>();
+
+        var configMap = comboChildConfigurations?
+            .GroupBy(c => (c.Component.ProductId, c.Component.VariantId))
+            .ToDictionary(g => g.Key, g => g.First());
+
+        var list = new List<ComboChildVm>();
+        foreach (var component in baseItem.ComboComponents)
+        {
+            if (component.ProductId <= 0)
+                continue;
+
+            ComboChildConfiguration? config = null;
+            configMap?.TryGetValue((component.ProductId, component.VariantId), out config);
+
+            selections.TryGetValue((component.ProductId, component.VariantId), out var existing);
+            if (existing == null)
+                existing = selections.Values.FirstOrDefault(s => s.ProductId == component.ProductId);
+            list.Add(new ComboChildVm(component, config, existing ?? config?.ExistingSelection));
+        }
+
+        return list;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -352,6 +477,280 @@ class VariantChoiceVm : INotifyPropertyChanged
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 }
 
+class ComboChildVm : INotifyPropertyChanged
+{
+    readonly TakeOrderPage.MenuItemVm.ComboComponent _component;
+    readonly Func<int, Task<IReadOnlyList<VariantModifierGroupLinkDTO>>>? _variantRulesLoader;
+    readonly Dictionary<int, IReadOnlyList<VariantModifierGroupLinkDTO>> _variantRulesCache = new();
+
+    bool _isSelected;
+    VariantChoiceVm? _selectedVariant;
+
+    public ComboChildVm(
+        TakeOrderPage.MenuItemVm.ComboComponent component,
+        ComboChildConfiguration? config,
+        TakeOrderPage.ComboChildSelection? existing)
+    {
+        _component = component;
+        _variantRulesLoader = config?.VariantRulesLoader;
+        Quantity = existing?.Quantity > 0
+            ? existing.Quantity
+            : (component.Quantity <= 0 ? 1 : component.Quantity);
+        IsRequired = component.IsRequired;
+        Notes = existing?.Notes ?? config?.DisplayNotes ?? component.Notes;
+
+        var variantChoices = BuildVariantChoices(
+            component,
+            config?.Variants,
+            existing?.VariantId ?? component.VariantId).ToList();
+        Variants = new ObservableCollection<VariantChoiceVm>(variantChoices);
+        var initialVariant = Variants.FirstOrDefault(v => v.IsSelected) ?? Variants.FirstOrDefault();
+        if (initialVariant != null)
+            SelectedVariant = initialVariant;
+
+        ModifierGroups = new ObservableCollection<ModifierGroupVm>(
+            BuildChildModifierGroups(config?.ModifierGroups, existing));
+
+        _isSelected = existing != null ? existing.Quantity > 0 : true;
+
+        if (initialVariant == null)
+            _ = ApplyVariantRulesAsync(component.VariantId);
+    }
+
+    public ObservableCollection<VariantChoiceVm> Variants { get; }
+    public ObservableCollection<ModifierGroupVm> ModifierGroups { get; }
+
+    public bool HasVariants => Variants.Count > 1;
+    public bool HasModifiers => ModifierGroups.Count > 0;
+
+    public VariantChoiceVm? SelectedVariant
+    {
+        get => _selectedVariant;
+        set
+        {
+            if (_selectedVariant == value)
+                return;
+
+            if (_selectedVariant != null)
+                _selectedVariant.IsSelected = false;
+
+            _selectedVariant = value;
+
+            if (_selectedVariant != null)
+                _selectedVariant.IsSelected = true;
+
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(DisplayName));
+            OnPropertyChanged(nameof(VariantSummary));
+            OnPropertyChanged(nameof(HasVariantSummary));
+            _ = ApplyVariantRulesAsync(_selectedVariant?.Item?.VariantId ?? _component.VariantId);
+        }
+    }
+
+    public int Quantity { get; }
+    public bool IsRequired { get; }
+    public string? Notes { get; }
+
+    public bool CanToggle => !IsRequired;
+
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set
+        {
+            var normalized = value || IsRequired;
+            if (_isSelected == normalized) return;
+            _isSelected = normalized;
+            OnPropertyChanged();
+        }
+    }
+
+    public string DisplayName
+    {
+        get
+        {
+            var variant = SelectedVariant?.Item;
+            if (variant != null)
+            {
+                var subtitle = variant.Subtitle;
+                if (!string.IsNullOrWhiteSpace(subtitle) && !string.Equals(subtitle, variant.Title, StringComparison.OrdinalIgnoreCase))
+                    return $"{variant.Title} · {subtitle}";
+                return variant.Title;
+            }
+
+            if (!string.IsNullOrWhiteSpace(_component.VariantName))
+                return $"{_component.ProductName} · {_component.VariantName}";
+
+            return _component.ProductName;
+        }
+    }
+
+    public string? VariantSummary
+    {
+        get
+        {
+            if (SelectedVariant?.Item != null)
+                return SelectedVariant.Item.Title;
+            if (!string.IsNullOrWhiteSpace(_component.VariantName))
+                return _component.VariantName;
+            if (!string.IsNullOrWhiteSpace(_component.Notes))
+                return _component.Notes;
+            return null;
+        }
+    }
+
+    public bool HasVariantSummary => !string.IsNullOrWhiteSpace(VariantSummary);
+
+    public string? HeaderDetail
+    {
+        get
+        {
+            var parts = new List<string>();
+            if (!IsRequired)
+                parts.Add("Opcional");
+            if (Quantity > 1)
+                parts.Add($"Cantidad: {Quantity}");
+            if (!string.IsNullOrWhiteSpace(Notes))
+                parts.Add(Notes!);
+            return parts.Count == 0 ? null : string.Join(" • ", parts);
+        }
+    }
+
+    public bool HasHeaderDetail => !string.IsNullOrWhiteSpace(HeaderDetail);
+
+    static IEnumerable<VariantChoiceVm> BuildVariantChoices(
+        TakeOrderPage.MenuItemVm.ComboComponent component,
+        IReadOnlyList<TakeOrderPage.MenuItemVm>? variants,
+        int? selectedVariantId)
+    {
+        if (variants == null || variants.Count == 0)
+            yield break;
+
+        foreach (var vm in variants.OrderBy(v => v.DisplaySortOrder).ThenBy(v => v.Title))
+        {
+            var isSelected = selectedVariantId.HasValue
+                ? vm.VariantId == selectedVariantId
+                : vm.Id == variants.First().Id;
+            yield return new VariantChoiceVm(vm, isSelected);
+        }
+    }
+
+    static IEnumerable<ModifierGroupVm> BuildChildModifierGroups(
+        IReadOnlyList<ModifierGroupDTO>? modifierGroups,
+        TakeOrderPage.ComboChildSelection? existingSelection)
+    {
+        if (modifierGroups == null || modifierGroups.Count == 0)
+            yield break;
+
+        var existing = existingSelection?.Modifiers?
+            .ToDictionary(m => m.GroupId);
+
+        foreach (var group in modifierGroups.OrderBy(g => g.position))
+        {
+            TakeOrderPage.CartModifierSelection? selection = null;
+            if (existing != null)
+                existing.TryGetValue(group.id, out selection);
+            yield return new ModifierGroupVm(group, selection);
+        }
+    }
+
+    async Task ApplyVariantRulesAsync(int? variantId)
+    {
+        IReadOnlyList<VariantModifierGroupLinkDTO>? overrides = null;
+
+        if (_variantRulesLoader != null && variantId.HasValue)
+        {
+            if (!_variantRulesCache.TryGetValue(variantId.Value, out overrides))
+            {
+                try
+                {
+                    overrides = await _variantRulesLoader(variantId.Value);
+                }
+                catch
+                {
+                    overrides = Array.Empty<VariantModifierGroupLinkDTO>();
+                }
+                _variantRulesCache[variantId.Value] = overrides;
+            }
+        }
+
+        var capturedVariant = variantId;
+        var capturedOverrides = overrides;
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            if (SelectedVariant?.Item?.VariantId != capturedVariant)
+                return;
+            ApplyVariantRules(capturedOverrides);
+        });
+    }
+
+    void ApplyVariantRules(IReadOnlyList<VariantModifierGroupLinkDTO>? overrides)
+    {
+        Dictionary<int, VariantModifierGroupLinkDTO>? map = null;
+        if (overrides != null)
+        {
+            map = overrides
+                .Where(o => (o.group?.id ?? o.groupId) != 0)
+                .ToDictionary(o => o.group?.id ?? o.groupId);
+        }
+
+        foreach (var group in ModifierGroups)
+        {
+            if (map != null && map.TryGetValue(group.Id, out var rule))
+                group.ApplyRules(rule.minSelect, rule.maxSelect, rule.isRequired);
+            else
+                group.ResetToDefaultRules();
+        }
+    }
+
+    public bool TryValidate(out string? message)
+    {
+        message = null;
+        if (!IsSelected)
+            return true;
+
+        foreach (var group in ModifierGroups)
+        {
+            if (!group.Validate(out message))
+                return false;
+        }
+
+        return true;
+    }
+
+    public TakeOrderPage.ComboChildSelection? ToSelection()
+    {
+        if (!IsSelected)
+            return null;
+
+        var variantItem = SelectedVariant?.Item;
+        var productName = variantItem?.Title ?? _component.ProductName;
+        var variantName = variantItem?.VariantId.HasValue == true
+            ? variantItem.Title
+            : variantItem?.Subtitle ?? _component.VariantName;
+
+        var selections = ModifierGroups
+            .Select(group => group.ToCartSelection())
+            .Where(selection => selection != null)
+            .Select(selection => selection!)
+            .ToList();
+
+        return new TakeOrderPage.ComboChildSelection(
+            _component.ProductId,
+            variantItem?.VariantId ?? _component.VariantId,
+            Quantity,
+            IsRequired,
+            productName,
+            variantName,
+            string.IsNullOrWhiteSpace(Notes) ? null : Notes,
+            selections);
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    void OnPropertyChanged([CallerMemberName] string? name = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+}
+
 class ModifierGroupVm : INotifyPropertyChanged
 {
     readonly ModifierGroupDTO _source;
@@ -364,6 +763,7 @@ class ModifierGroupVm : INotifyPropertyChanged
     bool _isRequired;
     bool _isSingleChoice;
     string _requirementText;
+    bool _isExpanded;
 
     public ModifierGroupVm(ModifierGroupDTO source, TakeOrderPage.CartModifierSelection? existingSelection)
     {
@@ -391,6 +791,8 @@ class ModifierGroupVm : INotifyPropertyChanged
                 }));
         NotifyLimitChanges();
         RequirementText = BuildRequirementText();
+        ToggleExpandedCommand = new Command(() => IsExpanded = !IsExpanded);
+        IsExpanded = Options.Any(o => o.Quantity > 0);
     }
 
     public int Id => _source.id;
@@ -406,6 +808,18 @@ class ModifierGroupVm : INotifyPropertyChanged
         }
     }
     public ObservableCollection<ModifierOptionVm> Options { get; }
+    public bool IsExpanded
+    {
+        get => _isExpanded;
+        set
+        {
+            if (_isExpanded == value) return;
+            _isExpanded = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public ICommand ToggleExpandedCommand { get; }
 
     public bool Validate(out string? message)
     {

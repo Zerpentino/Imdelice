@@ -89,6 +89,7 @@ public class MenusApi
         public MenuPublicVariantReference? variant { get; init; }
         public MenuPublicProductReference? product { get; init; }
         public MenuPublicOptionReference? option { get; init; }
+        public List<MenuPublicComboComponent> components { get; init; } = new();
     }
 
     public record MenuPublicVariantReference
@@ -123,6 +124,15 @@ public class MenusApi
         public string? name { get; init; }
         public int? priceExtraCents { get; init; }
         public bool isActive { get; init; }
+    }
+
+    public record MenuPublicComboComponent
+    {
+        public int quantity { get; init; }
+        public bool isRequired { get; init; }
+        public string? notes { get; init; }
+        public MenuPublicProductReference? product { get; init; }
+        public MenuPublicVariantReference? variant { get; init; }
     }
     #endregion
 

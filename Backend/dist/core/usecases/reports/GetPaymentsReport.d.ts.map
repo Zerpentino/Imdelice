@@ -1,0 +1,1 @@
+{"version":3,"file":"GetPaymentsReport.d.ts","sourceRoot":"","sources":["../../../../src/core/usecases/reports/GetPaymentsReport.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EACV,gBAAgB,EAChB,qBAAqB,EACrB,oBAAoB,EACrB,MAAM,4CAA4C,CAAC;AAEpD,qBAAa,iBAAiB;IAChB,OAAO,CAAC,QAAQ,CAAC,IAAI;gBAAJ,IAAI,EAAE,gBAAgB;IAEnD,IAAI,CAAC,OAAO,EAAE,qBAAqB,GAAG,OAAO,CAAC,oBAAoB,CAAC;CAGpE"}

@@ -1,0 +1,1 @@
+{"version":3,"file":"CreateTable.js","sourceRoot":"","sources":["../../../../src/core/usecases/tables/CreateTable.ts"],"names":[],"mappings":";;;AAQA,MAAa,WAAW;IACtB,YAA6B,IAAsB;QAAtB,SAAI,GAAJ,IAAI,CAAkB;IAAG,CAAC;IAEvD,IAAI,CAAC,KAAuB;QAC1B,OAAO,IAAI,CAAC,IAAI,CAAC,MAAM,CAAC,KAAK,CAAC,CAAC;IACjC,CAAC;CACF;AAND,kCAMC"}

@@ -1,0 +1,1 @@
+{"version":3,"file":"ListRoles.d.ts","sourceRoot":"","sources":["../../../../src/core/usecases/roles/ListRoles.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,eAAe,EAAE,MAAM,2CAA2C,CAAC;AAE5E,qBAAa,SAAS;IACR,OAAO,CAAC,IAAI;gBAAJ,IAAI,EAAE,eAAe;IACzC,OAAO;CAGR"}

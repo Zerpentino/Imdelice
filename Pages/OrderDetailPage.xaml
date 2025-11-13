@@ -1,0 +1,315 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Class="Imdeliceapp.Pages.OrderDetailPage"
+    x:Name="ThisPage"
+    Title="Detalle de orden"
+      Shell.NavBarIsVisible="True"
+
+    BackgroundColor="{AppThemeBinding Light=White, Dark=Black}">
+
+  <ContentPage.ToolbarItems>
+    <ToolbarItem Text="Atrás"
+                 Order="Primary"
+                 Priority="0"
+                 Clicked="Back_Clicked" />
+  </ContentPage.ToolbarItems>
+
+  <Grid>
+    <ScrollView>
+      <VerticalStackLayout Padding="16"
+                           Spacing="16">
+
+        <Border Stroke="{AppThemeBinding Light=#E5E5E5, Dark=#333333}"
+                StrokeShape="{RoundRectangle CornerRadius=14}"
+                BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#161616}"
+                Padding="18,16">
+          <Grid ColumnDefinitions="*,Auto"
+                ColumnSpacing="12"
+                RowSpacing="6">
+            <VerticalStackLayout Spacing="6">
+              <Label Text="{Binding OrderCode}"
+                     FontSize="20"
+                     FontAttributes="Bold"
+                     TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+              <Label Text="{Binding ServiceSummary}"
+                     TextColor="{AppThemeBinding Light=#555, Dark=#BBB}"
+                     FontSize="13"/>
+              <Label Text="{Binding TableSummary}"
+                     IsVisible="{Binding HasTable}"
+                     TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"
+                     FontSize="13"/>
+              <Label Text="{Binding CoversSummary}"
+                     IsVisible="{Binding HasCovers}"
+                     TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"
+                     FontSize="13"/>
+              <Label Text="{Binding ServedBySummary}"
+                     IsVisible="{Binding HasServedBy}"
+                     TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"
+                     FontSize="13"/>
+              <Label Text="{Binding CustomerSummary}"
+                     IsVisible="{Binding HasCustomer}"
+                     TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"
+                     FontSize="13"/>
+              <Label Text="{Binding NoteSummary}"
+                     IsVisible="{Binding HasNote}"
+                     TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"
+                     FontSize="13"/>
+              <Label Text="{Binding ExternalRefSummary}"
+                     IsVisible="{Binding HasExternalRef}"
+                     TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"
+                     FontSize="13"/>
+              <Label Text="{Binding PrepEtaSummary}"
+                     IsVisible="{Binding HasPrepEta}"
+                     TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"
+                     FontSize="13"/>
+              <Label Text="{Binding PlatformMarkupSummary}"
+                     IsVisible="{Binding HasPlatformMarkup}"
+                     TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"
+                     FontSize="13"/>
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Grid.Column="1"
+                                  HorizontalOptions="End"
+                                  Spacing="6"
+                                  VerticalOptions="Start">
+              <Label Text="{Binding StatusBadge}"
+                     TextColor="{Binding StatusColor}"
+                     FontAttributes="Bold"
+                     HorizontalTextAlignment="End"/>
+              <Label Text="{Binding TotalFormatted}"
+                     FontSize="22"
+                     FontAttributes="Bold"
+                     HorizontalTextAlignment="End"
+                     TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+              <Label Text="{Binding PaymentsTotalsFormatted}"
+                     FontSize="12"
+                     TextColor="{AppThemeBinding Light=#777, Dark=#AAA}"
+                     HorizontalTextAlignment="End"/>
+              <Label Text="{Binding OutstandingSummary}"
+                     IsVisible="{Binding HasOutstanding}"
+                     FontSize="12"
+                     TextColor="{AppThemeBinding Light=#D84315, Dark=#FFAB91}"
+                     HorizontalTextAlignment="End"/>
+            </VerticalStackLayout>
+          </Grid>
+        </Border>
+
+        <Button Text="Editar encabezado"
+                IsVisible="{Binding CanUpdate}"
+                Style="{StaticResource SecondaryPillButtonStyle}"
+                Clicked="EditMeta_Clicked"/>
+
+        <Border Stroke="{AppThemeBinding Light=#EEEEEE, Dark=#333333}"
+                StrokeShape="{RoundRectangle CornerRadius=12}"
+                BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E1E1E}"
+                Padding="14"
+                IsVisible="{Binding HasChargesBreakdown}">
+          <Grid RowDefinitions="Auto,Auto,Auto,Auto">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <Label Text="Subtotal"
+                   TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"/>
+            <Label Grid.Column="1"
+                   Text="{Binding SubtotalFormatted}"
+                   TextColor="{AppThemeBinding Light=#444, Dark=#DDD}"/>
+
+            <Label Grid.Row="1"
+                   Text="Descuento"
+                   TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"/>
+            <Label Grid.Row="1"
+                   Grid.Column="1"
+                   Text="{Binding DiscountFormatted}"
+                   TextColor="{AppThemeBinding Light=#444, Dark=#DDD}"/>
+
+            <Label Grid.Row="2"
+                   Text="Servicio"
+                   TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"/>
+            <Label Grid.Row="2"
+                   Grid.Column="1"
+                   Text="{Binding ServiceFeeFormatted}"
+                   TextColor="{AppThemeBinding Light=#444, Dark=#DDD}"/>
+
+            <Label Grid.Row="3"
+                   Text="Impuestos"
+                   TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"/>
+            <Label Grid.Row="3"
+                   Grid.Column="1"
+                   Text="{Binding TaxFormatted}"
+                   TextColor="{AppThemeBinding Light=#444, Dark=#DDD}"/>
+          </Grid>
+        </Border>
+
+        <Border Stroke="{AppThemeBinding Light=#EEEEEE, Dark=#333333}"
+                StrokeShape="{RoundRectangle CornerRadius=12}"
+                BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E1E1E}"
+                Padding="16"
+                IsVisible="{Binding HasTimeline}">
+          <VerticalStackLayout Spacing="8">
+            <Label Text="Cronología"
+                   FontAttributes="Bold"
+                   FontSize="15"
+                   TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+            <VerticalStackLayout BindableLayout.ItemsSource="{Binding TimelineEntries}"
+                                 Spacing="6">
+              <BindableLayout.ItemTemplate>
+                <DataTemplate>
+                  <Grid ColumnDefinitions="Auto,*"
+                        ColumnSpacing="12">
+                    <Label Text="{Binding Title}"
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light=#444, Dark=#DDD}"/>
+                    <Label Grid.Column="1"
+                           Text="{Binding Value}"
+                           TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"/>
+                  </Grid>
+                </DataTemplate>
+              </BindableLayout.ItemTemplate>
+            </VerticalStackLayout>
+          </VerticalStackLayout>
+        </Border>
+
+        <Grid ColumnDefinitions="*,Auto"
+              VerticalOptions="Center">
+          <Label Text="Productos"
+                 FontAttributes="Bold"
+                 FontSize="15"
+                 TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+          <HorizontalStackLayout Grid.Column="1"
+                                 Spacing="6"
+                                 IsVisible="{Binding CanUpdate}"
+                                 HorizontalOptions="End">
+            <Button Text="Editar"
+                    Style="{StaticResource PrimaryPillSmButtonStyle}"
+                    Clicked="OpenEditItemPicker_Clicked"/>
+            <Button Text="Dividir"
+                    Style="{StaticResource SecondaryPillSmButtonStyle}"
+                    IsVisible="{Binding CanSplit}"
+                    Clicked="SplitOrder_Clicked"/>
+            <Button Text="Reembolsar"
+                    Style="{StaticResource SecondaryPillSmButtonStyle}"
+                    TextColor="{AppThemeBinding Light=#C62828, Dark=#FF8A80}"
+                    IsVisible="{Binding CanRefund}"
+                    Clicked="RefundOrder_Clicked"/>
+          </HorizontalStackLayout>
+        </Grid>
+
+        <CollectionView ItemsSource="{Binding ItemLines}"
+                        SelectionMode="None">
+          <CollectionView.EmptyView>
+            <Label Text="No hay artículos en este pedido."
+                   TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"
+                   HorizontalTextAlignment="Center"/>
+          </CollectionView.EmptyView>
+          <CollectionView.ItemTemplate>
+            <DataTemplate>
+              <Grid ColumnDefinitions="Auto,*"
+                    RowDefinitions="Auto,Auto"
+                    Padding="0,6"
+                    Margin="{Binding Margin}">
+                <Label Text="{Binding QuantityText}"
+                       FontAttributes="Bold"
+                       TextColor="{AppThemeBinding Light=#444, Dark=#DDD}"/>
+                <Label Grid.Column="1"
+                       Text="{Binding Title}"
+                       FontAttributes="Bold"
+                       TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+                <Label Grid.Column="1"
+                       Grid.Row="1"
+                       Text="{Binding Detail}"
+                       FontSize="12"
+                       TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"/>
+                <VerticalStackLayout Grid.ColumnSpan="2"
+                                      Grid.Column="1"
+                                      HorizontalOptions="End"
+                                      Spacing="2">
+                  <Label Text="{Binding LineTotal}"
+                         FontAttributes="Bold"
+                         TextColor="{AppThemeBinding Light=Black, Dark=White}"
+                         HorizontalTextAlignment="End"/>
+                  <Label Text="{Binding StatusBadge}"
+                         TextColor="{Binding StatusColor}"
+                         FontSize="11"
+                         HorizontalTextAlignment="End"/>
+                </VerticalStackLayout>
+              </Grid>
+            </DataTemplate>
+          </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <Label Text="Pagos"
+               FontAttributes="Bold"
+               FontSize="15"
+               TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+
+        <CollectionView ItemsSource="{Binding PaymentLines}"
+                        SelectionMode="None">
+          <CollectionView.EmptyView>
+            <Label Text="Sin pagos registrados."
+                   TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"
+                   HorizontalTextAlignment="Center"/>
+          </CollectionView.EmptyView>
+          <CollectionView.ItemTemplate>
+            <DataTemplate>
+              <Border Stroke="{AppThemeBinding Light=#EEEEEE, Dark=#333333}"
+                      StrokeShape="{RoundRectangle CornerRadius=10}"
+                      BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1F1F1F}"
+                      Padding="12"
+                      Margin="0,6">
+                <Grid ColumnDefinitions="*,Auto"
+                      RowDefinitions="Auto,Auto">
+                  <Label Text="{Binding Method}"
+                         FontAttributes="Bold"
+                         TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+                  <Label Grid.Column="1"
+                         Text="{Binding Amount}"
+                         FontAttributes="Bold"
+                         TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+                  <Label Grid.Row="1"
+                         Text="{Binding Detail}"
+                         FontSize="12"
+                         TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"/>
+                  <Label Grid.Row="1"
+                         Grid.Column="1"
+                         Text="{Binding PaidAt}"
+                         FontSize="12"
+                         TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"
+                         HorizontalTextAlignment="End"/>
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <HorizontalStackLayout Spacing="12"
+                               IsVisible="{Binding CanUpdate}">
+          <Button Text="Agregar pago"
+                  Clicked="AddPayment_Clicked"
+                  Style="{StaticResource PrimaryPillSmButtonStyle}"
+                  IsVisible="{Binding CanAddPayment}"/>
+          <Button Text="Cambiar estado"
+                  Clicked="ChangeStatus_Clicked"
+                  Style="{StaticResource SecondaryPillSmButtonStyle}"/>
+        </HorizontalStackLayout>
+
+        <Label Text="{Binding PaymentBlockedMessage}"
+               IsVisible="{Binding ShowPaymentBlockedMessage}"
+               FontSize="12"
+               TextColor="{AppThemeBinding Light=#D84315, Dark=#FFAB91}"/>
+
+      </VerticalStackLayout>
+    </ScrollView>
+
+    <ActivityIndicator IsRunning="{Binding IsLoading}"
+                       IsVisible="{Binding IsLoading}"
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center"
+                       Color="{StaticResource BrandPrimary}"
+                       WidthRequest="32"
+                       HeightRequest="32"/>
+  </Grid>
+</ContentPage>

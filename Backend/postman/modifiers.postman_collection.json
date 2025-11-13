@@ -1,0 +1,236 @@
+{
+  "info": {
+    "name": "Modifiers Module",
+    "_postman_id": "6c41d4a6-9d6e-4b59-9d17-5fb6500f9b01",
+    "description": "Colección para gestionar grupos de modificadores, opciones y asociaciones con productos.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "token", "value": "" },
+    { "key": "groupId", "value": "1" },
+    { "key": "productId", "value": "1" },
+    { "key": "variantId", "value": "1" },
+    { "key": "optionId", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "Modifier Groups",
+      "item": [
+        {
+          "name": "Create Group",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Salsas\",\n  \"description\": \"Elige hasta dos salsas\",\n  \"minSelect\": 1,\n  \"maxSelect\": 2,\n  \"isRequired\": true,\n  \"appliesToCategoryId\": null,\n  \"options\": [\n    { \"name\": \"BBQ\", \"priceExtraCents\": 0, \"isDefault\": true },\n    { \"name\": \"Mango Habanero\", \"priceExtraCents\": 500 },\n    { \"name\": \"Chipotle\", \"priceExtraCents\": 300 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/modifiers/groups",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "modifiers", "groups"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Groups",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/modifiers/groups?isActive=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "modifiers", "groups"],
+              "query": [
+                { "key": "isActive", "value": "true" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Group Detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/modifiers/groups/{{groupId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "modifiers", "groups", "{{groupId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Groups By Product",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/modifiers/groups/by-product/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "modifiers", "groups", "by-product", "{{productId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Products By Group",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/modifiers/groups/{{groupId}}/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "modifiers", "groups", "{{groupId}}", "products"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Group",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Salsas premium\",\n  \"minSelect\": 0,\n  \"maxSelect\": 3,\n  \"replaceOptions\": [\n    { \"name\": \"BBQ Ahumada\", \"priceExtraCents\": 200, \"isDefault\": true },\n    { \"name\": \"Miel Mostaza\", \"priceExtraCents\": 150 },\n    { \"name\": \"Habanero\", \"priceExtraCents\": 400 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/modifiers/groups/{{groupId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "modifiers", "groups", "{{groupId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Modifier Option",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"priceExtraCents\": 750,\n  \"isDefault\": false,\n  \"isActive\": true,\n  \"position\": 2\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/modifiers/modifier-options/{{optionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "modifiers", "modifier-options", "{{optionId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Group",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/modifiers/groups/{{groupId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "modifiers", "groups", "{{groupId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Variant Modifier Overrides",
+      "item": [
+        {
+          "name": "List Variant Modifier Groups",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/variants/{{variantId}}/modifier-groups",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "variants", "{{variantId}}", "modifier-groups"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Attach Modifier Group to Variant",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"groupId\": {{groupId}},\n  \"minSelect\": 0,\n  \"maxSelect\": 2,\n  \"isRequired\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products/variants/{{variantId}}/modifier-groups",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "variants", "{{variantId}}", "modifier-groups"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Variant Modifier Group",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"minSelect\": 1,\n  \"maxSelect\": 3\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products/variants/{{variantId}}/modifier-groups/{{groupId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "variants", "{{variantId}}", "modifier-groups", "{{groupId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Detach Modifier Group from Variant",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/variants/{{variantId}}/modifier-groups/{{groupId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "variants", "{{variantId}}", "modifier-groups", "{{groupId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

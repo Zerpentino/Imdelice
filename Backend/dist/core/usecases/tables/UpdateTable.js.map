@@ -1,0 +1,1 @@
+{"version":3,"file":"UpdateTable.js","sourceRoot":"","sources":["../../../../src/core/usecases/tables/UpdateTable.ts"],"names":[],"mappings":";;;AAKA,MAAa,WAAW;IACtB,YAA6B,IAAsB;QAAtB,SAAI,GAAJ,IAAI,CAAkB;IAAG,CAAC;IAEvD,IAAI,CAAC,EAAU,EAAE,IAAsB;QACrC,OAAO,IAAI,CAAC,IAAI,CAAC,MAAM,CAAC,EAAE,EAAE,IAAI,CAAC,CAAC;IACpC,CAAC;CACF;AAND,kCAMC"}

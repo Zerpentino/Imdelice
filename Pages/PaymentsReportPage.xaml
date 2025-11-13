@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Imdeliceapp.Pages.PaymentsReportPage"
+             x:Name="PaymentsPage"
+             Title="Reporte de pagos"
+              Shell.NavBarIsVisible="True"
+             BackgroundColor="{AppThemeBinding Light=White, Dark=Black}">
+  <Grid>
+    <ScrollView>
+      <VerticalStackLayout Padding="16"
+                           Spacing="16">
+        <Label Text="Filtrar por fecha"
+               FontAttributes="Bold"
+               FontSize="18"
+               TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+        <Grid ColumnDefinitions="*,*"
+              ColumnSpacing="12">
+          <VerticalStackLayout Spacing="4">
+            <Label Text="Desde"
+                   FontAttributes="Bold"
+                   FontSize="13"
+                   TextColor="{AppThemeBinding Light=#555, Dark=#BBB}"/>
+            <DatePicker Date="{Binding FromDate}"
+                        MaximumDate="{Binding Today}"/>
+          </VerticalStackLayout>
+          <VerticalStackLayout Spacing="4"
+                                Grid.Column="1">
+            <Label Text="Hasta"
+                   FontAttributes="Bold"
+                   FontSize="13"
+                   TextColor="{AppThemeBinding Light=#555, Dark=#BBB}"/>
+            <DatePicker Date="{Binding ToDate}"
+                        MaximumDate="{Binding Today}"/>
+          </VerticalStackLayout>
+        </Grid>
+
+        <Button Text="Consultar"
+                Style="{StaticResource PrimaryPillButtonStyle}"
+                Clicked="Refresh_Clicked"
+                IsEnabled="{Binding IsNotLoading}"/>
+
+        <Border Stroke="{AppThemeBinding Light=#EEEEEE, Dark=#333333}"
+                StrokeShape="{RoundRectangle CornerRadius=18}"
+                BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1A1A1A}"
+                Padding="16"
+                IsVisible="{Binding HasSummary}">
+          <VerticalStackLayout Spacing="6">
+            <Label Text="{Binding RangeSummary}"
+                   FontAttributes="Bold"
+                   TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+            <Label Text="{Binding SummaryText}"
+                   TextColor="{AppThemeBinding Light=#555, Dark=#BBB}"
+                   FontSize="13"/>
+            <Label Text="{Binding OrdersClosedSummary}"
+                   TextColor="{AppThemeBinding Light=#555, Dark=#BBB}"
+                   FontSize="13"/>
+          </VerticalStackLayout>
+        </Border>
+
+        <CollectionView ItemsSource="{Binding MethodItems}"
+                        SelectionMode="None"
+                        IsVisible="{Binding HasResults}">
+          <CollectionView.ItemTemplate>
+            <DataTemplate>
+              <Border Stroke="{AppThemeBinding Light=#EFEFEF, Dark=#333333}"
+                      StrokeShape="{RoundRectangle CornerRadius=16}"
+                      BackgroundColor="{AppThemeBinding Light=#FBFBFB, Dark=#232323}"
+                      Padding="14"
+                      Margin="0,4">
+                <VerticalStackLayout Spacing="4">
+                  <Label Text="{Binding MethodDisplay}"
+                         FontAttributes="Bold"
+                         FontSize="16"
+                         TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+                  <Label Text="{Binding AmountSummary}"
+                         TextColor="{AppThemeBinding Light=#555, Dark=#BBB}"
+                         FontSize="13"/>
+                  <Label Text="{Binding ExtrasSummary}"
+                         TextColor="{AppThemeBinding Light=#777, Dark=#AAA}"
+                         FontSize="12"/>
+                </VerticalStackLayout>
+              </Border>
+            </DataTemplate>
+          </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <Grid ColumnDefinitions="*,Auto"
+              IsVisible="{Binding HasOrderItems}">
+          <Label Text="Órdenes del rango"
+                 FontAttributes="Bold"
+                 FontSize="16"
+                 TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+          <Button Grid.Column="1"
+                  Text="{Binding OrdersToggleIcon}"
+                  Command="{Binding ToggleOrdersCommand}"
+                  Padding="10,4"
+                  FontAttributes="Bold"
+                  BackgroundColor="{AppThemeBinding Light=#FFE082, Dark=#FFCA28}"
+                  TextColor="{AppThemeBinding Light=#6D4C41, Dark=#3E2723}"
+                  CornerRadius="16"/>
+        </Grid>
+
+        <CollectionView ItemsSource="{Binding OrderItems}"
+                        SelectionMode="None"
+                        IsVisible="{Binding ShowOrderItems}">
+          <CollectionView.ItemTemplate>
+            <DataTemplate>
+              <Border Stroke="{AppThemeBinding Light=#EFEFEF, Dark=#333333}"
+                      StrokeShape="{RoundRectangle CornerRadius=16}"
+                      BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E1E1E}"
+                      Padding="14"
+                      Margin="0,4">
+                <Border.GestureRecognizers>
+                  <TapGestureRecognizer Command="{Binding Source={x:Reference PaymentsPage}, Path=BindingContext.OpenOrderCommand}"
+                                        CommandParameter="{Binding .}"/>
+                </Border.GestureRecognizers>
+                <VerticalStackLayout Spacing="4">
+                  <Label Text="{Binding Title}"
+                         FontAttributes="Bold"
+                         FontSize="15"
+                         TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+                  <Label Text="{Binding StatusDisplay}"
+                         FontSize="12"
+                         TextColor="{Binding StatusColor}"
+                         FontAttributes="Bold"/>
+                  <Label Text="{Binding Subtitle}"
+                         FontSize="12"
+                         TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"
+                         IsVisible="{Binding HasSubtitle}"/>
+                  <Label Text="{Binding TotalsSummary}"
+                         FontSize="12"
+                         TextColor="{AppThemeBinding Light=#444, Dark=#BBB}"/>
+                  <VerticalStackLayout BindableLayout.ItemsSource="{Binding Payments}"
+                                       Spacing="2"
+                                       IsVisible="{Binding HasPayments}">
+                    <BindableLayout.ItemTemplate>
+                      <DataTemplate>
+                        <Label Text="{Binding Summary}"
+                               FontSize="11"
+                               TextColor="{AppThemeBinding Light=#555, Dark=#CCC}"/>
+                      </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                  </VerticalStackLayout>
+                </VerticalStackLayout>
+              </Border>
+            </DataTemplate>
+          </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <Label Text="Sin pagos registrados en el rango seleccionado."
+               IsVisible="{Binding ShowEmptyState}"
+               TextColor="{AppThemeBinding Light=#777, Dark=#AAA}"
+               HorizontalTextAlignment="Center"/>
+      </VerticalStackLayout>
+    </ScrollView>
+
+    <ActivityIndicator IsRunning="{Binding IsLoading}"
+                       IsVisible="{Binding IsLoading}"
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center"
+                       Color="{StaticResource BrandPrimary}"/>
+  </Grid>
+</ContentPage>

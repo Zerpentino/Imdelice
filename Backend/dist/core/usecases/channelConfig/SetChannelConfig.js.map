@@ -1,0 +1,1 @@
+{"version":3,"file":"SetChannelConfig.js","sourceRoot":"","sources":["../../../../src/core/usecases/channelConfig/SetChannelConfig.ts"],"names":[],"mappings":";;;AAIA,MAAa,gBAAgB;IAC3B,YAA6B,IAA8B;QAA9B,SAAI,GAAJ,IAAI,CAA0B;IAAG,CAAC;IAE/D,IAAI,CAAC,MAAmB,EAAE,SAAiB;QACzC,OAAO,IAAI,CAAC,IAAI,CAAC,MAAM,CAAC,MAAM,EAAE,SAAS,CAAC,CAAC;IAC7C,CAAC;CACF;AAND,4CAMC"}

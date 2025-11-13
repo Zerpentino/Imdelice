@@ -1,0 +1,347 @@
+3. Crear un pedido con items
+POST /api/ordersPermiso: orders.createBody: validado con CreateOrderDto
+
+Campos
+	•	Obligatorio: serviceType
+	•	Opcionales: source, tableId, note, covers, externalRef, prepEtaMinutes
+	•	status inicial: DRAFT | OPEN | HOLD
+Si se crea en OPEN, se marca acceptedAt automáticamente.
+{
+  "serviceType": "DINE_IN",               // obligatorio: DINE_IN | TAKEAWAY | DELIVERY
+
+  "source": "POS",                        // opcional: POS | UBER | DIDI | RAPPI
+  "tableId": 1,                          // opcional: si es consumo en mesa
+  "covers": 3,                            // opcional: número de comensales
+  "note": "Sin cebolla en la hamburguesa",// opcional
+  "externalRef": "UBER-ORD-99321",        // opcional: folio de plataforma si escojieron uber didi etc
+  "prepEtaMinutes": 18,                   // opcional: ETA que ve el front/kiosko
+
+  "status": "OPEN"                        // opcional: DRAFT | OPEN | HOLD
+                                          // si no mandas, el backend puede asumir DRAFT
+
+    "servedByUserId": 7,// id usuario (mesero etc)
+
+}
+
+1.1. Mínimo-mínimo (pos)
+
+{
+  "serviceType": "TAKEAWAY",
+  "source": "POS"
+}
+Usa defaults:
+	•	status: OPEN
+	•	totales: 0
+	•	items: []
+
+1.2. Salón (DINE_IN) con mesa
+
+{
+  "serviceType": "DINE_IN",
+  "source": "POS",
+  "tableId": 3,
+  "covers": 2,
+  "note": "Mesa de la entrada"
+}
+
+1.3. Salón (DINE_IN) sin mesa todavía
+
+{
+  "serviceType": "DINE_IN",
+  "source": "POS",
+  "covers": 4,
+  "note": "Aún no asignan mesa"
+}
+Luego la mesa se pone con el PATCH de meta.
+
+1.4. Para llevar (TAKEAWAY) con nombre
+
+{
+  "serviceType": "TAKEAWAY",
+  "source": "POS",
+  "customerName": "Cliente mostrador",
+  "note": "Pasa en 20 min"
+}
+
+1.5. Delivery básico
+
+{
+  "serviceType": "DELIVERY",
+  "source": "POS",
+  "customerName": "Carlos",
+  "customerPhone": "3312345678",
+  "note": "Tocar antes de entrar"
+}
+
+1.6. Delivery de marketplace (UBER / DIDI / RAPPI)
+
+{
+  "serviceType": "DELIVERY",
+  "source": "UBER",
+  "customerName": "Carlos Pacheco",
+  "customerPhone": "3312345678",
+  "externalRef": "UBER#998877",
+  "prepEtaMinutes": 25,
+  "note": "Dejar en recepción"
+}
+
+1.7. Crear pedido ya en HOLD
+(para que no salga todavía en cocina / POS)
+
+{
+  "serviceType": "DINE_IN",
+  "source": "POS",
+  "status": "HOLD",
+  "tableId": 2,
+  "note": "Reservado, aún no ordenan"
+}
+
+1.8. Crear pedido como DRAFT
+(si tu Zod lo acepta igual que HOLD; algunos lo ponen así)
+
+{
+  "serviceType": "TAKEAWAY",
+  "source": "POS",
+  "status": "DRAFT",
+  "customerName": "Prueba"
+}
+
+1.9. Crear pedido con 1 ítem simple (unificado)
+
+{
+  "serviceType": "TAKEAWAY",
+  "source": "POS",
+  "items": [
+    {
+      "productId": 12
+    }
+  ]
+}
+
+1.10. Crear pedido con varios ítems simples
+
+{
+  "serviceType": "DINE_IN",
+  "source": "POS",
+  "tableId": 5,
+  "items": [
+    { "productId": 12, "quantity": 2 },
+    { "productId": 51 },
+    { "productId": 18, "notes": "Sin cebolla" }
+  ]
+}
+Permiso: orders.updateBody: AddOrderItemDto
+	•	Crea un renglón con producto, variante y modifiers.
+	•	Si es combo → replica los hijos.
+	•	Devuelve { item } con snapshot (nombres, precios, estado).
+	•	Al final recalcula totales.
+Ejemplos:
+1. Caso más simple (un producto simple, sin nada extra)
+
+{
+  "productId": 12
+}
+	•	El backend lo toma con quantity = 1.
+	•	Sirve para productos tipo SIMPLE.
+
+2. Mismo producto pero con cantidad y nota
+
+{
+  "productId": 12,
+  "quantity": 3,
+  "notes": "Sin cebolla, porfa"
+}
+	•	Útil para cocina / KDS, porque la nota viaja al renglon.
+
+3. Producto con variantes (el backend en tu zip dice: “si es VARIANTED y no mandas variantId, truena”)
+
+{
+  "productId": 25,
+  "variantId": 3,
+  "quantity": 1
+}
+	•	Aquí el productId es el producto padre (ej. “Pizza”)
+	•	El variantId es la presentación (ej. “Grande”, “Mediana”, “Pepperoni grande”).
+	•	Si no mandas variantId y ese producto es VARIANTED → el repo te lanza: "variantId requerido para producto VARIANTED" (eso está en PrismaOrderRepository.ts).
+
+4. Producto con modificadores (extras, toppings, salsas…)
+
+{
+  "productId": 18,
+  "quantity": 2,
+  "modifiers": [
+    {
+      "optionId": 7
+    },
+    {
+      "optionId": 9,
+      "quantity": 2
+    }
+  ]
+}
+	•	Cada optionId debe existir en tus modifierOptions.
+	•	El backend busca esos optionId, suma el priceExtraCents y lo mete al renglón.
+	•	Si no encuentra alguno, lo ignora (no te truena la petición).
+
+5. Producto con todo: variante + modificadores + nota
+
+{
+  "productId": 25,
+  "variantId": 4,
+  "quantity": 1,
+  "notes": "Partir en 8",
+  "modifiers": [
+    { "optionId": 10 },           // extra queso
+    { "optionId": 12, "quantity": 2 }  // 2 salsas
+  ]
+}
+
+6. Combo (el repo detecta que es COMBO y crea los hijos solo)
+
+{
+  "productId": 30,
+  "quantity": 1
+}
+	•	En tu repo (PrismaOrderRepository) si el product.type === "COMBO" después de crear el ítem crea los renglones hijos con los componentes del combo.
+	•	Por eso el front no tiene que mandar los hijos, solo el combo.
+
+7. Ejemplo “didáctico” con comentarios (para tu equipo)
+Ojo: JSON real no lleva comentarios, esto es solo para que lo copien y lo limpien.
+
+{
+  "productId": 18,              // obligatorio
+  "variantId": 2,                // opcional, si el producto lo requiere
+  "quantity": 2,                 // default = 1
+  "notes": "Mesa 4, lo quiere rápido", // opcional
+  "modifiers": [
+    {
+      "optionId": 5,             // ej. "Coca 600"
+      "quantity": 1
+    },
+    {
+      "optionId": 8,             // ej. "Sin gluten"
+      "quantity": 1
+    }
+  ]
+}
+
+
+Respuesta :{
+    "error": null,
+    "data": {
+        "item": {
+            "id": 1,
+            "orderId": 2,
+            "productId": 18,
+            "variantId": null,
+            "parentItemId": null,
+            "quantity": 2,
+            "status": "NEW",
+            "basePriceCents": 7700,
+            "extrasTotalCents": 0,
+            "totalPriceCents": 15400,
+            "nameSnapshot": "Marquesita Champi",
+            "variantNameSnapshot": null,
+            "notes": "Mesa 4, lo quiere rápido"
+        }
+    },
+    "message": "Item added"
+}
+
+Respuesta: pedido creado (data con el pedido).
+{
+    "error": null,
+    "data": {
+        "id": 1,
+        "code": "IM-251030-LR97",
+        "status": "OPEN",
+        "serviceType": "DINE_IN",
+        "source": "POS",
+        "externalRef": "UBER-ORD-99321",
+        "prepEtaMinutes": 18,
+        "tableId": 1,
+        "openedAt": "2025-10-30T17:08:53.722Z",
+        "acceptedAt": "2025-10-30T17:08:53.719Z",
+        "readyAt": null,
+        "servedAt": null,
+        "closedAt": null,
+        "canceledAt": null,
+        "note": "Sin cebolla en la hamburguesa",
+        "customerName": null,
+        "customerPhone": null,
+        "covers": 3,
+        "servedByUserId": 1,
+        "subtotalCents": 0,
+        "discountCents": 0,
+        "serviceFeeCents": 0,
+        "taxCents": 0,
+        "totalCents": 0
+    },
+    "message": "Created"
+}
+
+10. Notas funcionales clave
+	•	Los totales siempre se recalculan ignorando ítems cancelados.
+	•	Se respetan descuentos / impuestos / service fee ya guardados.
+	•	prepEtaMinutes sirve para mostrar ETA en front / kiosko.
+	•	source y externalRef diferencian interno vs plataforma.
+	•	Con esto el front puede hacer todo el flujo:
+	0.	creación
+	0.	agregar / editar ítems
+	0.	KDS
+	0.	cobros
+	0.	cierre
+	0.	listado con filtros
+
+11. Glosario para el front
+Permisos
+	•	orders.read: puede listar y ver
+	•	orders.create: puede crear
+	•	orders.update: puede editar, pagar, mover estado
+serviceType (tipo de servicio)
+	•	DINE_IN: consumo en mesa
+	•	TAKEAWAY: para llevar
+	•	DELIVERY: a domicilio
+source (canal)
+	•	POS: pedido directo
+	•	UBER, DIDI, RAPPI: plataformas externas
+status del pedido
+	•	DRAFT: borrador, no cocina
+	•	OPEN: activo
+	•	HOLD: en pausa
+	•	CLOSED: cobrado y cerrado
+	•	CANCELED: cancelado
+OrderItem.status
+	•	NEW
+	•	IN_PROGRESS
+	•	READY
+	•	SERVED
+	•	CANCELED
+Timestamps
+	•	acceptedAt: el pedido salió de borrador / cocina lo tomó
+	•	readyAt: todos los ítems están listos
+	•	servedAt: todos servidos o cancelados
+	•	closedAt: se cobró
+	•	canceledAt: se canceló
+Totales (centavos)
+	•	subtotalCents: suma de renglones
+	•	discountCents: descuentos
+	•	serviceFeeCents: propina/fee fijo
+	•	taxCents: impuestos
+	•	totalCents: subtotal - descuento + service + tax
+	•	paymentsTotalCents: suma de pagos
+	•	paymentsTipCents: suma de propinas
+Pagos (payments[])
+	•	method: CASH | CARD | TRANSFER | OTHER
+	•	amountCents
+	•	tipCents
+	•	paidAt
+	•	note
+Mesa
+	•	tableId: id de la mesa
+	•	table: { id, name } para mostrar “Mesa 12”
+	•	covers: número de comensales
+DTOs clave
+	•	ListOrdersQueryDto: filtros del GET
+	•	UpdateOrderMetaDto: para editar nota, mesa, cubiertos, ETA
+	•	UpdateOrderStatusDto: para mover el pedido validando pagos

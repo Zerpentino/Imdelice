@@ -1,0 +1,156 @@
+{
+  "info": {
+    "name": "Tables Module",
+    "_postman_id": "0c7b555e-0f0e-4ed0-9848-3e8aca4a3f30",
+    "description": "Colección para crear, listar, consultar, actualizar y eliminar mesas.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "token", "value": "" },
+    { "key": "tableId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Create Table",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Mesa 1\",\n  \"seats\": 4,\n  \"isActive\": true\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/tables",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "tables"]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "let jsonData;",
+              "try { jsonData = pm.response.json(); } catch (e) {",
+              "  pm.test('Respuesta JSON', () => pm.expect.fail('Respuesta no es JSON'));",
+              "  return;",
+              "}",
+              "pm.test('Mesa creada', function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "  pm.expect(jsonData?.data?.id).to.exist;",
+              "});",
+              "if (jsonData?.data?.id) { pm.environment.set('tableId', jsonData.data.id); }"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "List Tables",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/tables",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "tables"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "List Tables (incluye inactivas)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/tables?includeInactive=true",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "tables"],
+          "query": [
+            { "key": "includeInactive", "value": "true" }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Table Detail",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/tables/{{tableId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "tables", "{{tableId}}"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Update Table",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Mesa 1 (actualizada)\",\n  \"seats\": 6,\n  \"isActive\": true\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/tables/{{tableId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "tables", "{{tableId}}"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Archive Table",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/tables/{{tableId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "tables", "{{tableId}}"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Table (Hard)",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/tables/{{tableId}}?hard=true",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "tables", "{{tableId}}"],
+          "query": [
+            { "key": "hard", "value": "true" }
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

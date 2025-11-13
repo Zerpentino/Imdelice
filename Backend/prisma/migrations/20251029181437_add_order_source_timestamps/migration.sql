@@ -1,0 +1,8 @@
+-- AlterTable
+ALTER TABLE `Order` ADD COLUMN `acceptedAt` DATETIME(3) NULL,
+    ADD COLUMN `canceledAt` DATETIME(3) NULL,
+    ADD COLUMN `externalRef` VARCHAR(191) NULL,
+    ADD COLUMN `prepEtaMinutes` INTEGER NULL,
+    ADD COLUMN `readyAt` DATETIME(3) NULL,
+    ADD COLUMN `servedAt` DATETIME(3) NULL,
+    ADD COLUMN `source` ENUM('POS', 'UBER', 'DIDI', 'RAPPI') NOT NULL DEFAULT 'POS';

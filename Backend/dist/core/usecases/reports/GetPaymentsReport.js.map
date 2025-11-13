@@ -1,0 +1,1 @@
+{"version":3,"file":"GetPaymentsReport.js","sourceRoot":"","sources":["../../../../src/core/usecases/reports/GetPaymentsReport.ts"],"names":[],"mappings":";;;AAMA,MAAa,iBAAiB;IAC5B,YAA6B,IAAsB;QAAtB,SAAI,GAAJ,IAAI,CAAkB;IAAG,CAAC;IAEvD,IAAI,CAAC,OAA8B;QACjC,OAAO,IAAI,CAAC,IAAI,CAAC,iBAAiB,CAAC,OAAO,CAAC,CAAC;IAC9C,CAAC;CACF;AAND,8CAMC"}

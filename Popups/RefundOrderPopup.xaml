@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<toolkit:Popup xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+               xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+               xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+               x:Class="Imdeliceapp.Popups.RefundOrderPopup"
+               Size="420,520"
+               CanBeDismissedByTappingOutsideOfPopup="False">
+  <Border Stroke="{AppThemeBinding Light=#E0E0E0, Dark=#333333}"
+          StrokeShape="{RoundRectangle CornerRadius=24}"
+          BackgroundColor="{AppThemeBinding Light=#FAFAFA, Dark=#121212}"
+          Padding="20">
+    <ScrollView>
+      <VerticalStackLayout Spacing="18">
+        <Label Text="Reembolsar pedido"
+               FontAttributes="Bold"
+               FontSize="22"/>
+        <Label Text="Se reversarán los pagos del ticket. Ingresa la razón y las credenciales del supervisor que autoriza el reembolso."
+               FontSize="13"
+               TextColor="{AppThemeBinding Light=#666, Dark=#B0B0B0}"
+               LineBreakMode="WordWrap"/>
+
+        <VerticalStackLayout Spacing="6">
+          <Label Text="Razón (opcional)"
+                 FontAttributes="Bold"/>
+          <Editor Text="{Binding Reason}"
+                  HeightRequest="80"
+                  AutoSize="TextChanges"
+                  Placeholder="Ej. Producto defectuoso"/>
+        </VerticalStackLayout>
+
+        <VerticalStackLayout Spacing="12">
+          <Label Text="Credenciales del supervisor"
+                 FontAttributes="Bold"/>
+          <Entry Text="{Binding AdminEmail}"
+                 Keyboard="Email"
+                 Placeholder="Correo del supervisor"/>
+          <Entry Text="{Binding AdminPin}"
+                 Keyboard="Numeric"
+                 Placeholder="PIN del supervisor (opcional)"/>
+          <Entry Text="{Binding Password}"
+                 IsPassword="True"
+                 Placeholder="Contraseña"
+                 />
+          <Label Text="Debes capturar correo o PIN y siempre la contraseña."
+                 FontSize="12"
+                 TextColor="{AppThemeBinding Light=#666, Dark=#B0B0B0}"/>
+        </VerticalStackLayout>
+
+        <Label Text="{Binding ValidationMessage}"
+               TextColor="#C62828"
+               FontSize="12"
+               LineBreakMode="WordWrap"
+               IsVisible="{Binding HasValidationMessage}"/>
+
+        <HorizontalStackLayout Spacing="12">
+          <Button Text="Cancelar"
+                  Style="{StaticResource SecondaryPillButtonStyle}"
+                  HorizontalOptions="FillAndExpand"
+                  Clicked="Cancel_Clicked"/>
+          <Button Text="Reembolsar"
+                  Style="{StaticResource PrimaryPillButtonStyle}"
+                  HorizontalOptions="FillAndExpand"
+                  Clicked="Confirm_Clicked"/>
+        </HorizontalStackLayout>
+      </VerticalStackLayout>
+    </ScrollView>
+  </Border>
+</toolkit:Popup>

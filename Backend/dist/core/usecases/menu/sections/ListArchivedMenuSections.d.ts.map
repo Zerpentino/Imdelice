@@ -1,0 +1,1 @@
+{"version":3,"file":"ListArchivedMenuSections.d.ts","sourceRoot":"","sources":["../../../../../src/core/usecases/menu/sections/ListArchivedMenuSections.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,eAAe,EAAE,MAAM,8CAA8C,CAAC;AAEpF,qBAAa,wBAAwB;IACvB,OAAO,CAAC,QAAQ,CAAC,IAAI;gBAAJ,IAAI,EAAE,eAAe;IAElD,IAAI,CAAC,MAAM,EAAE,MAAM;;;;;;;;;;;;;CAGpB"}

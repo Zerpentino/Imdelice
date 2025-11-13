@@ -1,0 +1,1 @@
+{"version":3,"file":"GetRoleById.js","sourceRoot":"","sources":["../../../../src/core/usecases/roles/GetRoleById.ts"],"names":[],"mappings":";;;AAEA,MAAa,WAAW;IACtB,YAAoB,IAAqB;QAArB,SAAI,GAAJ,IAAI,CAAiB;IAAG,CAAC;IAC7C,OAAO,CAAC,EAAU;QAChB,OAAO,IAAI,CAAC,IAAI,CAAC,OAAO,CAAC,EAAE,CAAC,CAAC;IAC/B,CAAC;CACF;AALD,kCAKC"}

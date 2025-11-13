@@ -1,0 +1,498 @@
+oye y no se puede poner un porcentaje q aplique a tdos los productos ? ya que me dice mi mama , sio sea cierto o no pero dicen q les cobran el 46% q es lo que cobran las plataformas ,osea poner algo un campo que puede editar el porcentaje de cobro si es plataforma y cuadno lo pone, aplica en todos los productos no se si esta bien ese flujo o como vez?
+
+
+Sí se puede. La forma más limpia es guardar un margen por canal y aplicarlo justo al crear el pedido o sus renglones:
+	1	Añade el porcentaje en tu modelo
+	•	Opción rápida: campo en Order, por ejemplo platformMarkupPct (nullable).
+	•	Más escalable: tabla de configuración ChannelConfig con { source, markupPct } para no modificar cada pedido a mano.
+	2	Calcula los precios al crear el pedido
+	•	Cuando source sea UBER, DIDI, etc., obtén el porcentaje (ej. 46%) y ajusta el precio antes de generar los OrderItem:tsconst markup = order.platformMarkupPct ?? channelConfig?.markupPct ?? 0;
+	•	const multiplier = 1 + markup / 100;
+	•	const basePrice = Math.round(originalPrice * multiplier);
+	•	
+	•	Esto se hace dentro de PrismaOrderRepository.addItem (o en create si creas items en la misma llamada, como ya haces ahora).
+	3	Mantén el snapshot
+	•	Guarda el precio final con markup en basePriceCents y totalPriceCents para que facturación/cuadre sean consistentes.
+	4	Configuración editable
+	•	Permite que tu mamá/administrador cambie el 46% desde un panel (ejemplo: PATCH /api/config/channels/uber { markupPct: 46 }).
+Así evitas tocar producto por producto: basta con ajustar el porcentaje global del canal y todos los renglones futuros de ese origen se recalculan automáticamente.
+puedes hacer ? me gusto agarra el mas escalable
+
+
+Se habilitó un markup global por canal:
+	•	Esquema: Order ahora guarda platformMarkupPct y se creó ChannelConfig (source + markupPct).
+	•	Creación de pedidos: al abrir un pedido con source ≠ POS, el repo busca el porcentaje en ChannelConfig (o respeta un override que pases) y lo snapshotea en el pedido.
+	•	Cálculo de renglones (addItem / create con items incluidos / update modifiers): el precio base y los modifiers se multiplican automáticamente por 1 + markup/100.
+	•	Split de pedidos: la órden clonada hereda el mismo porcentaje.
+	•	Listado: GET /api/orders devuelve también platformMarkupPct junto con servedBy.
+Para activar la funcionalidad:
+	1	Lanza la migración: npx prisma migrate dev --name add-channel-markup && npx prisma generate.
+	2	Configura los porcentajes, por ejemplo:
+ts
+
+await prisma.channelConfig.upsert({
+  where: { source: 'UBER' },
+  update: { markupPct: 46 },
+  create: { source: 'UBER', markupPct: 46 },
+});
+(lo mismo para DIDI, RAPPI, etc.)
+	1	Si quieres forzar un ajuste distinto por pedido, puedes pasar platformMarkupPct en el body de creación; si lo omites, se toma el de la tabla de configuración.
+3 files changed
++63
+-4
+
+Undo
+
+View all changes
+
+schema.prisma
++9
+-0
+
+IOrderRepository.ts
++2
+-0
+
+PrismaOrderRepository.ts
++52
+-4
+
+dame ejemplos para darle a front ya q el no sabe nada de lo que estamos haciendo
+
+Finished working
+
+Pedidos – Referencia Para Front
+	•	Crear pedido con markup automático
+http
+
+POST /api/orders
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "serviceType": "DELIVERY",
+  "source": "UBER",
+  "externalRef": "uber-98371",
+  "prepEtaMinutes": 25,
+  "platformMarkupPct": 50,          // opcional; si lo omites se usa ChannelConfig
+  "items": [
+    {
+      "productId": 101,
+      "quantity": 2,
+      "notes": "Sin cebolla",
+      "modifiers": [
+        { "optionId": 55, "quantity": 1 }
+      ]
+    },
+    {
+      "productId": 220,
+      "variantId": 33,
+      "quantity": 1
+    }
+    // puedes incluir combos igual que antes
+  ]
+}
+	•	Respuesta (resumen)
+json
+
+{
+  "error": null,
+  "data": {
+    "id": 432,
+    "code": "NOTA 1 del 5 de marzo de 2026 - Atendido por: Ana López - ID 7",
+    "status": "OPEN",
+    "serviceType": "DELIVERY",
+    "source": "UBER",
+    "platformMarkupPct": 50,
+    "servedByUserId": 7,
+    "servedBy": { "id": 7, "name": "Ana López", "email": "ana@resto.mx" },
+    "prepEtaMinutes": 25,
+    "externalRef": "uber-98371",
+    "subtotalCents": 21300,
+    "discountCents": 0,
+    "serviceFeeCents": 0,
+    "taxCents": 0,
+    "totalCents": 21300,
+    "openedAt": "2026-03-05T19:02:11.553Z",
+    "acceptedAt": "2026-03-05T19:02:11.553Z",
+    "readyAt": null,
+    "servedAt": null,
+    "closedAt": null,
+    "canceledAt": null,
+    "items": [
+      {
+        "id": 1280,
+        "productId": 101,
+        "quantity": 2,
+        "status": "NEW",
+        "nameSnapshot": "Taco pastor",
+        "variantNameSnapshot": null,
+        "basePriceCents": 6750,             // precio base con markup aplicado
+        "extrasTotalCents": 750,            // modifiers también se multiplican
+        "totalPriceCents": 15000,
+        "notes": "Sin cebolla",
+        "modifiers": [
+          {
+            "id": 2150,
+            "optionId": 55,
+            "nameSnapshot": "Queso extra",
+            "priceExtraCents": 750,
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "id": 1281,
+        "productId": 220,
+        "variantId": 33,
+        "quantity": 1,
+        "status": "NEW",
+        "nameSnapshot": "Refresco",
+        "variantNameSnapshot": "600 ml",
+        "basePriceCents": 6300,
+        "extrasTotalCents": 0,
+        "totalPriceCents": 6300,
+        "modifiers": []
+      }
+    ],
+    "payments": []
+  },
+  "message": "Created"
+}
+	•	Listar pedidos
+http
+
+GET /api/orders?source=UBER&statuses=OPEN
+Authorization: Bearer <token>
+json
+
+{
+  "error": null,
+  "data": [
+    {
+      "id": 432,
+      "code": "NOTA 1 del 5 de marzo de 2026 - Atendido por: Ana López - ID 7",
+      "status": "OPEN",
+      "serviceType": "DELIVERY",
+      "source": "UBER",
+      "platformMarkupPct": 50,
+      "servedByUserId": 7,
+      "servedBy": { "id": 7, "name": "Ana López", "email": "ana@resto.mx" },
+      "subtotalCents": 21300,
+      "totalCents": 21300,
+      "paymentsTotalCents": 0,
+      "paymentsTipCents": 0,
+      "openedAt": "2026-03-05T19:02:11.553Z",
+      "acceptedAt": "2026-03-05T19:02:11.553Z",
+      "readyAt": null,
+      "servedAt": null,
+      "closedAt": null,
+      "canceledAt": null,
+      "prepEtaMinutes": 25,
+      "externalRef": "uber-98371",
+      "table": null,
+      "payments": []
+    }
+  ],
+  "message": "OK"
+}
+	•	Detalle
+http
+
+GET /api/orders/432
+Authorization: Bearer <token>
+Respuesta igual al create, con arrays completos (items, payments, table, atm no hay etc).
+	•	Actualizar meta
+http
+
+PATCH /api/orders/432/meta
+{
+  "note": "Cliente pidió cubiertos",
+  "prepEtaMinutes": 30
+}
+	•	Actualizar estado
+http
+
+PATCH /api/orders/432/status
+{
+  "status": "READY"
+}
+(409 si aún no está cubierto el total cuando intentas CLOSED).
+	•	KDS
+http
+
+GET /api/orders/kds/list?statuses=NEW,READY
+json
+
+{
+  "error": null,
+  "data": [
+    {
+      "itemId": 1280,
+      "orderId": 432,
+      "status": "NEW",
+      "quantity": 2,
+      "name": "Taco pastor",
+      "variant": null,
+      "tableName": null,
+      "code": "NOTA 1 del 5 de marzo de 2026 - Atendido por: Ana López - ID 7",
+      "serviceType": "DELIVERY",
+      "parentItemId": null
+    }
+  ],
+  "message": "OK"
+}
+	•	Campos clave para UI
+	•	code: ya viene legible (NOTA … Atendido por…).
+	•	platformMarkupPct: porcentaje aplicado (si null, significa precio POS sin aumento).
+	•	servedBy / servedByUserId: quién levantó la orden.
+	•	prepEtaMinutes: ETA editable.
+	•	Timestamps (openedAt, acceptedAt, readyAt, servedAt, closedAt, canceledAt): usar para colores o historia.
+	•	paymentsTotalCents vs totalCents: permite indicar si falta cobrar algo.
+	•	items[].basePriceCents / extrasTotalCents / totalPriceCents: ya traen el markup.
+	•	Configurar markup por canal
+	•	Solo los admins deberán darle de alta una vez:POST /api/channel-config
+	•	{ "source": "UBER", "markupPct": 46 }
+	•	(si no tienes endpoint, puedes cargarlo con un seed manual; se busca automáticamente en backend).
+Con estos payloads el front ya puede armar los flujos de “crear”, “ver”, “listar” y “KDS” sabiendo que los precios para Uber/Didi/Rappi vienen inflados de forma homogénea.
+oye donde hacer el porcentaje de q si es uber o didi etc?
+
+Finished working
+
+El porcentaje se resuelve desde dos lugares:
+	1	Tabla ChannelConfig (global por canal)
+	•	Se añadió al schema (prisma/schema.prisma (lines 319-329)).
+	•	Cada fila guarda source (UBER, DIDI, RAPPI, etc.) y markupPct.
+	•	El repositorio (src/infra/repositories/PrismaOrderRepository.ts:70-107,900-939) busca automáticamente ese valor cada vez que crea un pedido cuyo source no es POS.
+	•	Ejemplo (puedes ejecutarlo en un seed o desde Prisma Studio):tsawait prisma.channelConfig.upsert({
+	•	  where: { source: 'UBER' },
+	•	  update: { markupPct: 46 },
+	•	  create: { source: 'UBER', markupPct: 46 },
+	•	});
+	•	
+	2	Override por pedido
+	•	Si al crear la orden mandas platformMarkupPct en el body (POST /api/orders), ese valor se guarda en el pedido y se usa para todos los renglones, ignorando ChannelConfig. Útil si en algún caso quieres un porcentaje distinto.
+En resumen: define una fila en ChannelConfig para cada canal que quieras encarecer, y la lógica de PrismaOrderRepository aplicará el markup en basePriceCents y modificadores cada vez que el pedido tenga ese source.
+
+no puedes hacer en un end point donde definas los porcentajes en vez de hacer un seed
+
+Listo: ahora puedes administrar el porcentaje de markup por canal desde la API.
+Endpoints nuevos (orders.update requerido):
+	•	GET /api/channel-configDevuelve lista de { source, markupPct, updatedAt }.
+	•	PUT /api/channel-config/:sourceBody: { "markupPct": 46 }. Crea o actualiza el porcentaje para POS | UBER | DIDI | RAPPI.
+El backend reutiliza esos valores automáticamente cuando source es distinto de POS, y los pedidos siguen aceptando un platformMarkupPct manual si quieres override puntual.
+Cambios clave:
+	•	Repositorio/Usecases/Controller para ChannelConfig (src/core/domain/repositories/IChannelConfigRepository.ts, src/infra/repositories/PrismaChannelConfigRepository.ts, src/core/usecases/channelConfig/*, src/presentation/controllers/ChannelConfigController.ts).
+	•	Nuevas rutas (src/routes/channelConfig.routes.ts) y wiring en src/index.ts y src/container/index.ts.
+	•	Modelo Order ya tenía platformMarkupPct; la lógica de PrismaOrderRepository sigue tomando el valor snapshoppeado o el definido en ChannelConfig.
+npm run build sigue pasando.Recuerda correr la migración que introduce ChannelConfig/platformMarkupPct si aún no la has aplicado (npx prisma migrate dev --name add-order-channel-config).
+9 files changed
++138
+-0
+
+Undo
+
+View all changes
+
+index.ts
++11
+-0
+
+IChannelConfigRepository.ts
++7
+-0
+
+
+ListChannelConfigs.ts
++10
+-0
+
+
+SetChannelConfig.ts
++11
+-0
+
+
+index.ts
++2
+-0
+
+PrismaChannelConfigRepository.ts
++20
+-0
+
+
+ChannelConfigController.ts
++47
+-0
+
+
+channelConfig.dto.ts
++12
+-0
+
+
+channelConfig.routes.ts
++18
+-0
+
+
+dame ejemplos para el front
+
+Finished working
+
+Canales y Markups
+	•	Listar configuración actual
+http
+
+GET /api/channel-config
+Authorization: Bearer <TOKEN>
+json
+
+{
+  "error": null,
+  "data": [
+    { "source": "POS",  "markupPct": 0,  "updatedAt": "2026-03-05T18:10:12.231Z" },
+    { "source": "UBER", "markupPct": 46, "updatedAt": "2026-03-05T18:12:01.904Z" },
+    { "source": "DIDI", "markupPct": 35, "updatedAt": "2026-03-05T18:12:30.102Z" },
+    { "source": "RAPPI","markupPct": 40, "updatedAt": "2026-03-05T18:13:15.553Z" }
+  ],
+  "message": "OK"
+}
+	•	Actualizar/crear porcentaje para un canal
+http
+
+PUT /api/channel-config/UBER
+Authorization: Bearer <TOKEN>
+Content-Type: application/json
+
+{ "markupPct": 46 }
+Respuesta:
+json
+
+{
+  "error": null,
+  "data": {
+    "source": "UBER",
+    "markupPct": 46,
+    "updatedAt": "2026-03-05T18:12:01.904Z"
+  },
+  "message": "OK"
+}
+Permiso requerido: orders.update. Si el canal no existía se crea, si ya existía se actualiza.
+Flujo con pedidos
+	1	Crear pedido – no es necesario mandar el porcentaje; el backend usa el configurado:
+json
+
+{
+  "serviceType": "DELIVERY",
+  "source": "UBER",
+  "externalRef": "uber-98371",
+  "items": [
+    {
+      "productId": 101,
+      "quantity": 2,
+      "modifiers": [{ "optionId": 55, "quantity": 1 }]
+    }
+  ]
+}
+	1	Respuesta de creación – incluye los precios con markup aplicado y el porcentaje que se usó:
+json
+
+{
+  "data": {
+    "id": 432,
+    "code": "NOTA 1 del 5 de marzo de 2026 - Atendido por: Ana López - ID 7",
+    "source": "UBER",
+    "platformMarkupPct": 46,
+    "items": [
+      {
+        "productId": 101,
+        "basePriceCents": 6570,   // precio POS + 46%
+        "extrasTotalCents": 730,
+        "totalPriceCents": 13800
+      }
+    ],
+    "totalCents": 13800,
+    ...
+  }
+}
+	1	Listado (GET /api/orders?source=UBER) – cada pedido trae platformMarkupPct y quién lo atendió:
+json
+
+{
+  "code": "NOTA 1 del 5 de marzo de 2026 - Atendido por: Ana López - ID 7",
+  "platformMarkupPct": 46,
+  "servedBy": { "id": 7, "name": "Ana López" },
+  "totalCents": 13800,
+  ...
+}
+	1	Detalle (GET /api/orders/432) – mismo formato; útil para mostrar precios unitarios y totales ya ajustados.
+Notas para UI
+	•	Usa GET /api/channel-config para poblar sliders/select de porcentajes por canal.
+	•	Al guardar un cambio, pega a PUT /api/channel-config/:source con el número deseado.
+	•	Cuando crees un pedido:
+	•	Si quieres usar el porcentaje global (lo normal), no mandes platformMarkupPct.
+	•	Si necesitas un override puntual, envía el campo platformMarkupPct en el body; se respeta ese valor solo para ese ticket.
+	•	Muestra platformMarkupPct en las vistas de pedido para que el operador sepa que es un pedido de plataforma.
+Con eso el front puede mantener los markups desde la UI sin depender de seeds ni ajustes manuales en DB.
+
+
+q es platformMarkupPct?
+
+Finished working
+
+platformMarkupPct es el porcentaje de recargo que se está aplicando al pedido por ser de una plataforma externa (Uber, Didi, Rappi, etc.). Lo guardamos en la tabla Order para “congelar” el valor usado en ese ticket: cuando el pedido se crea, el backend toma el porcentaje configurado para el canal (o el que pases manualmente) y lo aplica a los precios de los productos/modificadores; ese número queda registrado en platformMarkupPct para que ciencias contables y reportes sepan con qué margen se calculó ese pedido en particular.
+dame ejemplos si quiero usar un porcentaje distinto po como ?
+
+Finished working
+
+Si quieres usar un porcentaje distinto solo en un pedido (sin tocar la configuración global), basta con mandarlo en el body cuando creas la orden: el backend respeta ese valor y lo registra en platformMarkupPct.
+Ejemplo 1: pedido Uber con markup especial de 60 %
+http
+
+POST /api/orders
+Authorization: Bearer <TOKEN>
+Content-Type: application/json
+
+{
+  "serviceType": "DELIVERY",
+  "source": "UBER",
+  "platformMarkupPct": 60,
+  "externalRef": "uber-12345",
+  "items": [
+    { "productId": 101, "quantity": 1 },
+    { "productId": 220, "variantId": 33, "quantity": 2 }
+  ]
+}
+Respuesta (resumen):
+json
+
+{
+  "data": {
+    "source": "UBER",
+    "platformMarkupPct": 60,      // se respeta el override
+    "items": [
+      { "basePriceCents": 7200, ... },  // precios con 60% aplicado
+      ...
+    ]
+  }
+}
+Ejemplo 2: pedido POS pero con markup temporal (10 %)
+json
+
+{
+  "serviceType": "TAKEAWAY",
+  "source": "POS",
+  "platformMarkupPct": 10,
+  "items": [
+    { "productId": 305, "quantity": 3 }
+  ]
+}
+Aunque source es POS (normalmente 0 %), el pedido queda almacenado con platformMarkupPct: 10 y todos los renglones usan ese recargo.
+Notas:
+	•	Este campo solo afecta al pedido que estás creando; no modifica ChannelConfig.
+	•	Si mandas un valor fuera de rango (negativo, >300, etc.) la validación Zod del DTO fallará.
+	•	Si no envías platformMarkupPct, el backend toma el porcentaje de ChannelConfig para la source actual.
+
+

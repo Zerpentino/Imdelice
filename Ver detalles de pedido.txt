@@ -1,0 +1,775 @@
+2. Obtener un pedido
+GET /api/orders/:idPermiso: orders.read
+Devuelve el ticket completo:
+	•	datos del pedido
+	•	ítems (producto, variante, modifiers, combos hijos)
+	•	pagos
+	•	mesa
+Ejemplos casos:{
+    "error": null,
+    "data": {
+        "id": 2,
+        "code": "IM-251030-H8AX",
+        "status": "OPEN",
+        "serviceType": "DELIVERY",
+        "source": "POS",
+        "externalRef": "UBER-ORD-99321",
+        "prepEtaMinutes": 18,
+        "tableId": 1,
+        "openedAt": "2025-10-30T17:12:45.060Z",
+        "acceptedAt": "2025-10-30T17:12:45.059Z",
+        "readyAt": null,
+        "servedAt": null,
+        "closedAt": null,
+        "canceledAt": null,
+        "note": "Sin jitomate en la baguette",
+        "customerName": null,
+        "customerPhone": null,
+        "covers": 3,
+        "servedByUserId": 1,
+        "subtotalCents": 15400,
+        "discountCents": 0,
+        "serviceFeeCents": 0,
+        "taxCents": 0,
+        "totalCents": 15400,
+        "items": [
+            {
+                "id": 1,
+                "orderId": 2,
+                "productId": 18,
+                "variantId": null,
+                "parentItemId": null,
+                "quantity": 2,
+                "status": "NEW",
+                "basePriceCents": 7700,
+                "extrasTotalCents": 0,
+                "totalPriceCents": 15400,
+                "nameSnapshot": "Marquesita Champi",
+                "variantNameSnapshot": null,
+                "notes": "Mesa 4, lo quiere rápido",
+                "variant": null,
+                "product": {
+                    "id": 18,
+                    "name": "Marquesita Champi",
+                    "type": "SIMPLE"
+                },
+                "modifiers": [
+                    {
+                        "id": 1,
+                        "orderItemId": 1,
+                        "optionId": 5,
+                        "quantity": 1,
+                        "priceExtraCents": 0,
+                        "nameSnapshot": "Piña"
+                    },
+                    {
+                        "id": 2,
+                        "orderItemId": 1,
+                        "optionId": 8,
+                        "quantity": 1,
+                        "priceExtraCents": 0,
+                        "nameSnapshot": "Salsa de Pizza"
+                    }
+                ],
+                "childItems": [],
+                "parentItem": null
+            }
+        ],
+        "payments": [],
+        "table": {
+            "id": 1,
+            "name": "Mesa 1 (actualizada)",
+            "seats": 6,
+            "isActive": false
+        }
+    },
+    "message": "OK"
+}
+OTRO ejemplo 
+{
+  "error": null,
+  "data": {
+    "id": 214,
+    "code": "NOTA 1 del 5 de marzo de 2026 - Mesero 7",
+    "status": "OPEN",
+    "serviceType": "DINE_IN",
+    "source": "POS",
+    "servedByUserId": 7,
+    "servedBy": { "id": 7, "name": "Ana López", "email": "ana@resto.mx" },
+    "table": { "id": 12, "name": "Mesa 12" },
+    "covers": 3,
+    "note": "Mesa 12 - familia López",
+    "items": [
+      {
+        "id": 640,
+        "orderId": 214,
+        "status": "NEW",
+        "quantity": 2,
+        "nameSnapshot": "Taco pastor",
+        "variantNameSnapshot": null,
+        "basePriceCents": 4500,
+        "extrasTotalCents": 1500,
+        "totalPriceCents": 12000,
+        "notes": "Sin cebolla",
+        "product": { "id": 101, "name": "Taco pastor", "type": "SIMPLE" },
+        "variant": null,
+        "modifiers": [
+          {
+            "id": 900,
+            "optionId": 55,
+            "nameSnapshot": "Queso extra",
+            "priceExtraCents": 500,
+            "quantity": 1
+          }
+        ],
+        "childItems": []
+      },
+      {
+        "id": 641,
+        "orderId": 214,
+        "status": "NEW",
+        "quantity": 1,
+        "nameSnapshot": "Refresco",
+        "variantNameSnapshot": "600 ml",
+        "basePriceCents": 2800,
+        "extrasTotalCents": 0,
+        "totalPriceCents": 2800,
+        "notes": null,
+        "product": { "id": 220, "name": "Refresco", "type": "VARIANTED" },
+        "variant": { "id": 33, "name": "600 ml", "priceCents": 2800, ... },
+        "modifiers": [],
+        "childItems": []
+      }
+    ],
+    "payments": [],
+    "subtotalCents": 14800,
+    "discountCents": 0,
+    "serviceFeeCents": 0,
+    "taxCents": 0,
+    "totalCents": 14800,
+    "openedAt": "2026-03-05T17:32:11.553Z",
+    "acceptedAt": "2026-03-05T17:32:11.553Z",
+    "readyAt": null,
+    "servedAt": null,
+    "closedAt": null,
+    "canceledAt": null,
+    "prepEtaMinutes": 15,
+    "externalRef": null
+  },
+  "message": "OK"
+}Caso 1: pedido sencillo en mesa (DINE_IN), abierto, sin pagos
+Request
+
+GET http://localhost:3000/api/orders/45
+Authorization: Bearer {{token}}
+Response
+
+{
+  "error": null,
+  "data": {
+    "id": 45,
+    "code": "A-2025-000045",
+    "status": "OPEN",
+    "serviceType": "DINE_IN",
+    "source": "POS",
+    "tableId": 3,
+    "table": {
+      "id": 3,
+      "name": "M3",
+      "seats": 4,
+      "isActive": true
+    },
+    "openedAt": "2025-10-30T17:05:14.000Z",
+    "acceptedAt": null,
+    "readyAt": null,
+    "servedAt": null,
+    "closedAt": null,
+    "canceledAt": null,
+    "note": "Mesa de la entrada",
+    "customerName": null,
+    "customerPhone": null,
+    "covers": 2,
+    "subtotalCents": 13000,
+    "discountCents": 0,
+    "serviceFeeCents": 0,
+    "taxCents": 0,
+    "totalCents": 13000,
+    "items": [
+      {
+        "id": 101,
+        "orderId": 45,
+        "productId": 12,
+        "product": {
+          "id": 12,
+          "name": "Torta ahogada",
+          "type": "SIMPLE"
+        },
+        "variantId": null,
+        "variant": null,
+        "parentItemId": null,
+        "parentItem": null,
+        "childItems": [],
+        "quantity": 2,
+        "status": "NEW",
+        "basePriceCents": 6500,
+        "extrasTotalCents": 0,
+        "totalPriceCents": 13000,
+        "nameSnapshot": "Torta ahogada",
+        "variantNameSnapshot": null,
+        "notes": "Con poquita salsa",
+        "modifiers": []
+      }
+    ],
+    "payments": []
+  },
+  "message": "OK"
+}
+Qué aprende el front aquí:
+	•	Si hay mesa → viene table completo.
+	•	Si no hay pagos → payments: [].
+	•	Los montos vienen en centavos.
+
+Caso 2: pedido con combo (tiene hijos dentro de items)
+Aquí se ve lo que te pusieron: “ítems (producto, variante, modifiers, combos hijos)”.
+
+{
+  "error": null,
+  "data": {
+    "id": 50,
+    "code": "A-2025-000050",
+    "status": "OPEN",
+    "serviceType": "DINE_IN",
+    "source": "POS",
+    "tableId": 1,
+    "table": {
+      "id": 1,
+      "name": "M1",
+      "seats": 4,
+      "isActive": true
+    },
+    "openedAt": "2025-10-30T17:10:00.000Z",
+    "note": null,
+    "customerName": null,
+    "customerPhone": null,
+    "covers": 1,
+    "subtotalCents": 12000,
+    "discountCents": 0,
+    "serviceFeeCents": 0,
+    "taxCents": 0,
+    "totalCents": 12000,
+    "items": [
+      {
+        "id": 200,
+        "orderId": 50,
+        "productId": 30,
+        "product": {
+          "id": 30,
+          "name": "Combo burger + papas",
+          "type": "COMBO"
+        },
+        "variantId": null,
+        "variant": null,
+        "parentItemId": null,
+        "parentItem": null,
+        "quantity": 1,
+        "status": "NEW",
+        "basePriceCents": 12000,
+        "extrasTotalCents": 0,
+        "totalPriceCents": 12000,
+        "nameSnapshot": "Combo burger + papas",
+        "variantNameSnapshot": null,
+        "notes": null,
+        "modifiers": [],
+        "childItems": [
+          {
+            "id": 201,
+            "orderId": 50,
+            "productId": 31,
+            "product": {
+              "id": 31,
+              "name": "Hamburguesa sencilla",
+              "type": "SIMPLE"
+            },
+            "variantId": null,
+            "variant": null,
+            "parentItemId": 200,
+            "parentItem": { "id": 200 },
+            "childItems": [],
+            "quantity": 1,
+            "status": "NEW",
+            "basePriceCents": 0,
+            "extrasTotalCents": 0,
+            "totalPriceCents": 0,
+            "nameSnapshot": "Hamburguesa sencilla",
+            "variantNameSnapshot": null,
+            "notes": null,
+            "modifiers": []
+          },
+          {
+            "id": 202,
+            "orderId": 50,
+            "productId": 32,
+            "product": {
+              "id": 32,
+              "name": "Papas fritas",
+              "type": "SIMPLE"
+            },
+            "variantId": null,
+            "variant": null,
+            "parentItemId": 200,
+            "parentItem": { "id": 200 },
+            "childItems": [],
+            "quantity": 1,
+            "status": "NEW",
+            "basePriceCents": 0,
+            "extrasTotalCents": 0,
+            "totalPriceCents": 0,
+            "nameSnapshot": "Papas fritas",
+            "variantNameSnapshot": null,
+            "notes": null,
+            "modifiers": []
+          }
+        ]
+      }
+    ],
+    "payments": []
+  },
+  "message": "OK"
+}
+Punto clave para el front: si item.product.type === "COMBO", revisa childItems para mostrarlos.
+{
+    "error": null,
+    "data": {
+        "id": 2,
+        "code": "IM-251030-H8AX",
+        "status": "OPEN",
+        "serviceType": "DELIVERY",
+        "source": "POS",
+        "externalRef": "UBER-ORD-99321",
+        "prepEtaMinutes": 18,
+        "tableId": 1,
+        "openedAt": "2025-10-30T17:12:45.060Z",
+        "acceptedAt": "2025-10-30T17:12:45.059Z",
+        "readyAt": null,
+        "servedAt": null,
+        "closedAt": null,
+        "canceledAt": null,
+        "note": "Sin jitomate en la baguette",
+        "customerName": null,
+        "customerPhone": null,
+        "covers": 3,
+        "servedByUserId": 1,
+        "subtotalCents": 38600,
+        "discountCents": 0,
+        "serviceFeeCents": 0,
+        "taxCents": 0,
+        "totalCents": 38600,
+        "items": [
+            {
+                "id": 1,
+                "orderId": 2,
+                "productId": 18,
+                "variantId": null,
+                "parentItemId": null,
+                "quantity": 2,
+                "status": "NEW",
+                "basePriceCents": 7700,
+                "extrasTotalCents": 0,
+                "totalPriceCents": 15400,
+                "nameSnapshot": "Marquesita Champi",
+                "variantNameSnapshot": null,
+                "notes": "Mesa 4, lo quiere rápido",
+                "variant": null,
+                "product": {
+                    "id": 18,
+                    "name": "Marquesita Champi",
+                    "type": "SIMPLE"
+                },
+                "modifiers": [
+                    {
+                        "id": 1,
+                        "orderItemId": 1,
+                        "optionId": 5,
+                        "quantity": 1,
+                        "priceExtraCents": 0,
+                        "nameSnapshot": "Piña"
+                    },
+                    {
+                        "id": 2,
+                        "orderItemId": 1,
+                        "optionId": 8,
+                        "quantity": 1,
+                        "priceExtraCents": 0,
+                        "nameSnapshot": "Salsa de Pizza"
+                    }
+                ],
+                "childItems": [],
+                "parentItem": null
+            },
+            {
+                "id": 2,
+                "orderId": 2,
+                "productId": 38,
+                "variantId": null,
+                "parentItemId": null,
+                "quantity": 2,
+                "status": "NEW",
+                "basePriceCents": 11600,
+                "extrasTotalCents": 0,
+                "totalPriceCents": 23200,
+                "nameSnapshot": "assas",
+                "variantNameSnapshot": null,
+                "notes": "Mesa 4, lo quiere rápido",
+                "variant": null,
+                "product": {
+                    "id": 38,
+                    "name": "assas",
+                    "type": "COMBO"
+                },
+                "modifiers": [
+                    {
+                        "id": 3,
+                        "orderItemId": 2,
+                        "optionId": 5,
+                        "quantity": 1,
+                        "priceExtraCents": 0,
+                        "nameSnapshot": "Piña"
+                    },
+                    {
+                        "id": 4,
+                        "orderItemId": 2,
+                        "optionId": 8,
+                        "quantity": 1,
+                        "priceExtraCents": 0,
+                        "nameSnapshot": "Salsa de Pizza"
+                    }
+                ],
+                "childItems": [
+                    {
+                        "id": 3,
+                        "orderId": 2,
+                        "productId": 28,
+                        "variantId": null,
+                        "parentItemId": 2,
+                        "quantity": 2,
+                        "status": "NEW",
+                        "basePriceCents": 0,
+                        "extrasTotalCents": 0,
+                        "totalPriceCents": 0,
+                        "nameSnapshot": "Crepas Saladas",
+                        "variantNameSnapshot": null,
+                        "notes": null
+                    },
+                    {
+                        "id": 4,
+                        "orderId": 2,
+                        "productId": 35,
+                        "variantId": null,
+                        "parentItemId": 2,
+                        "quantity": 2,
+                        "status": "NEW",
+                        "basePriceCents": 0,
+                        "extrasTotalCents": 0,
+                        "totalPriceCents": 0,
+                        "nameSnapshot": "Cappuccino",
+                        "variantNameSnapshot": null,
+                        "notes": null
+                    }
+                ],
+                "parentItem": null
+            },
+            {
+                "id": 3,
+                "orderId": 2,
+                "productId": 28,
+                "variantId": null,
+                "parentItemId": 2,
+                "quantity": 2,
+                "status": "NEW",
+                "basePriceCents": 0,
+                "extrasTotalCents": 0,
+                "totalPriceCents": 0,
+                "nameSnapshot": "Crepas Saladas",
+                "variantNameSnapshot": null,
+                "notes": null,
+                "variant": null,
+                "product": {
+                    "id": 28,
+                    "name": "Crepas Saladas",
+                    "type": "VARIANTED"
+                },
+                "modifiers": [],
+                "childItems": [],
+                "parentItem": {
+                    "id": 2
+                }
+            },
+            {
+                "id": 4,
+                "orderId": 2,
+                "productId": 35,
+                "variantId": null,
+                "parentItemId": 2,
+                "quantity": 2,
+                "status": "NEW",
+                "basePriceCents": 0,
+                "extrasTotalCents": 0,
+                "totalPriceCents": 0,
+                "nameSnapshot": "Cappuccino",
+                "variantNameSnapshot": null,
+                "notes": null,
+                "variant": null,
+                "product": {
+                    "id": 35,
+                    "name": "Cappuccino",
+                    "type": "VARIANTED"
+                },
+                "modifiers": [],
+                "childItems": [],
+                "parentItem": {
+                    "id": 2
+                }
+            }
+        ],
+        "payments": [],
+        "table": {
+            "id": 1,
+            "name": "Mesa 1 (actualizada)",
+            "seats": 6,
+            "isActive": false
+        }
+    },
+    "message": "OK"
+}
+
+Caso 3: pedido de delivery (no mesa) con cliente
+
+{
+  "error": null,
+  "data": {
+    "id": 61,
+    "code": "DLV-2025-000061",
+    "status": "OPEN",
+    "serviceType": "DELIVERY",
+    "source": "UBER",
+    "tableId": null,
+    "table": null,
+    "openedAt": "2025-10-30T17:20:00.000Z",
+    "note": "Entregar en recepción",
+    "customerName": "Carlos Pacheco",
+    "customerPhone": "3312345678",
+    "covers": null,
+    "subtotalCents": 8500,
+    "discountCents": 0,
+    "serviceFeeCents": 0,
+    "taxCents": 0,
+    "totalCents": 8500,
+    "items": [
+      {
+        "id": 300,
+        "orderId": 61,
+        "productId": 40,
+        "product": {
+          "id": 40,
+          "name": "Ensalada César",
+          "type": "SIMPLE"
+        },
+        "variantId": 5,
+        "variant": {
+          "id": 5,
+          "productId": 40,
+          "name": "Grande",
+          "priceCents": 8500
+        },
+        "parentItemId": null,
+        "parentItem": null,
+        "childItems": [],
+        "quantity": 1,
+        "status": "NEW",
+        "basePriceCents": 8500,
+        "extrasTotalCents": 0,
+        "totalPriceCents": 8500,
+        "nameSnapshot": "Ensalada César",
+        "variantNameSnapshot": "Grande",
+        "notes": "Aderezo aparte",
+        "modifiers": []
+      }
+    ],
+    "payments": []
+  },
+  "message": "OK"
+}
+Aquí aprende el front: puede venir table: null y aun así el pedido es válido, porque el serviceType es DELIVERY.
+
+Caso 4: pedido cerrado con pagos
+
+{
+  "error": null,
+  "data": {
+    "id": 70,
+    "code": "A-2025-000070",
+    "status": "CLOSED",
+    "serviceType": "DINE_IN",
+    "source": "POS",
+    "tableId": 4,
+    "table": {
+      "id": 4,
+      "name": "M4",
+      "seats": 6,
+      "isActive": true
+    },
+    "openedAt": "2025-10-30T16:55:00.000Z",
+    "acceptedAt": "2025-10-30T17:00:00.000Z",
+    "readyAt": "2025-10-30T17:10:00.000Z",
+    "servedAt": "2025-10-30T17:15:00.000Z",
+    "closedAt": "2025-10-30T17:25:00.000Z",
+    "note": null,
+    "customerName": null,
+    "customerPhone": null,
+    "covers": 3,
+    "subtotalCents": 23000,
+    "discountCents": 0,
+    "serviceFeeCents": 0,
+    "taxCents": 0,
+    "totalCents": 23000,
+    "items": [
+      {
+        "id": 401,
+        "orderId": 70,
+        "productId": 50,
+        "product": {
+          "id": 50,
+          "name": "Pasta Alfredo",
+          "type": "SIMPLE"
+        },
+        "variantId": null,
+        "variant": null,
+        "parentItemId": null,
+        "parentItem": null,
+        "childItems": [],
+        "quantity": 1,
+        "status": "SERVED",
+        "basePriceCents": 11000,
+        "extrasTotalCents": 0,
+        "totalPriceCents": 11000,
+        "nameSnapshot": "Pasta Alfredo",
+        "variantNameSnapshot": null,
+        "notes": null,
+        "modifiers": []
+      },
+      {
+        "id": 402,
+        "orderId": 70,
+        "productId": 51,
+        "product": {
+          "id": 51,
+          "name": "Limonada",
+          "type": "SIMPLE"
+        },
+        "variantId": null,
+        "variant": null,
+        "parentItemId": null,
+        "parentItem": null,
+        "childItems": [],
+        "quantity": 2,
+        "status": "SERVED",
+        "basePriceCents": 6000,
+        "extrasTotalCents": 0,
+        "totalPriceCents": 12000,
+        "nameSnapshot": "Limonada",
+        "variantNameSnapshot": null,
+        "notes": null,
+        "modifiers": []
+      }
+    ],
+    "payments": [
+      {
+        "id": 10,
+        "orderId": 70,
+        "method": "CASH",
+        "amountCents": 20000,
+        "tipCents": 0,
+        "paidAt": "2025-10-30T17:23:00.000Z",
+        "receivedByUserId": null,
+        "note": null
+      },
+      {
+        "id": 11,
+        "orderId": 70,
+        "method": "CARD",
+        "amountCents": 3000,
+        "tipCents": 0,
+        "paidAt": "2025-10-30T17:24:00.000Z",
+        "receivedByUserId": null,
+        "note": "Resto en tarjeta"
+      }
+    ]
+  },
+  "message": "OK"
+}
+
+10. Notas funcionales clave
+	•	Los totales siempre se recalculan ignorando ítems cancelados.
+	•	Se respetan descuentos / impuestos / service fee ya guardados.
+	•	prepEtaMinutes sirve para mostrar ETA en front / kiosko.
+	•	source y externalRef diferencian interno vs plataforma.
+	•	Con esto el front puede hacer todo el flujo:
+	0.	creación
+	0.	agregar / editar ítems
+	0.	KDS
+	0.	cobros
+	0.	cierre
+	0.	listado con filtros
+
+11. Glosario para el front
+Permisos
+	•	orders.read: puede listar y ver
+	•	orders.create: puede crear
+	•	orders.update: puede editar, pagar, mover estado
+serviceType (tipo de servicio)
+	•	DINE_IN: consumo en mesa
+	•	TAKEAWAY: para llevar
+	•	DELIVERY: a domicilio
+source (canal)
+	•	POS: pedido directo
+	•	UBER, DIDI, RAPPI: plataformas externas
+status del pedido
+	•	DRAFT: borrador, no cocina
+	•	OPEN: activo
+	•	HOLD: en pausa
+	•	CLOSED: cobrado y cerrado
+	•	CANCELED: cancelado
+OrderItem.status
+	•	NEW
+	•	IN_PROGRESS
+	•	READY
+	•	SERVED
+	•	CANCELED
+Timestamps
+	•	acceptedAt: el pedido salió de borrador / cocina lo tomó
+	•	readyAt: todos los ítems están listos
+	•	servedAt: todos servidos o cancelados
+	•	closedAt: se cobró
+	•	canceledAt: se canceló
+Totales (centavos)
+	•	subtotalCents: suma de renglones
+	•	discountCents: descuentos
+	•	serviceFeeCents: propina/fee fijo
+	•	taxCents: impuestos
+	•	totalCents: subtotal - descuento + service + tax
+	•	paymentsTotalCents: suma de pagos
+	•	paymentsTipCents: suma de propinas
+Pagos (payments[])
+	•	method: CASH | CARD | TRANSFER | OTHER
+	•	amountCents
+	•	tipCents
+	•	paidAt
+	•	note
+Mesa
+	•	tableId: id de la mesa
+	•	table: { id, name } para mostrar “Mesa 12”
+	•	covers: número de comensales
+DTOs clave
+	•	ListOrdersQueryDto: filtros del GET
+	•	UpdateOrderMetaDto: para editar nota, mesa, cubiertos, ETA
+	•	UpdateOrderStatusDto: para mover el pedido validando pagos

@@ -1,0 +1,447 @@
+{
+  "info": {
+    "name": "Menus Module",
+    "_postman_id": "b3ba0db0-0160-4c92-9b0a-0bba9c811375",
+    "description": "Colección para gestionar menús, secciones y items del módulo de menú.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "token", "value": "" },
+    { "key": "menuId", "value": "" },
+    { "key": "sectionId", "value": "" },
+    { "key": "menuItemId", "value": "" },
+    { "key": "menuItemRefId", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "Menús",
+      "item": [
+        {
+          "name": "Create Menu",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Menu Principal\",\n  \"isActive\": true,\n  \"publishedAt\": null,\n  \"version\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/menus",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "menus"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "let jsonData;",
+                  "try { jsonData = pm.response.json(); } catch (e) {",
+                  "  pm.test('Respuesta JSON', () => pm.expect.fail('Respuesta no es JSON'));",
+                  "  return;",
+                  "}",
+                  "pm.test('Menú creado', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "  pm.expect(jsonData?.data?.id).to.exist;",
+                  "});",
+                  "if (jsonData?.data?.id) { pm.environment.set('menuId', jsonData.data.id); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Menus",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/menus",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "menus"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Archived Menus",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/menus/trash",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "menus", "trash"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Menu",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Menu Actualizado\",\n  \"isActive\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/menus/{{menuId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "menus", "{{menuId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Restore Menu",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/menus/{{menuId}}/restore",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "menus", "{{menuId}}", "restore"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Archive Menu",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/menus/{{menuId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "menus", "{{menuId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Menu (Hard)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/menus/{{menuId}}?hard=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "menus", "{{menuId}}"],
+              "query": [
+                { "key": "hard", "value": "true" }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Secciones",
+      "item": [
+        {
+          "name": "List Sections",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/menus/{{menuId}}/sections",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "menus", "{{menuId}}", "sections"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Archived Sections",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/menus/{{menuId}}/sections/trash",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "menus", "{{menuId}}", "sections", "trash"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Section",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"menuId\": {{menuId}},\n  \"name\": \"Desayunos\",\n  \"position\": 0,\n  \"categoryId\": null,\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/menus/sections",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "menus", "sections"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "let jsonData;",
+                  "try { jsonData = pm.response.json(); } catch (e) { return; }",
+                  "if (jsonData?.data?.id) { pm.environment.set('sectionId', jsonData.data.id); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Section",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Bebidas\",\n  \"position\": 1,\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/menus/sections/{{sectionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "menus", "sections", "{{sectionId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Restore Section",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/menus/sections/{{sectionId}}/restore",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "menus", "sections", "{{sectionId}}", "restore"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Archive Section",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/menus/sections/{{sectionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "menus", "sections", "{{sectionId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Section (Hard)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/menus/sections/{{sectionId}}/hard",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "menus", "sections", "{{sectionId}}", "hard"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Items In Section",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/menus/sections/{{sectionId}}/items",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "menus", "sections", "{{sectionId}}", "items"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Archived Items In Section",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/menus/sections/{{sectionId}}/items/trash",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "menus", "sections", "{{sectionId}}", "items", "trash"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Items",
+      "item": [
+        {
+          "name": "Add Menu Item",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sectionId\": {{sectionId}},\n  \"refType\": \"PRODUCT\",\n  \"refId\": {{menuItemRefId}},\n  \"displayName\": \"Hamburguesa Clásica\",\n  \"displayPriceCents\": 8900,\n  \"position\": 0,\n  \"isFeatured\": true,\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/menus/items",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "menus", "items"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "let jsonData;",
+                  "try { jsonData = pm.response.json(); } catch (e) { return; }",
+                  "if (jsonData?.data?.id) { pm.environment.set('menuItemId', jsonData.data.id); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Menu Item",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"displayName\": \"Hamburguesa Especial\",\n  \"displayPriceCents\": 9200,\n  \"position\": 1,\n  \"isFeatured\": false,\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/menus/items/{{menuItemId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "menus", "items", "{{menuItemId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Restore Menu Item",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/menus/items/{{menuItemId}}/restore",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "menus", "items", "{{menuItemId}}", "restore"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Archive Menu Item",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/menus/items/{{menuItemId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "menus", "items", "{{menuItemId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Menu Item (Hard)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/menus/items/{{menuItemId}}/hard",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "menus", "items", "{{menuItemId}}", "hard"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Público",
+      "item": [
+        {
+          "name": "Get Menu Public View",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/menus/{{menuId}}/public",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "menus", "{{menuId}}", "public"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

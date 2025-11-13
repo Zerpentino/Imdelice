@@ -1,0 +1,35 @@
+Endpoint: POST /api/orders/:id/refund
+Auth: Bearer token (quien opera la caja)
+Permiso base: orders.update (además se valida que el supervisor tenga orders.refund)
+Descripción: Permite reembolsar/cancelar pedidos ya cobrados siempre que un supervisor ingrese su PIN/email + contraseña.
+
+Body JSON:
+{
+  "reason": "Producto echado a perder",         // opcional
+  "adminEmail": "gerente@resto.mx",            // opcional (usar este o adminPin)
+  "adminPin": "1234",                          // opcional (usar este o adminEmail)
+  "password": "****"                           // requerido (del supervisor)
+}
+- Debes enviar al menos adminEmail o adminPin y siempre la password.
+- El supervisor debe tener el permiso `orders.refund`.
+
+Flujo:
+1) El operador llama al endpoint con la razón y las credenciales del supervisor.
+2) El backend verifica la identidad (email+password o pin+password).
+3) Si el pedido está `CLOSED`, se generan pagos negativos para revertir el cobro, se inserta un registro en `OrderRefundLog` y el pedido pasa a `REFUNDED`.
+4) Respuesta:
+{
+  "error": null,
+  "data": { "orderId": 71, "status": "REFUNDED", "refundedAt": "2025-11-11T18:05:12.000Z" },
+  "message": "Refunded"
+}
+
+Errores comunes:
+- 400 si el pedido no está cerrado o no tiene pagos.
+- 401 si las credenciales son inválidas.
+- 403 si el supervisor no tiene permiso `orders.refund`.
+
+Notas:
+- Los pagos negativos hacen que los reportes financieros reflejen el reembolso automáticamente.
+- Se guarda el log en `OrderRefundLog` (para auditoría) con el supervisor que autorizó.
+- Este endpoint no devuelve los ítems; el ajuste de inventario se hará en el módulo de stock más adelante.

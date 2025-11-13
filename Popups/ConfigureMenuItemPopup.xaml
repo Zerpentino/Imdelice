@@ -3,6 +3,7 @@
                xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
                xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
                x:Class="Imdeliceapp.Popups.ConfigureMenuItemPopup"
+               
                CanBeDismissedByTappingOutsideOfPopup="False">
   <Border Stroke="{AppThemeBinding Light=#DDDDDD, Dark=#333333}"
           StrokeShape="{RoundRectangle CornerRadius=24}"
@@ -10,8 +11,17 @@
           Padding="0">
     <ScrollView>
       <VerticalStackLayout Spacing="16" Padding="20" WidthRequest="360">
-      <Grid ColumnDefinitions="*,Auto">
-        <VerticalStackLayout Spacing="4">
+      <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+        <Button Text="←"
+                WidthRequest="32"
+                HeightRequest="32"
+                Padding="0"
+                TextColor="{AppThemeBinding Light=Black, Dark=White}"
+                BackgroundColor="Transparent"
+                IsVisible="{Binding ShowBackButton}"
+                Clicked="BackButton_Clicked"/>
+        <VerticalStackLayout Grid.Column="1"
+                             Spacing="4">
           <Label Text="{Binding Title}"
                  FontAttributes="Bold"
                  FontSize="20"
@@ -23,7 +33,7 @@
                  MaxLines="2"
                  IsVisible="{Binding HasSubtitle}"/>
         </VerticalStackLayout>
-        <Button Grid.Column="1"
+        <Button Grid.Column="2"
                 Text="✕"
                 FontSize="16"
                 WidthRequest="32"
@@ -80,6 +90,195 @@
         </CollectionView>
       </VerticalStackLayout>
 
+      <VerticalStackLayout Spacing="8"
+                           IsVisible="{Binding HasComboChildren}">
+        <Label Text="Contenido del combo"
+               FontAttributes="Bold"
+               FontSize="14"/>
+        <VerticalStackLayout BindableLayout.ItemsSource="{Binding ComboChildren}"
+                             Spacing="8">
+          <BindableLayout.ItemTemplate>
+            <DataTemplate>
+              <Border StrokeThickness="1"
+                      Stroke="{AppThemeBinding Light=#E0E0E0, Dark=#444}"
+                      BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E1A1F}"
+                      StrokeShape="{RoundRectangle CornerRadius=12}"
+                      Padding="12"
+                      Margin="0,2">
+                <VerticalStackLayout Spacing="10">
+                  <Grid ColumnDefinitions="Auto,*"
+                        ColumnSpacing="12">
+                    <CheckBox IsChecked="{Binding IsSelected}"
+                              IsEnabled="{Binding CanToggle}"
+                              VerticalOptions="Center"/>
+                    <VerticalStackLayout Grid.Column="1"
+                                         Spacing="2">
+                      <Label Text="{Binding DisplayName}"
+                             FontAttributes="Bold"/>
+                      <Label Text="{Binding HeaderDetail}"
+                             FontSize="12"
+                             TextColor="{AppThemeBinding Light=#777, Dark=#AAA}"
+                             IsVisible="{Binding HasHeaderDetail}"/>
+                      <Label Text="{Binding VariantSummary}"
+                             FontSize="12"
+                             TextColor="{AppThemeBinding Light=#884166, Dark=#F2CCE4}"
+                             IsVisible="{Binding HasVariantSummary}"/>
+                    </VerticalStackLayout>
+                  </Grid>
+
+                  <VerticalStackLayout Spacing="8"
+                                       IsVisible="{Binding HasVariants}">
+                    <Label Text="Presentación"
+                           FontAttributes="Bold"
+                           FontSize="13"/>
+                    <CollectionView ItemsSource="{Binding Variants}"
+                                    SelectionMode="Single"
+                                    SelectedItem="{Binding SelectedVariant}">
+                      <CollectionView.ItemsLayout>
+                        <LinearItemsLayout Orientation="Vertical" ItemSpacing="8"/>
+                      </CollectionView.ItemsLayout>
+                      <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                          <Border StrokeThickness="1"
+                                  Stroke="{AppThemeBinding Light=#E0E0E0, Dark=#333}"
+                                  BackgroundColor="{Binding BackgroundColor}"
+                                  StrokeShape="{RoundRectangle CornerRadius=12}">
+                            <Grid ColumnDefinitions="*,Auto"
+                                  Padding="12,10">
+                              <VerticalStackLayout Spacing="2">
+                                <Label Text="{Binding DisplayName}"
+                                       FontAttributes="Bold"
+                                       LineBreakMode="TailTruncation"/>
+                                <Label Text="{Binding Description}"
+                                       FontSize="12"
+                                       TextColor="{AppThemeBinding Light=#777, Dark=#AAA}"
+                                       IsVisible="{Binding HasDescription}"
+                                       LineBreakMode="TailTruncation"/>
+                              </VerticalStackLayout>
+                              <Label Grid.Column="1"
+                                     Text="{Binding PriceLabel}"
+                                     FontAttributes="Bold"
+                                     VerticalOptions="Center"/>
+                            </Grid>
+                          </Border>
+                        </DataTemplate>
+                      </CollectionView.ItemTemplate>
+                    </CollectionView>
+                  </VerticalStackLayout>
+
+                  <CollectionView ItemsSource="{Binding ModifierGroups}"
+                                  SelectionMode="None"
+                                  IsVisible="{Binding HasModifiers}">
+                    <CollectionView.ItemTemplate>
+                      <DataTemplate>
+                        <Border StrokeThickness="1"
+                                Stroke="{AppThemeBinding Light=#E7E0E5, Dark=#333}"
+                                StrokeShape="{RoundRectangle CornerRadius=16}"
+                                Padding="12"
+                                Margin="0,4">
+                          <VerticalStackLayout Spacing="10">
+                            <Grid ColumnDefinitions="*,Auto,Auto"
+                                  ColumnSpacing="8"
+                                  VerticalOptions="Center">
+                              <Label Text="{Binding Name}"
+                                     FontAttributes="Bold"
+                                     FontSize="14"/>
+                              <Label Grid.Column="1"
+                                     Text="{Binding RequirementText}"
+                                     FontSize="12"
+                                     TextColor="{AppThemeBinding Light=#884166, Dark=#D0A0B8}"
+                                     HorizontalOptions="End"
+                                     VerticalOptions="Center"/>
+                              <Button Grid.Column="2"
+                                      Text="{Binding IsExpanded, Converter={StaticResource BoolToIconConverter}}"
+                                      Command="{Binding ToggleExpandedCommand}"
+                                      WidthRequest="28"
+                                      HeightRequest="28"
+                                      Padding="0"
+                                      BackgroundColor="Transparent"
+                                      FontSize="16"
+                                      TextColor="{AppThemeBinding Light=#884166, Dark=#F2CCE4}"/>
+                            </Grid>
+
+                            <VerticalStackLayout Spacing="8"
+                                                 IsVisible="{Binding IsExpanded}"
+                                                 BindableLayout.ItemsSource="{Binding Options}">
+                              <BindableLayout.ItemTemplate>
+                                <DataTemplate>
+                                  <Border StrokeThickness="1"
+                                          Stroke="{AppThemeBinding Light=#E0E0E0, Dark=#444}"
+                                          BackgroundColor="{Binding Background}"
+                                          StrokeShape="{RoundRectangle CornerRadius=12}"
+                                          Padding="12"
+                                          Margin="0,2">
+                                    <Grid ColumnDefinitions="*,Auto"
+                                          ColumnSpacing="12">
+                                      <VerticalStackLayout Spacing="2">
+                                        <Label Text="{Binding Name}"
+                                               FontAttributes="Bold"
+                                               LineBreakMode="TailTruncation"/>
+                                        <Label Text="{Binding Description}"
+                                               IsVisible="{Binding HasDescription}"
+                                               FontSize="12"
+                                               TextColor="{AppThemeBinding Light=#777, Dark=#AAA}"/>
+                                        <Label Text="{Binding ExtraLabel}"
+                                               FontSize="12"
+                                               TextColor="{AppThemeBinding Light=#884166, Dark=#D0A0B8}">
+                                          <Label.Triggers>
+                                            <DataTrigger TargetType="Label" Binding="{Binding ExtraLabel}" Value="">
+                                              <Setter Property="IsVisible" Value="False"/>
+                                            </DataTrigger>
+                                          </Label.Triggers>
+                                        </Label>
+                                      </VerticalStackLayout>
+
+                                      <HorizontalStackLayout Grid.Column="1"
+                                                             Spacing="6"
+                                                             VerticalOptions="Center">
+                                        <Button Text="−"
+                                                WidthRequest="32"
+                                                HeightRequest="32"
+                                                CornerRadius="16"
+                                                Command="{Binding DecrementCommand}"
+                                                IsEnabled="{Binding CanDecrement}"/>
+                                        <Frame WidthRequest="32"
+                                               HeightRequest="32"
+                                               CornerRadius="16"
+                                               Padding="0"
+                                               HasShadow="False"
+                                               BackgroundColor="{AppThemeBinding Light=#894164, Dark=#894164}"
+                                               VerticalOptions="Center"
+                                               HorizontalOptions="Center">
+                                          <Label Text="{Binding QuantityDisplay}"
+                                                 HorizontalOptions="Center"
+                                                 VerticalOptions="Center"
+                                                 TextColor="White"
+                                                 FontAttributes="Bold"/>
+                                        </Frame>
+                                        <Button Text="+"
+                                                WidthRequest="32"
+                                                HeightRequest="32"
+                                                CornerRadius="16"
+                                                Command="{Binding IncrementCommand}"
+                                                IsEnabled="{Binding CanIncrement}"/>
+                                      </HorizontalStackLayout>
+                                    </Grid>
+                                  </Border>
+                                </DataTemplate>
+                              </BindableLayout.ItemTemplate>
+                            </VerticalStackLayout>
+                          </VerticalStackLayout>
+                        </Border>
+                      </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                  </CollectionView>
+                </VerticalStackLayout>
+              </Border>
+            </DataTemplate>
+          </BindableLayout.ItemTemplate>
+        </VerticalStackLayout>
+      </VerticalStackLayout>
+
       <CollectionView ItemsSource="{Binding ModifierGroups}"
                       SelectionMode="None"
                       IsVisible="{Binding HasModifiers}">
@@ -91,17 +290,31 @@
                     Padding="16"
                     Margin="0,6">
               <VerticalStackLayout Spacing="12">
-                <Grid ColumnDefinitions="*,Auto">
+                <Grid ColumnDefinitions="*,Auto,Auto"
+                      ColumnSpacing="8"
+                      VerticalOptions="Center">
                   <Label Text="{Binding Name}"
                          FontAttributes="Bold"
                          FontSize="15"/>
                   <Label Grid.Column="1"
                          Text="{Binding RequirementText}"
                          FontSize="12"
-                         TextColor="{AppThemeBinding Light=#884166, Dark=#D0A0B8}"/>
+                         TextColor="{AppThemeBinding Light=#884166, Dark=#D0A0B8}"
+                         HorizontalOptions="End"
+                         VerticalOptions="Center"/>
+                  <Button Grid.Column="2"
+                          Text="{Binding IsExpanded, Converter={StaticResource BoolToIconConverter}}"
+                          Command="{Binding ToggleExpandedCommand}"
+                          WidthRequest="32"
+                          HeightRequest="32"
+                          Padding="0"
+                          BackgroundColor="Transparent"
+                          FontSize="16"
+                          TextColor="{AppThemeBinding Light=#884166, Dark=#F2CCE4}"/>
                 </Grid>
 
                 <VerticalStackLayout Spacing="8"
+                                     IsVisible="{Binding IsExpanded}"
                                      BindableLayout.ItemsSource="{Binding Options}">
                   <BindableLayout.ItemTemplate>
                     <DataTemplate>
@@ -172,16 +385,32 @@
         </CollectionView.ItemTemplate>
       </CollectionView>
 
-      <Grid ColumnDefinitions="Auto,*,Auto"
+      <Grid ColumnDefinitions="Auto,Auto,*,Auto"
             Padding="0,8,0,0">
         <Label Text="Cantidad"
                FontAttributes="Bold"
                VerticalOptions="Center"/>
+        <Border Grid.Column="1"
+                WidthRequest="44"
+                HeightRequest="34"
+                Stroke="{AppThemeBinding Light=#E0C7D6, Dark=#3A2532}"
+                BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E1A1F}"
+                StrokeShape="{RoundRectangle CornerRadius=8}"
+                HorizontalOptions="Start"
+                VerticalOptions="Center">
+          <Label Text="{Binding Quantity}"
+                 HorizontalTextAlignment="Center"
+                 VerticalTextAlignment="Center"
+                 FontAttributes="Bold"/>
+        </Border>
         <Stepper Grid.Column="2"
                  Minimum="1"
                  Maximum="50"
                  Increment="1"
-                 Value="{Binding Quantity}"/>
+                 IsEnabled="{Binding IsQuantityEditable}"
+                 Value="{Binding Quantity}"
+                 WidthRequest="150"
+                 HeightRequest="34"/>
       </Grid>
 
       <VerticalStackLayout>

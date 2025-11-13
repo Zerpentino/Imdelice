@@ -1,0 +1,328 @@
+9. Split de pedido
+POST /api/orders/:id/splitPermiso: orders.updateBody: SplitOrderByItemsDto
+	•	Duplica los ítems seleccionados a un nuevo pedido
+	•	Incluye combos
+	•	El nuevo pedido hereda:
+	•	serviceType
+	•	tableId
+	•	covers
+	•	source
+	•	Se pueden sobrescribir
+	•	Marca acceptedAt de inmediato
+Qué hace el controller (exacto)
+	1	const orderId = ensureNumericId(req.params.id);
+	2	const dto = SplitOrderByItemsDto.parse(req.body);
+	3	saca servedByUserId de req.auth.userId → si no hay → 401
+	4	llama:this.splitOrderByItemsUC.exec(orderId, {
+	5	  ...dto,
+	6	  servedByUserId,
+	7	});
+	8	
+	9	responde:{
+	10	  "error": null,
+	11	  "data": {
+	12	    "newOrderId": 123,
+	13	    "code": "A-2025-000123"
+	14	  },
+	15	  "message": "Order split"
+	16	}
+	17	con HTTP 201
+
+DTO exacto (de orders.dto.ts)
+
+export const SplitOrderByItemsDto = z.object({
+  itemIds: z.array(z.number().int().positive()).min(1),
+  // Puedes sobreescribir metadatos del pedido nuevo (opcionales)
+  serviceType: ServiceTypeEnum.optional(),
+  tableId: z.number().int().positive().nullable().optional(),
+  note: z.string().optional(),
+  covers: z.number().int().positive().optional()
+});
+Traducción:
+	•	itemIds ✅ obligatorio, al menos 1
+	•	serviceType ❓ opcional → si no lo mandas, usa el del pedido original
+	•	tableId ❓ opcional → puedes poner mesa nueva o null para que NO tenga
+	•	note ❓ opcional → nota del nuevo pedido
+	•	covers ❓ opcional → comensales del nuevo pedido
+
+Lo MÁS importante de tu repo (esto es lo que lo hace especial)
+En PrismaOrderRepository.splitOrderByItems(...) hace 5 pasos:
+	1	Valida que todos los itemIds sean de ese pedido (sourceOrderId).Si hay uno que no… → "Todos los items deben pertenecer al mismo pedido"
+	2	Expande combos:
+	◦	si mandaste un padre → mete todos sus hijos
+	◦	si mandaste un hijo → mete su padre y todos los hermanos
+	3	Crea el pedido nuevo copiando del original:
+	◦	status: "OPEN"
+	◦	serviceType: input.serviceType ?? src.serviceType
+	◦	source: src.source ?? "POS"
+	◦	tableId: input.tableId ?? src.tableId ?? null
+	◦	note: input.note ?? null
+	◦	covers: input.covers ?? src.covers ?? null
+	◦	servedByUserId: input.servedByUserId
+	◦	acceptedAt: new Date()
+	◦	code: generateOrderCode()
+	4	Mueve esos items al nuevo pedido (updateMany ... data: { orderId: newOrder.id })
+	5	Recalcula totales en los dos pedidos:
+	◦	el original (porque le quitaste cosas)
+	◦	el nuevo (porque le pusiste cosas)
+y te regresa:
+
+{ "newOrderId": ..., "code": "..." }
+Listo 👌
+
+CASOS 💥
+1. Dividir un pedido de mesa en dos mesas
+Pedido original: id = 45, DINE_IN, mesa 3Quiero pasar 2 platillos a la mesa 7
+Request
+
+{
+  "itemIds": [101, 102],
+  "tableId": 7
+}
+Qué pasa:
+	•	crea NUEVO pedido:
+	◦	status: OPEN
+	◦	serviceType: DINE_IN (copiado)
+	◦	tableId: 7 (lo que mandaste)
+	◦	note: null
+	◦	covers: los del original
+	•	mueve los items 101 y 102 ahí
+	•	recalcula los dos
+Response
+
+{
+  "error": null,
+  "data": {
+    "newOrderId": 120,
+    "code": "A-2025-000120"
+  },
+  "message": "Order split"
+}
+
+2. Dividir sin cambiar mesa (solo separar ticket)
+Pedido original: mesa 3Solo quiero mandar estos items a “otra cuenta” pero misma mesa.
+
+{
+  "itemIds": [101, 103]
+}
+(no mandas mesa)
+→ el repo hace:
+	•	tableId: src.tableId (o sea, la misma 3)
+
+3. Dividir y quitar mesa (p.ej. para cobrar en caja)
+
+{
+  "itemIds": [200, 201],
+  "tableId": null,
+  "note": "Cobro en caja"
+}
+→ nuevo pedido nace sin mesa y con nota “Cobro en caja”.
+
+4. Dividir y cambiar serviceType (de DINE_IN a TAKEAWAY)
+Esto es útil cuando alguien de la mesa dice “ese es para llevar”.
+
+{
+  "itemIds": [300],
+  "serviceType": "TAKEAWAY",
+  "note": "Para llevar"
+}
+→ nuevo pedido:
+	•	serviceType = TAKEAWAY
+	•	tableId = null (porque no mandaste y TAKEAWAY no ocupa)
+	•	note = “Para llevar”
+
+5. Dividir un combo padre (manda SOLO el padre)
+Supón que en el pedido hay un combo con itemId 400.
+
+{
+  "itemIds": [400]
+}
+El repo ve que 400 tiene hijos → busca a todos sus hijos → los mete también → se van JUNTOS al nuevo pedido.Así no te queda el combo descuadrado.
+
+6. Dividir un hijo de combo (manda SOLO el hijo)
+Supón que el papá es 400 y el hijo que quieres mover es 402.
+
+{
+  "itemIds": [402]
+}
+El repo hace EXACTAMENTE esto:
+	1	“Ah, este es hijo”
+	2	trae a su padre
+	3	trae a sus hermanos
+	4	mete a TODOS juntos en el nuevo pedido
+Resultado: nunca te quedas con un combo “partido”.
+
+7. Dividir y poner covers distintos
+
+{
+  "itemIds": [501, 502],
+  "covers": 1
+}
+→ nuevo pedido con covers = 1→ pedido origen se queda con sus covers originales.
+
+8. Dividir con nota específica (para cocina / caja)
+
+{
+  "itemIds": [601],
+  "note": "Cliente paga por separado"
+}
+
+9. Intentar dividir sin items → ERROR
+
+{
+  "itemIds": []
+}
+Respuesta:
+
+{
+  "error": {
+    "code": 400,
+    "details": "itemIds must contain at least 1 element(s)"
+  },
+  "data": null,
+  "message": "Error splitting order"
+}
+(esto viene del Zod porque pusiste .min(1))
+
+10. Intentar dividir items de 2 pedidos diferentes → ERROR
+Supón que mandas [101, 9999] y 9999 es de otro pedido.
+
+{
+  "itemIds": [101, 9999]
+}
+Respuesta (del repo):
+
+{
+  "error": {
+    "code": 500,
+    "details": "Todos los items deben pertenecer al mismo pedido"
+  },
+  "data": null,
+  "message": "Error splitting order"
+}
+
+11. Intentar dividir con usuario no autenticado → 401
+(no tiene req.auth.userId)
+
+{
+  "itemIds": [101]
+}
+Respuesta:
+
+{
+  "error": {
+    "code": 401,
+    "details": null
+  },
+  "data": null,
+  "message": "Unauthorized"
+}
+Porque el controller hace:
+
+if (!servedByUserId) return fail(res, "Unauthorized", 401);
+
+12. Dividir y mandar serviceType + tableId juntos
+
+{
+  "itemIds": [710, 711],
+  "serviceType": "DINE_IN",
+  "tableId": 12,
+  "note": "Se cambiaron de mesa"
+}
+→ válido; el nuevo pedido nace como DINE_IN en mesa 12.
+
+13. Pedido origen no existe → ERROR
+Si el :id no existe:
+Request
+
+POST /api/orders/99999/split
+Body
+
+{ "itemIds": [1] }
+Response (del repo):
+
+{
+  "error": {
+    "code": 500,
+    "details": "Pedido origen no existe"
+  },
+  "data": null,
+  "message": "Error splitting order"
+}
+
+Cosas que tu front TIENE que saber
+	1	Este endpoint NO regresa el pedido nuevo completo, solo:{ "newOrderId": ..., "code": "..." }
+	2	→ si lo quieres completo haces luego:GET /api/orders/{{newOrderId}}
+	3	
+	4	Siempre recalcula los dos pedidos. O sea: en la pantalla de la mesa original te va a bajar el total.
+	5	Nunca te deja combos “rotos”: si mandas papá o hijo, mueve el combo entero (padre + hijos + hermanos).
+	6	Puedes usarlo para “pagar por separado”: divides, pagas el nuevo, dejas el viejo abierto.
+	7	Se guarda quién hizo el split (servedByUserId), lo cual está chido para auditoría.
+
+10. Notas funcionales clave
+	•	Los totales siempre se recalculan ignorando ítems cancelados.
+	•	Se respetan descuentos / impuestos / service fee ya guardados.
+	•	prepEtaMinutes sirve para mostrar ETA en front / kiosko.
+	•	source y externalRef diferencian interno vs plataforma.
+	•	Con esto el front puede hacer todo el flujo:
+	0.	creación
+	0.	agregar / editar ítems
+	0.	KDS
+	0.	cobros
+	0.	cierre
+	0.	listado con filtros
+
+11. Glosario para el front
+Permisos
+	•	orders.read: puede listar y ver
+	•	orders.create: puede crear
+	•	orders.update: puede editar, pagar, mover estado
+serviceType (tipo de servicio)
+	•	DINE_IN: consumo en mesa
+	•	TAKEAWAY: para llevar
+	•	DELIVERY: a domicilio
+source (canal)
+	•	POS: pedido directo
+	•	UBER, DIDI, RAPPI: plataformas externas
+status del pedido
+	•	DRAFT: borrador, no cocina
+	•	OPEN: activo
+	•	HOLD: en pausa
+	•	CLOSED: cobrado y cerrado
+	•	CANCELED: cancelado
+OrderItem.status
+	•	NEW
+	•	IN_PROGRESS
+	•	READY
+	•	SERVED
+	•	CANCELED
+Timestamps
+	•	acceptedAt: el pedido salió de borrador / cocina lo tomó
+	•	readyAt: todos los ítems están listos
+	•	servedAt: todos servidos o cancelados
+	•	closedAt: se cobró
+	•	canceledAt: se canceló
+Totales (centavos)
+	•	subtotalCents: suma de renglones
+	•	discountCents: descuentos
+	•	serviceFeeCents: propina/fee fijo
+	•	taxCents: impuestos
+	•	totalCents: subtotal - descuento + service + tax
+	•	paymentsTotalCents: suma de pagos
+	•	paymentsTipCents: suma de propinas
+Pagos (payments[])
+	•	method: CASH | CARD | TRANSFER | OTHER
+	•	amountCents
+	•	tipCents
+	•	paidAt
+	•	note
+Mesa
+	•	tableId: id de la mesa
+	•	table: { id, name } para mostrar “Mesa 12”
+	•	covers: número de comensales
+DTOs clave
+	•	ListOrdersQueryDto: filtros del GET
+	•	UpdateOrderMetaDto: para editar nota, mesa, cubiertos, ETA
+	•	UpdateOrderStatusDto: para mover el pedido validando pagos
+
+Si quieres, en la siguiente te lo bajo todavía más a “doc para front” (solo campos + ejemplo), pero así ya está ordenado y sin que se vea todo pegado.

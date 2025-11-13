@@ -1,0 +1,24 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const asyncHandler_1 = require("../presentation/utils/asyncHandler");
+const authenticate_1 = require("../presentation/middlewares/authenticate");
+const container_1 = require("../container");
+const authorize_1 = require("../presentation/middlewares/authorize");
+const router = (0, express_1.Router)();
+router.use(authenticate_1.authenticate);
+router.get("/", (0, authorize_1.authorize)("orders.read"), (0, asyncHandler_1.asyncHandler)(container_1.ordersController.list));
+router.get("/kds/list", (0, authorize_1.authorize)("orders.read"), (0, asyncHandler_1.asyncHandler)(container_1.ordersController.kds));
+router.get("/:id", (0, authorize_1.authorize)("orders.read"), (0, asyncHandler_1.asyncHandler)(container_1.ordersController.get));
+router.post("/", (0, authorize_1.authorize)("orders.create"), (0, asyncHandler_1.asyncHandler)(container_1.ordersController.create));
+router.patch("/:id/meta", (0, authorize_1.authorize)("orders.update"), (0, asyncHandler_1.asyncHandler)(container_1.ordersController.updateMeta));
+router.patch("/:id/status", (0, authorize_1.authorize)("orders.update"), (0, asyncHandler_1.asyncHandler)(container_1.ordersController.updateStatus));
+router.post("/:id/refund", (0, authorize_1.authorize)("orders.update"), (0, asyncHandler_1.asyncHandler)(container_1.ordersController.refund));
+router.post("/:id/items", (0, authorize_1.authorize)("orders.update"), (0, asyncHandler_1.asyncHandler)(container_1.ordersController.addItem));
+router.patch("/items/:itemId/status", (0, authorize_1.authorize)("orders.update"), (0, asyncHandler_1.asyncHandler)(container_1.ordersController.setItemStatus));
+router.patch("/items/:itemId", (0, authorize_1.authorize)("orders.update"), (0, asyncHandler_1.asyncHandler)(container_1.ordersController.updateItem));
+router.delete("/items/:itemId", (0, authorize_1.authorize)("orders.update"), (0, asyncHandler_1.asyncHandler)(container_1.ordersController.removeItem));
+router.post("/:id/payments", (0, authorize_1.authorize)("orders.update"), (0, asyncHandler_1.asyncHandler)(container_1.ordersController.addPayment));
+router.post("/:id/split", (0, authorize_1.authorize)("orders.update"), (0, asyncHandler_1.asyncHandler)(container_1.ordersController.splitByItems));
+exports.default = router;
+//# sourceMappingURL=orders.routes.js.map

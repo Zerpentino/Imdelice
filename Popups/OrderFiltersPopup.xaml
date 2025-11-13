@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<?xaml-comp compile="true" ?>
+<toolkit:Popup
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+    x:Class="Imdeliceapp.Popups.OrderFiltersPopup"
+    CanBeDismissedByTappingOutsideOfPopup="True">
+
+  <Border
+      BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E1E1E}"
+      StrokeShape="{RoundRectangle CornerRadius=18}"
+      Padding="20"
+      WidthRequest="340">
+
+    <VerticalStackLayout Spacing="14">
+      <Label Text="Filtros"
+             FontSize="20"
+             FontAttributes="Bold"
+             TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+
+      <Picker x:Name="StatusPicker"
+              Title="Estatus"
+              ItemDisplayBinding="{Binding Label}"/>
+
+      <Picker x:Name="ServicePicker"
+              Title="Servicio"
+              ItemDisplayBinding="{Binding Label}"/>
+
+      <Picker x:Name="SourcePicker"
+              Title="Canal"
+              ItemDisplayBinding="{Binding Label}"/>
+
+      <Picker x:Name="TablePicker"
+              Title="Mesa"
+              ItemDisplayBinding="{Binding Label}"/>
+
+      <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+        <Switch x:Name="DateSwitch"
+                Toggled="DateSwitch_Toggled"/>
+        <Label Grid.Column="1"
+               Text="Filtrar por fechas"
+               VerticalOptions="Center"
+               TextColor="{AppThemeBinding Light=#555555, Dark=#CCCCCC}"/>
+      </Grid>
+
+      <Grid x:Name="DateGrid"
+            ColumnDefinitions="*,*"
+            ColumnSpacing="12">
+        <DatePicker x:Name="FromPicker"
+                    Format="dd/MM/yyyy"/>
+        <DatePicker x:Name="ToPicker"
+                    Grid.Column="1"
+                    Format="dd/MM/yyyy"/>
+      </Grid>
+
+      <Grid ColumnDefinitions="*,*" ColumnSpacing="12" Padding="0,8,0,0">
+        <Button Text="Cancelar"
+                BackgroundColor="{AppThemeBinding Light=#F1E9F1, Dark=#2B1D29}"
+                TextColor="{AppThemeBinding Light=#894164, Dark=#D5B2C2}"
+                CommandParameter="false"
+                Clicked="Cancel_Clicked"/>
+        <Button Grid.Column="1"
+                Text="Aplicar"
+                BackgroundColor="#894164"
+                TextColor="White"
+                Clicked="Apply_Clicked"/>
+      </Grid>
+    </VerticalStackLayout>
+  </Border>
+</toolkit:Popup>

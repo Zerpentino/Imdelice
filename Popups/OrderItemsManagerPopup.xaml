@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<toolkit:Popup
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+    x:Class="Imdeliceapp.Popups.OrderItemsManagerPopup"
+    Size="430,600"
+    CanBeDismissedByTappingOutsideOfPopup="False">
+  <Border Stroke="{AppThemeBinding Light=#E5E5E5, Dark=#333333}"
+          StrokeShape="{RoundRectangle CornerRadius=24}"
+          BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1A1A1A}"
+          Padding="20">
+    <ScrollView>
+      <VerticalStackLayout Spacing="16">
+        <Grid ColumnDefinitions="*,Auto">
+          <Label Text="Gestionar productos"
+                 FontSize="20"
+                 FontAttributes="Bold"/>
+          <Button Text="✕"
+                  Grid.Column="1"
+                  WidthRequest="32"
+                  HeightRequest="32"
+                  Padding="0"
+                  BackgroundColor="Transparent"
+                  Clicked="CloseButton_Clicked"/>
+        </Grid>
+
+        <Button Text="Agregar producto"
+                Style="{StaticResource PrimaryPillButtonStyle}"
+                Clicked="AddProduct_Clicked"/>
+
+        <CollectionView ItemsSource="{Binding Items}"
+                        SelectionMode="None">
+          <CollectionView.EmptyView>
+            <Label Text="Sin productos en este pedido."
+                   TextColor="{AppThemeBinding Light=#777, Dark=#AAA}"
+                   HorizontalTextAlignment="Center"/>
+          </CollectionView.EmptyView>
+          <CollectionView.ItemTemplate>
+            <DataTemplate>
+              <Border Stroke="{AppThemeBinding Light=#EEEEEE, Dark=#333333}"
+                      StrokeShape="{RoundRectangle CornerRadius=16}"
+                      BackgroundColor="{AppThemeBinding Light=#FBFBFB, Dark=#232323}"
+                      Padding="12"
+                      Margin="{Binding Margin}">
+                <VerticalStackLayout Spacing="6">
+                  <Label Text="{Binding DisplayTitle}"
+                         FontAttributes="Bold"
+                         TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+                  <Label Text="{Binding Detail}"
+                         FontSize="12"
+                         TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"/>
+                  <HorizontalStackLayout Spacing="6">
+                    <Button Text="Editar"
+                            Style="{StaticResource PrimaryPillSmButtonStyle}"
+                            CommandParameter="{Binding}"
+                            Clicked="EditButton_Clicked"/>
+                    <Button Text="Estado"
+                            Style="{StaticResource SecondaryPillSmButtonStyle}"
+                            CommandParameter="{Binding}"
+                            Clicked="StatusButton_Clicked"/>
+                    <Button Text="Eliminar"
+                            Style="{StaticResource DangerPillSmButtonStyle}"
+                            CommandParameter="{Binding}"
+                            Clicked="DeleteButton_Clicked"/>
+                  </HorizontalStackLayout>
+                </VerticalStackLayout>
+              </Border>
+            </DataTemplate>
+          </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <Button Text="Cerrar"
+                Style="{StaticResource SecondaryPillButtonStyle}"
+                Clicked="CloseButton_Clicked"/>
+      </VerticalStackLayout>
+    </ScrollView>
+  </Border>
+</toolkit:Popup>

@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
+using Imdeliceapp.Helpers;
 using Imdeliceapp.Services;
 using Microsoft.Maui.Controls;
 using Microsoft.Maui.Storage;
@@ -49,6 +51,13 @@ public partial class MenuItemEditorPage : ContentPage
     int? _selectedRefId;
     string _selectedRefLabel = "Ninguna";
     bool _suppressTypeChanged;
+
+    readonly HashSet<int> _existingProductIds = new();
+    readonly HashSet<int> _existingComboIds = new();
+    readonly HashSet<int> _existingVariantIds = new();
+    readonly HashSet<int> _existingVariantProductIds = new();
+    bool _existingRefsLoaded;
+    bool _loadingRefs;
 
     public MenuItemEditorPage()
     {
@@ -111,6 +120,8 @@ public partial class MenuItemEditorPage : ContentPage
             _selectedRefLabel = "Ninguna";
             UpdateReferenceUI();
         }
+
+        await EnsureExistingRefsAsync();
     }
 
     void RefTypePicker_SelectedIndexChanged(object? sender, EventArgs e)
@@ -132,6 +143,8 @@ public partial class MenuItemEditorPage : ContentPage
 
         try
         {
+            await EnsureExistingRefsAsync();
+
             switch (_selectedRefType)
             {
                 case "PRODUCT":
@@ -168,7 +181,8 @@ public partial class MenuItemEditorPage : ContentPage
             return type == "SIMPLE";
         }
 
-        var product = await ProductPickerPage.PickAsync(Navigation, Filter);
+        var highlight = includeCombos ? _existingComboIds : _existingProductIds;
+        var product = await ProductPickerPage.PickAsync(Navigation, Filter, highlight);
         if (product is null) return;
 
         _selectedRefId = product.id;
@@ -183,10 +197,12 @@ public partial class MenuItemEditorPage : ContentPage
 
     async Task PickVariantAsync()
     {
+        await EnsureExistingRefsAsync();
+
         static bool Filter(ProductPickerPage.ProductDTO p)
             => p.isActive && string.Equals(p.type, "VARIANTED", StringComparison.OrdinalIgnoreCase);
 
-        var product = await ProductPickerPage.PickAsync(Navigation, Filter);
+        var product = await ProductPickerPage.PickAsync(Navigation, Filter, _existingVariantProductIds);
         if (product is null) return;
 
         var detail = await _menus.GetProductAsync(product.id);
@@ -207,13 +223,20 @@ public partial class MenuItemEditorPage : ContentPage
         }
 
         var options = variants
-            .Select(v => (Title: string.IsNullOrWhiteSpace(v.name) ? $"Variante #{v.id}" : v.name!, Variant: v))
+            .Select(v =>
+            {
+                var baseTitle = string.IsNullOrWhiteSpace(v.name) ? $"Variante #{v.id}" : v.name!;
+                var display = $"{baseTitle} · #{v.id}";
+                if (_existingVariantIds.Contains(v.id))
+                    display += " (ya en sección)";
+                return (Display: display, Variant: v);
+            })
             .ToArray();
 
-        var choice = await DisplayActionSheet("Selecciona variante", "Cancelar", null, options.Select(o => o.Title).ToArray());
+        var choice = await DisplayActionSheet("Selecciona variante", "Cancelar", null, options.Select(o => o.Display).ToArray());
         if (string.IsNullOrWhiteSpace(choice) || choice == "Cancelar") return;
 
-        var picked = options.FirstOrDefault(o => o.Title == choice).Variant;
+        var picked = options.FirstOrDefault(o => o.Display == choice).Variant;
         if (picked == null) return;
 
         _selectedRefId = picked.id;
@@ -390,6 +413,52 @@ public partial class MenuItemEditorPage : ContentPage
         SelectedRefLabel.Text = _selectedRefLabel;
         if (ClearRefButton != null)
             ClearRefButton.IsVisible = !IsEdit && _selectedRefId.HasValue;
+    }
+
+    async Task EnsureExistingRefsAsync()
+    {
+        if (_existingRefsLoaded || _loadingRefs) return;
+
+        _loadingRefs = true;
+        try
+        {
+            var items = await _menus.GetSectionItemsAsync(SectionId);
+
+            _existingProductIds.Clear();
+            _existingComboIds.Clear();
+            _existingVariantIds.Clear();
+            _existingVariantProductIds.Clear();
+
+            foreach (var item in items)
+            {
+                var type = item.refType?.ToUpperInvariant();
+                switch (type)
+                {
+                    case "PRODUCT":
+                        _existingProductIds.Add(item.refId);
+                        break;
+                    case "COMBO":
+                        _existingComboIds.Add(item.refId);
+                        break;
+                    case "VARIANT":
+                        _existingVariantIds.Add(item.refId);
+                        var productId = item.@ref?.variant?.product?.id;
+                        if (productId.HasValue)
+                            _existingVariantProductIds.Add(productId.Value);
+                        break;
+                }
+            }
+
+            _existingRefsLoaded = true;
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandler.MostrarErrorTecnico(ex, "Ítems – Referencias existentes");
+        }
+        finally
+        {
+            _loadingRefs = false;
+        }
     }
 
     void EnsureRefTypePicker(string? type)

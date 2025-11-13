@@ -66,6 +66,12 @@ build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.Category
 build_metadata.AdditionalFiles.TargetPath = Pages/CategoryEditorPage.xaml
 build_metadata.AdditionalFiles.RelativePath = Pages/CategoryEditorPage.xaml
 
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/ChannelConfigPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.ChannelConfigPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages/ChannelConfigPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages/ChannelConfigPage.xaml
+
 [/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/GroupEditorPage.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.GroupEditorPage.xaml
@@ -77,6 +83,12 @@ build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.GroupLinkedProductsPage.xaml
 build_metadata.AdditionalFiles.TargetPath = Pages/GroupLinkedProductsPage.xaml
 build_metadata.AdditionalFiles.RelativePath = Pages/GroupLinkedProductsPage.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/KdsPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.KdsPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages/KdsPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages/KdsPage.xaml
 
 [/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/LoginPage.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
@@ -108,11 +120,23 @@ build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.OptionsP
 build_metadata.AdditionalFiles.TargetPath = Pages/OptionsPage.xaml
 build_metadata.AdditionalFiles.RelativePath = Pages/OptionsPage.xaml
 
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/OrderDetailPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.OrderDetailPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages/OrderDetailPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages/OrderDetailPage.xaml
+
 [/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/OrdersPage.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.OrdersPage.xaml
 build_metadata.AdditionalFiles.TargetPath = Pages/OrdersPage.xaml
 build_metadata.AdditionalFiles.RelativePath = Pages/OrdersPage.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/PaymentsReportPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.PaymentsReportPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages/PaymentsReportPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages/PaymentsReportPage.xaml
 
 [/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/ProductEditorPage.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
@@ -162,6 +186,18 @@ build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.SectionI
 build_metadata.AdditionalFiles.TargetPath = Pages/SectionItemsPage.xaml
 build_metadata.AdditionalFiles.RelativePath = Pages/SectionItemsPage.xaml
 
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/TableEditorPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.TableEditorPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages/TableEditorPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages/TableEditorPage.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/TablesPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.TablesPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages/TablesPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages/TablesPage.xaml
+
 [/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/TakeOrderPage.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.TakeOrderPage.xaml
@@ -186,6 +222,12 @@ build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.VariantM
 build_metadata.AdditionalFiles.TargetPath = Pages/VariantModifierOverridesPage.xaml
 build_metadata.AdditionalFiles.RelativePath = Pages/VariantModifierOverridesPage.xaml
 
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Popups/AddPaymentPopup.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Popups.AddPaymentPopup.xaml
+build_metadata.AdditionalFiles.TargetPath = Popups/AddPaymentPopup.xaml
+build_metadata.AdditionalFiles.RelativePath = Popups/AddPaymentPopup.xaml
+
 [/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Popups/CartReviewPopup.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Popups.CartReviewPopup.xaml
@@ -197,6 +239,72 @@ build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Popups.ConfigureMenuItemPopup.xaml
 build_metadata.AdditionalFiles.TargetPath = Popups/ConfigureMenuItemPopup.xaml
 build_metadata.AdditionalFiles.RelativePath = Popups/ConfigureMenuItemPopup.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Popups/KdsTicketDetailPopup.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Popups.KdsTicketDetailPopup.xaml
+build_metadata.AdditionalFiles.TargetPath = Popups/KdsTicketDetailPopup.xaml
+build_metadata.AdditionalFiles.RelativePath = Popups/KdsTicketDetailPopup.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Popups/OrderFiltersPopup.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Popups.OrderFiltersPopup.xaml
+build_metadata.AdditionalFiles.TargetPath = Popups/OrderFiltersPopup.xaml
+build_metadata.AdditionalFiles.RelativePath = Popups/OrderFiltersPopup.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Popups/OrderItemEditorPopup.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Popups.OrderItemEditorPopup.xaml
+build_metadata.AdditionalFiles.TargetPath = Popups/OrderItemEditorPopup.xaml
+build_metadata.AdditionalFiles.RelativePath = Popups/OrderItemEditorPopup.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Popups/OrderItemPickerPopup.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Popups.OrderItemPickerPopup.xaml
+build_metadata.AdditionalFiles.TargetPath = Popups/OrderItemPickerPopup.xaml
+build_metadata.AdditionalFiles.RelativePath = Popups/OrderItemPickerPopup.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Popups/OrderItemsManagerPopup.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Popups.OrderItemsManagerPopup.xaml
+build_metadata.AdditionalFiles.TargetPath = Popups/OrderItemsManagerPopup.xaml
+build_metadata.AdditionalFiles.RelativePath = Popups/OrderItemsManagerPopup.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Popups/OrderItemStatusPopup.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Popups.OrderItemStatusPopup.xaml
+build_metadata.AdditionalFiles.TargetPath = Popups/OrderItemStatusPopup.xaml
+build_metadata.AdditionalFiles.RelativePath = Popups/OrderItemStatusPopup.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Popups/OrderMenuSelectorPopup.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Popups.OrderMenuSelectorPopup.xaml
+build_metadata.AdditionalFiles.TargetPath = Popups/OrderMenuSelectorPopup.xaml
+build_metadata.AdditionalFiles.RelativePath = Popups/OrderMenuSelectorPopup.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Popups/OrderMetaEditorPopup.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Popups.OrderMetaEditorPopup.xaml
+build_metadata.AdditionalFiles.TargetPath = Popups/OrderMetaEditorPopup.xaml
+build_metadata.AdditionalFiles.RelativePath = Popups/OrderMetaEditorPopup.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Popups/OrderSplitPopup.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Popups.OrderSplitPopup.xaml
+build_metadata.AdditionalFiles.TargetPath = Popups/OrderSplitPopup.xaml
+build_metadata.AdditionalFiles.RelativePath = Popups/OrderSplitPopup.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Popups/OrderStatusPopup.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Popups.OrderStatusPopup.xaml
+build_metadata.AdditionalFiles.TargetPath = Popups/OrderStatusPopup.xaml
+build_metadata.AdditionalFiles.RelativePath = Popups/OrderStatusPopup.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Popups/RefundOrderPopup.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Popups.RefundOrderPopup.xaml
+build_metadata.AdditionalFiles.TargetPath = Popups/RefundOrderPopup.xaml
+build_metadata.AdditionalFiles.RelativePath = Popups/RefundOrderPopup.xaml
 
 [/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Resources/Styles/Colors.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml

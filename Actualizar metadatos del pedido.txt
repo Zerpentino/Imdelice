@@ -1,0 +1,187 @@
+
+Contrato del módulo de pedidos (API)
+0. Notas generales
+	•	Todas las respuestas usan wrapper estándar:{ error, data, message }
+	•	Todas las rutas están protegidas con permisos:
+	•	orders.read
+	•	orders.create
+	•	orders.update
+	•	El controlador usa AuthRequest, asyncHandler y no usa console.log.
+	•	Siempre que se toca un pedido se recalculan totales ignorando ítems cancelados.
+
+4. Actualizar metadatos del pedido
+PATCH /api/orders/:id/metaPermiso: orders.updateBody: UpdateOrderMetaDto
+Permite actualizar parcialmente:
+	•	tableId
+	•	note
+	•	covers
+	•	prepEtaMinutes
+Para limpiar un campo: mandar null (mesa, cubiertos o ETA).
+Ejemplo{
+  "tableId": 1,
+  "covers": 4,
+  "note": "Mesa movida",
+  "prepEtaMinutes": 8
+}
+Ejemplos;
+Casos posibles (todos los que tiene sentido mandar)
+1. Cambiar de mesa
+
+{
+  "tableId": 7
+}
+👉 Pasa de la mesa que tenía a la mesa 7.
+
+2. Quitar la mesa (dejarlo sin mesa)
+
+{
+  "tableId": null
+}
+👉 Esto está permitido porque el Zod lo puso como nullable. El repo lo guarda como null.
+
+3. Poner / cambiar la nota
+
+{
+  "note": "Cumpleaños, traer pastel"
+}
+
+4. Limpiar la nota
+
+{
+  "note": null
+}
+👉 Queda sin nota.
+
+5. Actualizar número de comensales (covers)
+
+{
+  "covers": 4
+}
+
+6. Quitar los comensales (dejarlo sin valor)
+
+{
+  "covers": null
+}
+
+7. Poner tiempo estimado de preparación (para KDS / delivery)
+
+{
+  "prepEtaMinutes": 20
+}
+
+8. Quitar el tiempo estimado
+
+{
+  "prepEtaMinutes": null
+}
+
+9. Cambiar mesa y nota al mismo tiempo
+
+{
+  "tableId": 4,
+  "note": "Pasar primero las bebidas"
+}
+
+10. Mesa + covers
+
+{
+  "tableId": 2,
+  "covers": 3
+}
+
+11. Todo junto (caso “editar encabezado” en el front)
+
+{
+  "tableId": 5,
+  "note": "Cliente frecuente",
+  "covers": 2,
+  "prepEtaMinutes": 15
+}
+
+12. Body vacío (el backend lo acepta, pero no cambia nada)
+
+{}
+👉 El repo ve que no hay campos y sale sin actualizar. Útil para probar que no truena.
+
+13. Quitar varias cosas a la vez
+(por ejemplo: lo pasaste a delivery y ya no quieres mesa ni covers ni nota)
+
+{
+  "tableId": null,
+  "covers": null,
+  "note": null
+}
+
+Respuesta: 200 con data: null.
+{
+    "error": null,
+    "data": null,
+    "message": "Updated"
+}
+
+10. Notas funcionales clave
+	•	Los totales siempre se recalculan ignorando ítems cancelados.
+	•	Se respetan descuentos / impuestos / service fee ya guardados.
+	•	prepEtaMinutes sirve para mostrar ETA en front / kiosko.
+	•	source y externalRef diferencian interno vs plataforma.
+	•	Con esto el front puede hacer todo el flujo:
+	0.	creación
+	0.	agregar / editar ítems
+	0.	KDS
+	0.	cobros
+	0.	cierre
+	0.	listado con filtros
+
+11. Glosario para el front
+Permisos
+	•	orders.read: puede listar y ver
+	•	orders.create: puede crear
+	•	orders.update: puede editar, pagar, mover estado
+serviceType (tipo de servicio)
+	•	DINE_IN: consumo en mesa
+	•	TAKEAWAY: para llevar
+	•	DELIVERY: a domicilio
+source (canal)
+	•	POS: pedido directo
+	•	UBER, DIDI, RAPPI: plataformas externas
+status del pedido
+	•	DRAFT: borrador, no cocina
+	•	OPEN: activo
+	•	HOLD: en pausa
+	•	CLOSED: cobrado y cerrado
+	•	CANCELED: cancelado
+OrderItem.status
+	•	NEW
+	•	IN_PROGRESS
+	•	READY
+	•	SERVED
+	•	CANCELED
+Timestamps
+	•	acceptedAt: el pedido salió de borrador / cocina lo tomó
+	•	readyAt: todos los ítems están listos
+	•	servedAt: todos servidos o cancelados
+	•	closedAt: se cobró
+	•	canceledAt: se canceló
+Totales (centavos)
+	•	subtotalCents: suma de renglones
+	•	discountCents: descuentos
+	•	serviceFeeCents: propina/fee fijo
+	•	taxCents: impuestos
+	•	totalCents: subtotal - descuento + service + tax
+	•	paymentsTotalCents: suma de pagos
+	•	paymentsTipCents: suma de propinas
+Pagos (payments[])
+	•	method: CASH | CARD | TRANSFER | OTHER
+	•	amountCents
+	•	tipCents
+	•	paidAt
+	•	note
+Mesa
+	•	tableId: id de la mesa
+	•	table: { id, name } para mostrar “Mesa 12”
+	•	covers: número de comensales
+DTOs clave
+	•	ListOrdersQueryDto: filtros del GET
+	•	UpdateOrderMetaDto: para editar nota, mesa, cubiertos, ETA
+	•	UpdateOrderStatusDto: para mover el pedido validando pagos

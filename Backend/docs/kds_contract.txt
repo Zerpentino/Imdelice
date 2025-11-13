@@ -1,0 +1,69 @@
+Endpoint: GET /api/orders/kds/list
+Permission: orders.read
+Auth: Bearer token
+
+Query parameters:
+- statuses: CSV of item statuses (NEW, IN_PROGRESS, READY). Defaults to NEW,IN_PROGRESS.
+- serviceType: DINE_IN | TAKEAWAY | DELIVERY
+- source: POS | UBER | DIDI | RAPPI
+- tableId: numeric, optional.
+- from / to: ISO date (time optional). "to" expands to end of day when only date is provided.
+
+Response shape:
+{
+  "error": null,
+  "data": [
+    {
+      "orderId": number,
+      "code": string,
+      "status": OrderStatus,
+      "serviceType": ServiceType,
+      "source": OrderSource,
+      "openedAt": ISO date string,
+      "note": string|null,
+      "prepEtaMinutes": number|null,
+      "customerName": string|null,
+      "customerPhone": string|null,
+      "table": { "id": number, "name": string|null } | null,
+      "items": [
+        {
+          "id": number,
+          "productId": number,
+          "name": string,
+          "variantName": string|null,
+          "quantity": number,
+          "status": OrderItemStatus,
+          "notes": string|null,
+          "modifiers": [ { "name": string, "quantity": number } ],
+          "isComboParent": boolean,
+          "children": [
+            {
+              "id": number,
+              "productId": number,
+              "name": string,
+              "variantName": string|null,
+              "quantity": number,
+              "status": OrderItemStatus,
+              "notes": string|null,
+              "modifiers": [ { "name": string, "quantity": number } ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "message": "OK"
+}
+
+Notes:
+- Only top-level items whose status matches the filter are listed. Children are attached to the parent (combo) even if their own status difers.
+- Payments and totals are omitted on purpose (kitchen does not need them).
+- Table info, customer, and notes are included so KDS can show context.
+- If no tickets match, data is an empty array.
+
+Sample cases:
+1) DINE_IN simple item (status NEW).
+2) DELIVERY UBER with notes and modifiers.
+3) Combo with children (burger + papas). Parent flagged with isComboParent=true.
+4) Mixed statuses (NEW + IN_PROGRESS) to paint separate columns.
+5) Filtering by statuses/serviceType/source to show specific tickets.

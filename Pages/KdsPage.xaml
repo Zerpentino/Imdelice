@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Imdeliceapp.Pages.KdsPage"
+             Title="KDS"
+             Shell.NavBarIsVisible="True"
+             BackgroundColor="{AppThemeBinding Light=#F8F8F8, Dark=#101010}">
+  <ContentPage.ToolbarItems>
+    <ToolbarItem Text="Actualizar"
+                 Priority="0"
+                 Clicked="RefreshToolbar_Clicked"/>
+  </ContentPage.ToolbarItems>
+
+  <Grid RowDefinitions="Auto,*"
+        Padding="16">
+    <HorizontalStackLayout Spacing="12">
+      <VerticalStackLayout WidthRequest="160">
+        <Label Text="Estados"
+               FontSize="12"
+               TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"/>
+        <Picker x:Name="StatusPicker"
+                SelectedIndexChanged="FilterChanged"/>
+      </VerticalStackLayout>
+      <VerticalStackLayout WidthRequest="160">
+        <Label Text="Servicio"
+               FontSize="12"
+               TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"/>
+        <Picker x:Name="ServicePicker"
+                SelectedIndexChanged="FilterChanged"/>
+      </VerticalStackLayout>
+    </HorizontalStackLayout>
+
+    <RefreshView Grid.Row="1"
+                 x:Name="RefreshControl"
+                 Refreshing="RefreshControl_Refreshing">
+      <CollectionView ItemsSource="{Binding Tickets}"
+                      SelectionMode="None"
+                      Margin="0,12,0,0">
+        <CollectionView.ItemTemplate>
+          <DataTemplate>
+            <Border Stroke="{AppThemeBinding Light=#E0E0E0, Dark=#333}"
+                    BackgroundColor="{AppThemeBinding Light=White, Dark=#1C1C1C}"
+                    StrokeShape="{RoundRectangle CornerRadius=18}"
+                    Padding="16"
+                    Margin="0,0,0,12">
+              <Border.GestureRecognizers>
+                <TapGestureRecognizer Tapped="TicketCard_Tapped"
+                                      CommandParameter="{Binding .}"/>
+              </Border.GestureRecognizers>
+              <VerticalStackLayout Spacing="8">
+                <Grid ColumnDefinitions="*,Auto">
+                  <VerticalStackLayout Spacing="2">
+                    <Label Text="{Binding Code}"
+                           FontAttributes="Bold"
+                           FontSize="16"/>
+                    <Label Text="{Binding Subtitle}"
+                           FontSize="12"
+                           TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"/>
+                    <Label Text="{Binding TimingSummary}"
+                           FontSize="12"
+                           TextColor="{AppThemeBinding Light=#0288D1, Dark=#80CBC4}"
+                           IsVisible="{Binding HasTimingSummary}"/>
+                  </VerticalStackLayout>
+                  <Label Text="{Binding StatusBadge}"
+                         FontAttributes="Bold"
+                         TextColor="{Binding StatusColor}"
+                         HorizontalTextAlignment="End"/>
+                </Grid>
+
+                <Label Text="{Binding Note}"
+                       FontSize="12"
+                       TextColor="{AppThemeBinding Light=#D84315, Dark=#FFAB91}"
+                       IsVisible="{Binding HasNote}"/>
+
+                <VerticalStackLayout BindableLayout.ItemsSource="{Binding Items}"
+                                     Spacing="10">
+                  <BindableLayout.ItemTemplate>
+                    <DataTemplate>
+                      <VerticalStackLayout Spacing="4">
+                        <Grid ColumnDefinitions="*,Auto">
+                          <Label Text="{Binding Title}"
+                                 FontAttributes="Bold"/>
+                          <Label Text="{Binding StatusLabel}"
+                                 TextColor="{AppThemeBinding Light=#0288D1, Dark=#80CBC4}"
+                                 FontSize="12"
+                                 HorizontalTextAlignment="End"/>
+                        </Grid>
+                        <Label Text="{Binding Detail}"
+                               FontSize="12"
+                               TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"
+                               IsVisible="{Binding HasDetail}"/>
+                        <HorizontalStackLayout Spacing="8"
+                                               BindableLayout.ItemsSource="{Binding Actions}"
+                                               IsVisible="{Binding HasActions}">
+                          <BindableLayout.ItemTemplate>
+                            <DataTemplate>
+                              <Button Text="{Binding Label}"
+                                      Command="{Binding Command}"
+                                      Padding="10,6"
+                                      FontSize="11"
+                                      BackgroundColor="{AppThemeBinding Light=#E8F1FF, Dark=#2B3647}"
+                                      TextColor="{AppThemeBinding Light=#0D47A1, Dark=#90CAF9}"
+                                      CornerRadius="16"/>
+                            </DataTemplate>
+                          </BindableLayout.ItemTemplate>
+                        </HorizontalStackLayout>
+
+                        <VerticalStackLayout BindableLayout.ItemsSource="{Binding Children}"
+                                             Spacing="2"
+                                             Padding="14,0,0,0"
+                                             IsVisible="{Binding HasChildren}">
+                          <BindableLayout.ItemTemplate>
+                            <DataTemplate>
+                              <VerticalStackLayout Spacing="2">
+                                <Grid ColumnDefinitions="*,Auto">
+                                  <Label Text="{Binding Title}"
+                                         FontAttributes="Bold"/>
+                                  <Label Text="{Binding StatusLabel}"
+                                         FontSize="11"
+                                         TextColor="{AppThemeBinding Light=#7A7A7A, Dark=#B0BEC5}"
+                                         HorizontalTextAlignment="End"/>
+                                </Grid>
+                                <Label Text="{Binding Detail}"
+                                       FontSize="11"
+                                       TextColor="{AppThemeBinding Light=#777, Dark=#999}"
+                                       IsVisible="{Binding HasDetail}"/>
+                                <HorizontalStackLayout Spacing="6"
+                                                       BindableLayout.ItemsSource="{Binding Actions}"
+                                                       IsVisible="{Binding HasActions}">
+                                  <BindableLayout.ItemTemplate>
+                                    <DataTemplate>
+                                      <Button Text="{Binding Label}"
+                                              Command="{Binding Command}"
+                                              Padding="8,4"
+                                              FontSize="10"
+                                              BackgroundColor="{AppThemeBinding Light=#EEF4FF, Dark=#2E3A4C}"
+                                              TextColor="{AppThemeBinding Light=#01579B, Dark=#B3E5FC}"
+                                              CornerRadius="14"/>
+                                    </DataTemplate>
+                                  </BindableLayout.ItemTemplate>
+                                </HorizontalStackLayout>
+                              </VerticalStackLayout>
+                            </DataTemplate>
+                          </BindableLayout.ItemTemplate>
+                        </VerticalStackLayout>
+                      </VerticalStackLayout>
+                    </DataTemplate>
+                  </BindableLayout.ItemTemplate>
+                </VerticalStackLayout>
+              </VerticalStackLayout>
+            </Border>
+          </DataTemplate>
+        </CollectionView.ItemTemplate>
+        <CollectionView.EmptyView>
+          <Label Text="Sin tickets para mostrar."
+                 HorizontalTextAlignment="Center"
+                 TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"
+                 Margin="0,32,0,0"/>
+        </CollectionView.EmptyView>
+      </CollectionView>
+    </RefreshView>
+  </Grid>
+</ContentPage>

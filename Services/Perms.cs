@@ -27,15 +27,23 @@ public static class Perms
     public static bool CategoriesUpdate  => Has("categories.update");
     public static bool CategoriesDelete => Has("categories.delete");
 
-public static bool ModifiersRead    => Has("modifiers.read");
+    public static bool ModifiersRead    => Has("modifiers.read");
     public static bool ModifiersCreate  => Has("modifiers.create");
     public static bool ModifiersUpdate  => Has("modifiers.update");
     public static bool ModifiersDelete => Has("modifiers.delete");
 
+    public static bool TablesRead    => Has("tables.read");
+    public static bool TablesCreate  => Has("tables.create");
+    public static bool TablesUpdate  => Has("tables.update");
+    public static bool TablesDelete  => Has("tables.delete");
+
+    public static bool OrdersRead    => Has("orders.read");
+    public static bool OrdersCreate  => Has("orders.create");
+    public static bool OrdersUpdate  => Has("orders.update");
 
     public static bool MenusRead    => Has("menu.read");
-public static bool MenusCreate  => Has("menu.create");
-public static bool MenusUpdate  => Has("menu.update");
-public static bool MenusDelete  => Has("menu.delete");
+    public static bool MenusCreate  => Has("menu.create");
+    public static bool MenusUpdate  => Has("menu.update");
+    public static bool MenusDelete  => Has("menu.delete");
 
 }

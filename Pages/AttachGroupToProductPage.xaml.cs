@@ -3,6 +3,10 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using Imdeliceapp.Models;
 using ModelsCategoryDTO = Imdeliceapp.Models.CategoryDTO;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using System.Globalization;
 
 namespace Imdeliceapp.Pages;
 
@@ -15,11 +19,12 @@ public partial class AttachGroupToProductPage : ContentPage
     public int GroupId { get; set; }
     public string GroupName { get; set; } = "";
 
-    public ObservableCollection<ModifiersApi.SimpleProductDTO> Products { get; } = new();
-    List<ModifiersApi.SimpleProductDTO> _all = new();
+    public ObservableCollection<ProductRow> Products { get; } = new();
+    List<ProductRow> _all = new();
+    HashSet<int> _attachedProductIds = new();
 
     public ObservableCollection<ModelsCategoryDTO> Categories { get; } = new();
-ModelsCategoryDTO? _selectedCategory;
+    ModelsCategoryDTO? _selectedCategory;
 
     bool _isRefreshing;
     public bool IsRefreshing { get => _isRefreshing; set { _isRefreshing = value; OnPropertyChanged(); } }
@@ -37,6 +42,7 @@ ModelsCategoryDTO? _selectedCategory;
         Hdr.Text = $"Grupo #{GroupId} — {GroupName}";
 
         if (Categories.Count == 0) await LoadCategoriesAsync();
+        await LoadAttachedProductsAsync();
         await LoadProductsAsync();
     }
 
@@ -59,6 +65,19 @@ ModelsCategoryDTO? _selectedCategory;
         }
     }
 
+    async Task LoadAttachedProductsAsync()
+    {
+        try
+        {
+            var links = await _api.GetProductsByGroupAsync(GroupId, isActive: null, search: null, limit: 200, offset: 0);
+            _attachedProductIds = links.Select(l => l.product.id).ToHashSet();
+        }
+        catch
+        {
+            _attachedProductIds = new HashSet<int>();
+        }
+    }
+
     async Task LoadProductsAsync()
     {
         if (_loading) return;
@@ -76,11 +95,17 @@ ModelsCategoryDTO? _selectedCategory;
                 offset: 0
             );
 
-            _all = list
+            var rows = list
                 .OrderByDescending(p => p.isActive)
                 .ThenBy(p => p.name)
+                .Select(p => new ProductRow(p)
+                {
+                    IsLinked = _attachedProductIds.Contains(p.id)
+                })
                 .ToList();
-ApplyFilters();
+
+            _all = rows;
+            ApplyFilters();
         }
         catch (Exception ex)
         {
@@ -96,8 +121,6 @@ ApplyFilters();
     async void CategoryPicker_SelectedIndexChanged(object? sender, EventArgs e)
     {
         _selectedCategory = CategoryPicker.SelectedItem as ModelsCategoryDTO;
-
-        // recargar con el nuevo filtro
         ApplyFilters();
     }
 void ApplyFilters()
@@ -105,15 +128,13 @@ void ApplyFilters()
     var q = (SearchBox?.Text ?? "").Trim().ToLowerInvariant();
     int? catId = (_selectedCategory != null && _selectedCategory.id > 0) ? _selectedCategory.id : (int?)null;
 
-    IEnumerable<ModifiersApi.SimpleProductDTO> src = _all;
+    IEnumerable<ProductRow> src = _all;
 
-    // filtro por categoría (local)
     if (catId.HasValue)
-        src = src.Where(p => p.categoryId == catId.Value);
+        src = src.Where(p => p.Source.categoryId == catId.Value);
 
-    // filtro por texto (local)
     if (!string.IsNullOrEmpty(q))
-        src = src.Where(p => (p.name ?? "").ToLowerInvariant().Contains(q));
+        src = src.Where(p => p.Name.ToLowerInvariant().Contains(q));
 
     Products.Clear();
     foreach (var p in src) Products.Add(p);
@@ -133,12 +154,20 @@ void ApplyFilters()
     async void ProdRefresh_Refreshing(object s, EventArgs e)
     {
         IsRefreshing = true;
+        await LoadAttachedProductsAsync();
         await LoadProductsAsync();
     }
 
     async void AttachRow_Clicked(object sender, EventArgs e)
     {
-        if ((sender as Button)?.CommandParameter is not ModifiersApi.SimpleProductDTO p) return;
+        if ((sender as Button)?.CommandParameter is not ProductRow row) return;
+        if (row.IsLinked)
+        {
+            await DisplayAlert("Aviso", "Este producto ya tiene el grupo adjuntado.", "OK");
+            return;
+        }
+
+        var p = row.Source;
 
         // posición: toma la que esté en la parte inferior (DefaultPosEntry) o pregunta
         int position = 0;
@@ -148,18 +177,50 @@ void ApplyFilters()
         try
         {
             await _api.AttachGroupToProductAsync(p.id, GroupId, position);
+            row.IsLinked = true;
+            _attachedProductIds.Add(p.id);
             await DisplayAlert("OK", $"Grupo adjuntado a “{p.name}”.", "Cerrar");
-            // Vuelve a la pantalla de vinculados (para que se vea el nuevo):
-            await Navigation.PopAsync();
-             
         }
         catch (HttpRequestException ex) when (ex.Message.Contains("409") || ex.Message.Contains("unique"))
-{
-    await DisplayAlert("Aviso", "Ese grupo ya estaba vinculado a este producto.", "OK");
-}
-catch (Exception ex)
-{
-    await DisplayAlert("Error", ex.Message, "OK");
-}
+        {
+            await DisplayAlert("Aviso", "Ese grupo ya estaba vinculado a este producto.", "OK");
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Error", ex.Message, "OK");
+        }
+    }
+
+    public class ProductRow : INotifyPropertyChanged
+    {
+        public ProductRow(ModifiersApi.SimpleProductDTO source)
+        {
+            Source = source;
+        }
+
+        public ModifiersApi.SimpleProductDTO Source { get; }
+
+        public string Name => Source.name ?? $"Producto #{Source.id}";
+        public string Type => Source.type ?? "SIMPLE";
+        public string PriceDisplay => Source.priceCents.HasValue
+            ? (Source.priceCents.Value / 100m).ToString("C", CultureInfo.CurrentCulture)
+            : "—";
+        public bool IsActive => Source.isActive;
+
+        bool _isLinked;
+        public bool IsLinked
+        {
+            get => _isLinked;
+            set
+            {
+                if (_isLinked == value) return;
+                _isLinked = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+        void OnPropertyChanged([CallerMemberName] string? name = null)
+            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
 }

@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<toolkit:Popup xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+               xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+               xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+               x:Class="Imdeliceapp.Popups.KdsTicketDetailPopup"
+               Size="400,600"
+               CanBeDismissedByTappingOutsideOfPopup="True">
+  <Border Stroke="{AppThemeBinding Light=#E0E0E0, Dark=#333333}"
+          BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1A1A1A}"
+          StrokeShape="{RoundRectangle CornerRadius=24}"
+          Padding="20">
+    <Grid RowDefinitions="Auto,*">
+      <Grid ColumnDefinitions="*,Auto"
+            ColumnSpacing="12">
+        <VerticalStackLayout Spacing="2">
+          <Label Text="{Binding Code}"
+                 FontAttributes="Bold"
+                 FontSize="20"/>
+          <Label Text="{Binding TableLabel}"
+                 FontSize="13"
+                 TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"
+                 IsVisible="{Binding HasTable}"/>
+          <Label Text="{Binding ServiceSummary}"
+                 FontSize="12"
+                 TextColor="{AppThemeBinding Light=#888, Dark=#BBB}"/>
+        </VerticalStackLayout>
+        <VerticalStackLayout Grid.Column="1"
+                             HorizontalOptions="End"
+                             Spacing="4">
+          <Label Text="{Binding StatusBadge}"
+                 FontAttributes="Bold"
+                 TextColor="{Binding StatusColor}"
+                 HorizontalTextAlignment="End"/>
+          <Label Text="{Binding TimingSummary}"
+                 FontSize="12"
+                 TextColor="{AppThemeBinding Light=#999, Dark=#CCC}"
+                 HorizontalTextAlignment="End"/>
+        </VerticalStackLayout>
+      </Grid>
+
+      <ScrollView Grid.Row="1"
+                  Margin="0,16,0,0">
+        <VerticalStackLayout Spacing="16">
+
+          <VerticalStackLayout IsVisible="{Binding HasNote}">
+            <Label Text="Nota del pedido"
+                   FontAttributes="Bold"
+                   FontSize="14"/>
+            <Label Text="{Binding Note}"
+                   FontSize="13"
+                   TextColor="{AppThemeBinding Light=#BF360C, Dark=#FFAB91}"/>
+          </VerticalStackLayout>
+
+          <VerticalStackLayout BindableLayout.ItemsSource="{Binding Items}"
+                               Spacing="12">
+            <BindableLayout.ItemTemplate>
+              <DataTemplate>
+                <VerticalStackLayout Spacing="6">
+                  <Grid ColumnDefinitions="*,Auto">
+                    <Label Text="{Binding Title}"
+                           FontAttributes="Bold"/>
+                    <Label Text="{Binding StatusLabel}"
+                           FontSize="12"
+                           TextColor="{AppThemeBinding Light=#0288D1, Dark=#4DD0E1}"
+                           HorizontalTextAlignment="End"/>
+                  </Grid>
+                  <Label Text="{Binding Detail}"
+                         FontSize="12"
+                         TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"
+                         IsVisible="{Binding HasDetail}"/>
+
+                  <VerticalStackLayout BindableLayout.ItemsSource="{Binding Children}"
+                                       Spacing="4"
+                                       Padding="16,0,0,0"
+                                       IsVisible="{Binding HasChildren}">
+                    <BindableLayout.ItemTemplate>
+                      <DataTemplate>
+                        <VerticalStackLayout Spacing="2">
+                          <Grid ColumnDefinitions="*,Auto">
+                            <Label Text="{Binding Title}"/>
+                            <Label Text="{Binding StatusLabel}"
+                                   FontSize="11"
+                                   TextColor="{AppThemeBinding Light=#7A7A7A, Dark=#B0BEC5}"
+                                   HorizontalTextAlignment="End"/>
+                          </Grid>
+                          <Label Text="{Binding Detail}"
+                                 FontSize="11"
+                                 TextColor="{AppThemeBinding Light=#777, Dark=#BBB}"
+                                 IsVisible="{Binding HasDetail}"/>
+                        </VerticalStackLayout>
+                      </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                  </VerticalStackLayout>
+                </VerticalStackLayout>
+              </DataTemplate>
+            </BindableLayout.ItemTemplate>
+          </VerticalStackLayout>
+
+          <Button Text="Cerrar"
+                  Clicked="CloseButton_Clicked"
+                  CornerRadius="20"
+                  Padding="18,10"
+                  BackgroundColor="{AppThemeBinding Light=#263238, Dark=#ECEFF1}"
+                  TextColor="{AppThemeBinding Light=#FFFFFF, Dark=#263238}"/>
+        </VerticalStackLayout>
+      </ScrollView>
+    </Grid>
+  </Border>
+</toolkit:Popup>

@@ -1,0 +1,262 @@
+5. Cambiar el estado del pedido
+PATCH /api/orders/:id/statusPermiso: orders.updateBody: UpdateOrderStatusDto
+Transiciones permitidas
+	•	DRAFT → OPEN, HOLD, CANCELED
+	•	OPEN → HOLD, CANCELED, CLOSED
+	•	HOLD → OPEN, CANCELED
+	•	CLOSED o CANCELED → no se mueven
+{
+  "status": "CLOSED"
+}
+{
+    "error": null,
+    "data": null,
+    "message": "Updated"
+}
+
+Reglas extra
+	•	Al cerrar (CLOSED) se:
+	0.	recalcular totales
+	0.	validar que pagos + propinas >= total
+	0.	si no cubre → 409
+	•	Se actualizan automáticamente los timestamps:
+	•	acceptedAt
+	•	readyAt
+	•	servedAt
+	•	closedAt
+	•	canceledAt
+Casos :TODOS los casos que puedes mandar
+1. Pasar de OPEN → HOLD
+
+{
+  "status": "HOLD"
+}
+Útil cuando el mesero “lo está armando” pero no quiere que avance.
+
+2. Volver de HOLD → OPEN
+
+{
+  "status": "OPEN"
+}
+Para reactivarlo en listas y en KDS.
+
+3. Marcar que la casa ya aceptó el pedido (p. ej. delivery)
+
+{
+  "status": "ACCEPTED"
+}
+El repo va a poner:
+
+acceptedAt = now()
+
+4. Marcar que ya está listo (cocina terminó)
+
+{
+  "status": "READY"
+}
+El repo:
+
+readyAt = now()
+Esto hace que el KDS lo pueda mandar a columna “listos”.
+
+5. Marcar que ya se sirvió (para DINE_IN)
+
+{
+  "status": "SERVED"
+}
+El repo:
+
+servedAt = now()
+
+6. Cerrar pedido (CLOSED) 💰
+
+{
+  "status": "CLOSED"
+}
+🔴 Aquí entra la regla que te pusieron en la instrucción:
+“no permite cerrar si paidTotal < total”
+O sea, el repo hace algo así:
+	•	suma payments.amountCents
+	•	compara con order.totalCents
+	•	si es menor → responde error
+Respuesta si NO está pagado:
+
+{
+  "error": {
+    "code": 400,
+    "details": "Order cannot be closed because it is not fully paid"
+  },
+  "data": null,
+  "message": "Order not fully paid"
+}
+Respuesta si SÍ está pagado:
+
+{
+  "error": null,
+  "data": {
+    "id": 145,
+    "status": "CLOSED",
+    "closedAt": "2025-10-30T18:30:00.000Z",
+    "payments": [
+      { "id": 1, "amountCents": 23000 }
+    ],
+    "totalCents": 23000,
+    "...": "..."
+  },
+  "message": "OK"
+}
+
+7. Cancelar pedido
+
+{
+  "status": "CANCELED",
+  "reason": "El cliente se fue"
+}
+El repo:
+
+canceledAt = now()
+y guarda el motivo si lo mapeaste en el modelo.
+
+8. Cancelar SIN motivo
+
+{
+  "status": "CANCELED"
+}
+Válido porque el DTO lo pone como opcional.
+
+9. “Revivir” un pedido en HOLD que estaba con tiempo
+
+{
+  "status": "OPEN"
+}
+(igual que el caso 2, pero lo uso mucho en front)
+
+10. Intentar cerrar un pedido que tiene 0 pagos → debe fallar
+
+{
+  "status": "CLOSED"
+}
+Respuesta esperada:
+
+{
+  "error": {
+    "code": 400,
+    "details": "Order cannot be closed because it is not fully paid"
+  },
+  "data": null,
+  "message": "Order not fully paid"
+}
+Esto es EXACTAMENTE lo que te pedían: “no permite cerrar…”
+
+11. Ponerlo ACCEPTED y de una READY (dos llamadas)
+	0.	
+
+{ "status": "ACCEPTED" }
+	0.	
+
+{ "status": "READY" }
+Esto lo hacen algunas pantallas de cocina.
+
+12. Pasar de READY → SERVED → CLOSED
+	0.	
+
+{ "status": "SERVED" }
+	0.	(cuando ya pagó)
+
+{ "status": "CLOSED" }
+
+13. Pedido de delivery que nunca llegó → cancel
+
+{
+  "status": "CANCELED",
+  "reason": "Rechazado por el repartidor"
+}
+
+14. Pedido de app que quieres reactivar → OPEN
+
+{
+  "status": "OPEN"
+}
+
+15. Body vacío (no hace nada, pero lo pongo para pruebas)
+
+{}
+El Zod te va a decir algo como “status is required”, porque este sí es de los que SÍ requieren el campo.
+Respuesta de validación:
+
+{
+  "error": {
+    "code": 400,
+    "details": "status is required"
+  },
+  "data": null,
+  "message": "Validation failed"
+}
+
+
+
+10. Notas funcionales clave
+	•	Los totales siempre se recalculan ignorando ítems cancelados.
+	•	Se respetan descuentos / impuestos / service fee ya guardados.
+	•	prepEtaMinutes sirve para mostrar ETA en front / kiosko.
+	•	source y externalRef diferencian interno vs plataforma.
+	•	Con esto el front puede hacer todo el flujo:
+	0.	creación
+	0.	agregar / editar ítems
+	0.	KDS
+	0.	cobros
+	0.	cierre
+	0.	listado con filtros
+
+11. Glosario para el front
+Permisos
+	•	orders.read: puede listar y ver
+	•	orders.create: puede crear
+	•	orders.update: puede editar, pagar, mover estado
+serviceType (tipo de servicio)
+	•	DINE_IN: consumo en mesa
+	•	TAKEAWAY: para llevar
+	•	DELIVERY: a domicilio
+source (canal)
+	•	POS: pedido directo
+	•	UBER, DIDI, RAPPI: plataformas externas
+status del pedido
+	•	DRAFT: borrador, no cocina
+	•	OPEN: activo
+	•	HOLD: en pausa
+	•	CLOSED: cobrado y cerrado
+	•	CANCELED: cancelado
+OrderItem.status
+	•	NEW
+	•	IN_PROGRESS
+	•	READY
+	•	SERVED
+	•	CANCELED
+Timestamps
+	•	acceptedAt: el pedido salió de borrador / cocina lo tomó
+	•	readyAt: todos los ítems están listos
+	•	servedAt: todos servidos o cancelados
+	•	closedAt: se cobró
+	•	canceledAt: se canceló
+Totales (centavos)
+	•	subtotalCents: suma de renglones
+	•	discountCents: descuentos
+	•	serviceFeeCents: propina/fee fijo
+	•	taxCents: impuestos
+	•	totalCents: subtotal - descuento + service + tax
+	•	paymentsTotalCents: suma de pagos
+	•	paymentsTipCents: suma de propinas
+Pagos (payments[])
+	•	method: CASH | CARD | TRANSFER | OTHER
+	•	amountCents
+	•	tipCents
+	•	paidAt
+	•	note
+Mesa
+	•	tableId: id de la mesa
+	•	table: { id, name } para mostrar “Mesa 12”
+	•	covers: número de comensales
+DTOs clave
+	•	ListOrdersQueryDto: filtros del GET
+	•	UpdateOrderMetaDto: para editar nota, mesa, cubiertos, ETA
+	•	UpdateOrderStatusDto: para mover el pedido validando pagos

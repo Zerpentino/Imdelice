@@ -24,7 +24,10 @@ public partial class OptionsPage : ContentPage
         BtnRoles.IsVisible = Perms.RolesRead;       // ver listado de roles
         BtnCategorias.IsVisible = Perms.CategoriesRead;  // ver categorías
         BtnModifierGroups.IsVisible = Perms.ModifiersRead;   // ver grupos de modificadores
+        BtnTables.IsVisible = Perms.TablesRead; // ver mesas
         BtnMenu.IsVisible = Perms.MenusRead;      // editar/publicar menú
+        BtnChannelConfig.IsVisible = Perms.OrdersUpdate;
+        BtnPaymentsReport.IsVisible = Perms.OrdersRead;
     }
 
     private async void BtnUsuarios_Clicked(object sender, EventArgs e)
@@ -59,6 +62,34 @@ public partial class OptionsPage : ContentPage
         if (!Perms.ModifiersRead) { await DisplayAlert("Acceso restringido","No puedes ver modificadores.","OK"); return; }
 
         await Shell.Current.GoToAsync(nameof(ModifierGroupsPage));
+    }
+
+    private async void OpenTables_Clicked(object sender, EventArgs e)
+    {
+        if (!Perms.TablesRead) { await DisplayAlert("Acceso restringido", "No puedes ver mesas.", "OK"); return; }
+        await Shell.Current.GoToAsync(nameof(TablesPage));
+    }
+
+    private async void OpenChannelConfig_Clicked(object sender, EventArgs e)
+    {
+        if (!Perms.OrdersUpdate)
+        {
+            await DisplayAlert("Acceso restringido", "No puedes editar la configuración de plataformas.", "OK");
+            return;
+        }
+
+        await Shell.Current.GoToAsync(nameof(ChannelConfigPage));
+    }
+
+    private async void OpenPaymentsReport_Clicked(object sender, EventArgs e)
+    {
+        if (!Perms.OrdersRead)
+        {
+            await DisplayAlert("Acceso restringido", "No puedes ver el reporte de pagos.", "OK");
+            return;
+        }
+
+        await Shell.Current.GoToAsync(nameof(PaymentsReportPage));
     }
 
 

@@ -22,6 +22,9 @@ public partial class AppShell : Shell
 		Routing.RegisterRoute(nameof(CategoryEditorPage), typeof(CategoryEditorPage));
 		Routing.RegisterRoute(nameof(ProductsPage), typeof(ProductsPage));
 		Routing.RegisterRoute(nameof(ProductEditorPage), typeof(ProductEditorPage));
+		Routing.RegisterRoute(nameof(OrderDetailPage), typeof(OrderDetailPage));
+		Routing.RegisterRoute(nameof(TablesPage), typeof(TablesPage));
+		Routing.RegisterRoute(nameof(TableEditorPage), typeof(TableEditorPage));
 
 
 		Routing.RegisterRoute(nameof(AdminMenuPage), typeof(AdminMenuPage));
@@ -38,6 +41,9 @@ public partial class AppShell : Shell
 		Routing.RegisterRoute(nameof(GroupLinkedProductsPage), typeof(GroupLinkedProductsPage));
 		Routing.RegisterRoute(nameof(AttachGroupToProductPage), typeof(AttachGroupToProductPage));
 		Routing.RegisterRoute(nameof(VariantModifierOverridesPage), typeof(VariantModifierOverridesPage));
+		Routing.RegisterRoute(nameof(ChannelConfigPage), typeof(ChannelConfigPage));
+		Routing.RegisterRoute(nameof(KdsPage), typeof(KdsPage));
+		Routing.RegisterRoute(nameof(PaymentsReportPage), typeof(PaymentsReportPage));
 
 
 

@@ -1,0 +1,1 @@
+{"version":3,"file":"DeleteRole.js","sourceRoot":"","sources":["../../../../src/core/usecases/roles/DeleteRole.ts"],"names":[],"mappings":";;;AAEA,MAAa,UAAU;IACrB,YAAoB,IAAqB;QAArB,SAAI,GAAJ,IAAI,CAAiB;IAAG,CAAC;IAC7C,KAAK,CAAC,OAAO,CAAC,EAAU;QACtB,MAAM,IAAI,CAAC,IAAI,CAAC,MAAM,CAAC,EAAE,CAAC,CAAC;IAC7B,CAAC;CACF;AALD,gCAKC"}

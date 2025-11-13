@@ -1,0 +1,1 @@
+{"version":3,"file":"GetTable.js","sourceRoot":"","sources":["../../../../src/core/usecases/tables/GetTable.ts"],"names":[],"mappings":";;;AAEA,MAAa,QAAQ;IACnB,YAA6B,IAAsB;QAAtB,SAAI,GAAJ,IAAI,CAAkB;IAAG,CAAC;IAEvD,IAAI,CAAC,EAAU;QACb,OAAO,IAAI,CAAC,IAAI,CAAC,OAAO,CAAC,EAAE,CAAC,CAAC;IAC/B,CAAC;CACF;AAND,4BAMC"}

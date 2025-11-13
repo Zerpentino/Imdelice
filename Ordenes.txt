@@ -1,0 +1,3231 @@
+
+Contrato del módulo de pedidos (API)
+0. Notas generales
+	•	Todas las respuestas usan wrapper estándar:{ error, data, message }
+	•	Todas las rutas están protegidas con permisos:
+	•	orders.read
+	•	orders.create
+	•	orders.update
+	•	El controlador usa AuthRequest, asyncHandler y no usa console.log.
+	•	Siempre que se toca un pedido se recalculan totales ignorando ítems cancelados.
+
+1. Listar pedidos
+GET /api/ordersPermiso: orders.read
+Query params (todos opcionales)
+	•	statuses: CSV de estados, ej. OPEN,HOLD
+	•	serviceType: DINE_IN | TAKEAWAY | DELIVERY
+	•	source: POS | UBER | DIDI | RAPPI
+	•	from / to: fechas ISO; to se expande al final del día
+	•	tableId: entero
+Respuesta (data[])
+Para cada pedido:
+	•	id
+	•	code
+	•	status: DRAFT | OPEN | HOLD | CLOSED | CANCELED
+	•	serviceType: sala / llevar / delivery
+	•	source: canal (POS, UBER, etc.)
+	•	Montos (en centavos):
+	•	subtotalCents
+	•	discountCents
+	•	serviceFeeCents
+	•	taxCents
+	•	totalCents
+	•	paymentsTotalCents
+	•	paymentsTipCents
+	•	Timestamps clave:
+	•	openedAt
+	•	acceptedAt
+	•	readyAt
+	•	servedAt
+	•	closedAt
+	•	canceledAt
+	•	prepEtaMinutes (nullable)
+	•	externalRef
+	•	table: { id, name } si hay mesa
+	•	payments[]: id, method, amountCents, tipCents, paidAt, note
+Esta lógica está en PrismaOrderRepository.list + OrdersController.list.
+Ejemplo
+{
+    "error": null,
+    "data": [
+        {
+            "id": 2,
+            "code": "IM-251030-H8AX",
+            "status": "OPEN",
+            "serviceType": "DELIVERY",
+            "source": "POS",
+            "subtotalCents": 0,
+            "discountCents": 0,
+            "serviceFeeCents": 0,
+            "taxCents": 0,
+            "totalCents": 0,
+            "paymentsTotalCents": 0,
+            "paymentsTipCents": 0,
+            "openedAt": "2025-10-30T17:12:45.060Z",
+            "closedAt": null,
+            "acceptedAt": "2025-10-30T17:12:45.059Z",
+            "readyAt": null,
+            "servedAt": null,
+            "canceledAt": null,
+            "prepEtaMinutes": 18,
+            "externalRef": "UBER-ORD-99321",
+            "table": {
+                "id": 1,
+                "name": "Mesa 1 (actualizada)"
+            },
+            "payments": []
+        },
+        {
+            "id": 1,
+            "code": "IM-251030-LR97",
+            "status": "OPEN",
+            "serviceType": "DINE_IN",
+            "source": "POS",
+            "subtotalCents": 0,
+            "discountCents": 0,
+            "serviceFeeCents": 0,
+            "taxCents": 0,
+            "totalCents": 0,
+            "paymentsTotalCents": 0,
+            "paymentsTipCents": 0,
+            "openedAt": "2025-10-30T17:08:53.722Z",
+            "closedAt": null,
+            "acceptedAt": "2025-10-30T17:08:53.719Z",
+            "readyAt": null,
+            "servedAt": null,
+            "canceledAt": null,
+            "prepEtaMinutes": 18,
+            "externalRef": "UBER-ORD-99321",
+            "table": {
+                "id": 1,
+                "name": "Mesa 1 (actualizada)"
+            },
+            "payments": []
+        }
+    ],
+    "message": "OK"
+}
+Estructura que sale del repo (ya la vi): cada pedido trae más o menos esto:
+
+{
+  "id": 45,
+  "code": "A-2025-000045",
+  "status": "OPEN",
+  "serviceType": "DINE_IN",
+  "source": "POS",
+  "subtotalCents": 13000,
+  "discountCents": 0,
+  "serviceFeeCents": 0,
+  "taxCents": 0,
+  "totalCents": 13000,
+  "paymentsTotalCents": 0,
+  "paymentsTipCents": 0,
+  "openedAt": "2025-10-30T17:05:14.000Z",
+  "closedAt": null,
+  "acceptedAt": null,
+  "readyAt": null,
+  "servedAt": null,
+  "canceledAt": null,
+  "prepEtaMinutes": null,
+  "externalRef": null,
+  "table": { "id": 3, "name": "M3" },
+  "payments": [
+    {
+      "id": 1,
+      "method": "CASH",
+      "amountCents": 13000,
+      "tipCents": 0,
+      "paidAt": "2025-10-30T17:10:00.000Z",
+      "note": null
+    }
+  ]
+}
+Ojo: en este listado NO vienen los items[]. Para eso es el GET /api/orders/:id.
+Te dejo los casos completos para que el front no se pierda 👇
+
+Caso 1 – sin filtros (lista general)
+Request
+
+GET {{baseUrl}}/api/orders
+Authorization: Bearer {{token}}
+Response
+
+{
+  "error": null,
+  "data": [
+    {
+      "id": 71,
+      "code": "A-2025-000071",
+      "status": "OPEN",
+      "serviceType": "DINE_IN",
+      "source": "POS",
+      "subtotalCents": 18500,
+      "discountCents": 0,
+      "serviceFeeCents": 0,
+      "taxCents": 0,
+      "totalCents": 18500,
+      "paymentsTotalCents": 0,
+      "paymentsTipCents": 0,
+      "openedAt": "2025-10-30T17:32:00.000Z",
+      "closedAt": null,
+      "acceptedAt": null,
+      "readyAt": null,
+      "servedAt": null,
+      "canceledAt": null,
+      "prepEtaMinutes": null,
+      "externalRef": null,
+      "table": { "id": 2, "name": "M2" },
+      "payments": []
+    },
+    {
+      "id": 70,
+      "code": "A-2025-000070",
+      "status": "CLOSED",
+      "serviceType": "DINE_IN",
+      "source": "POS",
+      "subtotalCents": 23000,
+      "discountCents": 0,
+      "serviceFeeCents": 0,
+      "taxCents": 0,
+      "totalCents": 23000,
+      "paymentsTotalCents": 23000,
+      "paymentsTipCents": 0,
+      "openedAt": "2025-10-30T16:55:00.000Z",
+      "closedAt": "2025-10-30T17:25:00.000Z",
+      "acceptedAt": "2025-10-30T17:00:00.000Z",
+      "readyAt": "2025-10-30T17:10:00.000Z",
+      "servedAt": "2025-10-30T17:15:00.000Z",
+      "canceledAt": null,
+      "prepEtaMinutes": null,
+      "externalRef": null,
+      "table": { "id": 4, "name": "M4" },
+      "payments": [
+        {
+          "id": 10,
+          "method": "CASH",
+          "amountCents": 20000,
+          "tipCents": 0,
+          "paidAt": "2025-10-30T17:23:00.000Z",
+          "note": null
+        },
+        {
+          "id": 11,
+          "method": "CARD",
+          "amountCents": 3000,
+          "tipCents": 0,
+          "paidAt": "2025-10-30T17:24:00.000Z",
+          "note": "Resto en tarjeta"
+        }
+      ]
+    },
+    {
+      "id": 61,
+      "code": "DLV-2025-000061",
+      "status": "OPEN",
+      "serviceType": "DELIVERY",
+      "source": "UBER",
+      "subtotalCents": 8500,
+      "discountCents": 0,
+      "serviceFeeCents": 0,
+      "taxCents": 0,
+      "totalCents": 8500,
+      "paymentsTotalCents": 0,
+      "paymentsTipCents": 0,
+      "openedAt": "2025-10-30T17:20:00.000Z",
+      "closedAt": null,
+      "acceptedAt": null,
+      "readyAt": null,
+      "servedAt": null,
+      "canceledAt": null,
+      "prepEtaMinutes": 25,
+      "externalRef": "UBER#12345",
+      "table": null,
+      "payments": []
+    }
+  ],
+  "message": "OK"
+}
+Qué ve el front:
+	•	mezcla de DINE_IN y DELIVERY
+	•	algunos tienen mesa, otros no
+	•	algunos ya tienen pagos
+	•	vienen ordenados por openedAt desc
+
+Caso 2 – filtrar por estado
+El DTO acepta statuses como CSV.
+Request
+
+GET {{baseUrl}}/api/orders?statuses=OPEN,HOLD
+Authorization: Bearer {{token}}
+Response (ejemplo)
+
+{
+  "error": null,
+  "data": [
+    {
+      "id": 71,
+      "code": "A-2025-000071",
+      "status": "OPEN",
+      "serviceType": "DINE_IN",
+      "source": "POS",
+      "subtotalCents": 18500,
+      "discountCents": 0,
+      "serviceFeeCents": 0,
+      "taxCents": 0,
+      "totalCents": 18500,
+      "paymentsTotalCents": 0,
+      "paymentsTipCents": 0,
+      "openedAt": "2025-10-30T17:32:00.000Z",
+      "closedAt": null,
+      "table": { "id": 2, "name": "M2" },
+      "payments": []
+    },
+    {
+      "id": 61,
+      "code": "DLV-2025-000061",
+      "status": "OPEN",
+      "serviceType": "DELIVERY",
+      "source": "UBER",
+      "subtotalCents": 8500,
+      "discountCents": 0,
+      "serviceFeeCents": 0,
+      "taxCents": 0,
+      "totalCents": 8500,
+      "paymentsTotalCents": 0,
+      "paymentsTipCents": 0,
+      "openedAt": "2025-10-30T17:20:00.000Z",
+      "closedAt": null,
+      "table": null,
+      "payments": []
+    }
+  ],
+  "message": "OK"
+}
+
+Caso 3 – solo los de restaurante (DINE_IN)
+Request
+
+GET {{baseUrl}}/api/orders?serviceType=DINE_IN
+Response
+
+{
+  "error": null,
+  "data": [
+    {
+      "id": 71,
+      "code": "A-2025-000071",
+      "status": "OPEN",
+      "serviceType": "DINE_IN",
+      "source": "POS",
+      "subtotalCents": 18500,
+      "discountCents": 0,
+      "serviceFeeCents": 0,
+      "taxCents": 0,
+      "totalCents": 18500,
+      "paymentsTotalCents": 0,
+      "paymentsTipCents": 0,
+      "openedAt": "2025-10-30T17:32:00.000Z",
+      "closedAt": null,
+      "table": { "id": 2, "name": "M2" },
+      "payments": []
+    },
+    {
+      "id": 70,
+      "code": "A-2025-000070",
+      "status": "CLOSED",
+      "serviceType": "DINE_IN",
+      "source": "POS",
+      "subtotalCents": 23000,
+      "discountCents": 0,
+      "serviceFeeCents": 0,
+      "taxCents": 0,
+      "totalCents": 23000,
+      "paymentsTotalCents": 23000,
+      "paymentsTipCents": 0,
+      "openedAt": "2025-10-30T16:55:00.000Z",
+      "closedAt": "2025-10-30T17:25:00.000Z",
+      "table": { "id": 4, "name": "M4" },
+      "payments": [
+        { "id": 10, "method": "CASH", "amountCents": 20000, "tipCents": 0, "paidAt": "2025-10-30T17:23:00.000Z", "note": null },
+        { "id": 11, "method": "CARD", "amountCents": 3000, "tipCents": 0, "paidAt": "2025-10-30T17:24:00.000Z", "note": "Resto en tarjeta" }
+      ]
+    }
+  ],
+  "message": "OK"
+}
+
+Caso 4 – solo los de una mesa
+El controller hace tableId numérico.
+Request
+
+GET {{baseUrl}}/api/orders?tableId=2&statuses=OPEN
+Response
+
+{
+  "error": null,
+  "data": [
+    {
+      "id": 71,
+      "code": "A-2025-000071",
+      "status": "OPEN",
+      "serviceType": "DINE_IN",
+      "source": "POS",
+      "subtotalCents": 18500,
+      "discountCents": 0,
+      "serviceFeeCents": 0,
+      "taxCents": 0,
+      "totalCents": 18500,
+      "paymentsTotalCents": 0,
+      "paymentsTipCents": 0,
+      "openedAt": "2025-10-30T17:32:00.000Z",
+      "closedAt": null,
+      "table": { "id": 2, "name": "M2" },
+      "payments": []
+    }
+  ],
+  "message": "OK"
+}
+Esto le sirve al front para “ver qué tiene la mesa 2”.
+
+Caso 5 – por origen (source=UBER, DIDI, RAPPI…)
+El DTO transforma array a “primer valor”, así que con uno basta.
+Request
+
+GET {{baseUrl}}/api/orders?source=UBER
+Response
+
+{
+  "error": null,
+  "data": [
+    {
+      "id": 61,
+      "code": "DLV-2025-000061",
+      "status": "OPEN",
+      "serviceType": "DELIVERY",
+      "source": "UBER",
+      "subtotalCents": 8500,
+      "discountCents": 0,
+      "serviceFeeCents": 0,
+      "taxCents": 0,
+      "totalCents": 8500,
+      "paymentsTotalCents": 0,
+      "paymentsTipCents": 0,
+      "openedAt": "2025-10-30T17:20:00.000Z",
+      "closedAt": null,
+      "table": null,
+      "payments": []
+    }
+  ],
+  "message": "OK"
+}
+
+
+Caso 7 – por fecha (from / to)
+El controller hace:
+	•	from → openedAt >= from
+	•	to → openedAt <= to (fin de día)
+Request
+
+GET {{baseUrl}}/api/orders?from=2025-10-30&to=2025-10-30
+Response (resumen)
+
+{
+  "error": null,
+  "data": [
+    { "id": 71, "code": "A-2025-000071", "status": "OPEN", "serviceType": "DINE_IN", "source": "POS", "subtotalCents": 18500, "totalCents": 18500, "openedAt": "2025-10-30T17:32:00.000Z", "table": { "id": 2, "name": "M2" }, "payments": [] },
+    { "id": 70, "code": "A-2025-000070", "status": "CLOSED", "serviceType": "DINE_IN", "source": "POS", "subtotalCents": 23000, "totalCents": 23000, "openedAt": "2025-10-30T16:55:00.000Z", "table": { "id": 4, "name": "M4" }, "payments": [ /* ... */ ] },
+    { "id": 61, "code": "DLV-2025-000061", "status": "OPEN", "serviceType": "DELIVERY", "source": "UBER", "subtotalCents": 8500, "totalCents": 8500, "openedAt": "2025-10-30T17:20:00.000Z", "table": null, "payments": [] }
+  ],
+  "message": "OK"
+}
+
+2. Obtener un pedido
+GET /api/orders/:idPermiso: orders.read
+Devuelve el ticket completo:
+	•	datos del pedido
+	•	ítems (producto, variante, modifiers, combos hijos)
+	•	pagos
+	•	mesa
+Ejemplos casos:{
+    "error": null,
+    "data": {
+        "id": 2,
+        "code": "IM-251030-H8AX",
+        "status": "OPEN",
+        "serviceType": "DELIVERY",
+        "source": "POS",
+        "externalRef": "UBER-ORD-99321",
+        "prepEtaMinutes": 18,
+        "tableId": 1,
+        "openedAt": "2025-10-30T17:12:45.060Z",
+        "acceptedAt": "2025-10-30T17:12:45.059Z",
+        "readyAt": null,
+        "servedAt": null,
+        "closedAt": null,
+        "canceledAt": null,
+        "note": "Sin jitomate en la baguette",
+        "customerName": null,
+        "customerPhone": null,
+        "covers": 3,
+        "servedByUserId": 1,
+        "subtotalCents": 15400,
+        "discountCents": 0,
+        "serviceFeeCents": 0,
+        "taxCents": 0,
+        "totalCents": 15400,
+        "items": [
+            {
+                "id": 1,
+                "orderId": 2,
+                "productId": 18,
+                "variantId": null,
+                "parentItemId": null,
+                "quantity": 2,
+                "status": "NEW",
+                "basePriceCents": 7700,
+                "extrasTotalCents": 0,
+                "totalPriceCents": 15400,
+                "nameSnapshot": "Marquesita Champi",
+                "variantNameSnapshot": null,
+                "notes": "Mesa 4, lo quiere rápido",
+                "variant": null,
+                "product": {
+                    "id": 18,
+                    "name": "Marquesita Champi",
+                    "type": "SIMPLE"
+                },
+                "modifiers": [
+                    {
+                        "id": 1,
+                        "orderItemId": 1,
+                        "optionId": 5,
+                        "quantity": 1,
+                        "priceExtraCents": 0,
+                        "nameSnapshot": "Piña"
+                    },
+                    {
+                        "id": 2,
+                        "orderItemId": 1,
+                        "optionId": 8,
+                        "quantity": 1,
+                        "priceExtraCents": 0,
+                        "nameSnapshot": "Salsa de Pizza"
+                    }
+                ],
+                "childItems": [],
+                "parentItem": null
+            }
+        ],
+        "payments": [],
+        "table": {
+            "id": 1,
+            "name": "Mesa 1 (actualizada)",
+            "seats": 6,
+            "isActive": false
+        }
+    },
+    "message": "OK"
+}
+Caso 1: pedido sencillo en mesa (DINE_IN), abierto, sin pagos
+Request
+
+GET http://localhost:3000/api/orders/45
+Authorization: Bearer {{token}}
+Response
+
+{
+  "error": null,
+  "data": {
+    "id": 45,
+    "code": "A-2025-000045",
+    "status": "OPEN",
+    "serviceType": "DINE_IN",
+    "source": "POS",
+    "tableId": 3,
+    "table": {
+      "id": 3,
+      "name": "M3",
+      "seats": 4,
+      "isActive": true
+    },
+    "openedAt": "2025-10-30T17:05:14.000Z",
+    "acceptedAt": null,
+    "readyAt": null,
+    "servedAt": null,
+    "closedAt": null,
+    "canceledAt": null,
+    "note": "Mesa de la entrada",
+    "customerName": null,
+    "customerPhone": null,
+    "covers": 2,
+    "subtotalCents": 13000,
+    "discountCents": 0,
+    "serviceFeeCents": 0,
+    "taxCents": 0,
+    "totalCents": 13000,
+    "items": [
+      {
+        "id": 101,
+        "orderId": 45,
+        "productId": 12,
+        "product": {
+          "id": 12,
+          "name": "Torta ahogada",
+          "type": "SIMPLE"
+        },
+        "variantId": null,
+        "variant": null,
+        "parentItemId": null,
+        "parentItem": null,
+        "childItems": [],
+        "quantity": 2,
+        "status": "NEW",
+        "basePriceCents": 6500,
+        "extrasTotalCents": 0,
+        "totalPriceCents": 13000,
+        "nameSnapshot": "Torta ahogada",
+        "variantNameSnapshot": null,
+        "notes": "Con poquita salsa",
+        "modifiers": []
+      }
+    ],
+    "payments": []
+  },
+  "message": "OK"
+}
+Qué aprende el front aquí:
+	•	Si hay mesa → viene table completo.
+	•	Si no hay pagos → payments: [].
+	•	Los montos vienen en centavos.
+
+Caso 2: pedido con combo (tiene hijos dentro de items)
+Aquí se ve lo que te pusieron: “ítems (producto, variante, modifiers, combos hijos)”.
+
+{
+  "error": null,
+  "data": {
+    "id": 50,
+    "code": "A-2025-000050",
+    "status": "OPEN",
+    "serviceType": "DINE_IN",
+    "source": "POS",
+    "tableId": 1,
+    "table": {
+      "id": 1,
+      "name": "M1",
+      "seats": 4,
+      "isActive": true
+    },
+    "openedAt": "2025-10-30T17:10:00.000Z",
+    "note": null,
+    "customerName": null,
+    "customerPhone": null,
+    "covers": 1,
+    "subtotalCents": 12000,
+    "discountCents": 0,
+    "serviceFeeCents": 0,
+    "taxCents": 0,
+    "totalCents": 12000,
+    "items": [
+      {
+        "id": 200,
+        "orderId": 50,
+        "productId": 30,
+        "product": {
+          "id": 30,
+          "name": "Combo burger + papas",
+          "type": "COMBO"
+        },
+        "variantId": null,
+        "variant": null,
+        "parentItemId": null,
+        "parentItem": null,
+        "quantity": 1,
+        "status": "NEW",
+        "basePriceCents": 12000,
+        "extrasTotalCents": 0,
+        "totalPriceCents": 12000,
+        "nameSnapshot": "Combo burger + papas",
+        "variantNameSnapshot": null,
+        "notes": null,
+        "modifiers": [],
+        "childItems": [
+          {
+            "id": 201,
+            "orderId": 50,
+            "productId": 31,
+            "product": {
+              "id": 31,
+              "name": "Hamburguesa sencilla",
+              "type": "SIMPLE"
+            },
+            "variantId": null,
+            "variant": null,
+            "parentItemId": 200,
+            "parentItem": { "id": 200 },
+            "childItems": [],
+            "quantity": 1,
+            "status": "NEW",
+            "basePriceCents": 0,
+            "extrasTotalCents": 0,
+            "totalPriceCents": 0,
+            "nameSnapshot": "Hamburguesa sencilla",
+            "variantNameSnapshot": null,
+            "notes": null,
+            "modifiers": []
+          },
+          {
+            "id": 202,
+            "orderId": 50,
+            "productId": 32,
+            "product": {
+              "id": 32,
+              "name": "Papas fritas",
+              "type": "SIMPLE"
+            },
+            "variantId": null,
+            "variant": null,
+            "parentItemId": 200,
+            "parentItem": { "id": 200 },
+            "childItems": [],
+            "quantity": 1,
+            "status": "NEW",
+            "basePriceCents": 0,
+            "extrasTotalCents": 0,
+            "totalPriceCents": 0,
+            "nameSnapshot": "Papas fritas",
+            "variantNameSnapshot": null,
+            "notes": null,
+            "modifiers": []
+          }
+        ]
+      }
+    ],
+    "payments": []
+  },
+  "message": "OK"
+}
+Punto clave para el front: si item.product.type === "COMBO", revisa childItems para mostrarlos.
+{
+    "error": null,
+    "data": {
+        "id": 2,
+        "code": "IM-251030-H8AX",
+        "status": "OPEN",
+        "serviceType": "DELIVERY",
+        "source": "POS",
+        "externalRef": "UBER-ORD-99321",
+        "prepEtaMinutes": 18,
+        "tableId": 1,
+        "openedAt": "2025-10-30T17:12:45.060Z",
+        "acceptedAt": "2025-10-30T17:12:45.059Z",
+        "readyAt": null,
+        "servedAt": null,
+        "closedAt": null,
+        "canceledAt": null,
+        "note": "Sin jitomate en la baguette",
+        "customerName": null,
+        "customerPhone": null,
+        "covers": 3,
+        "servedByUserId": 1,
+        "subtotalCents": 38600,
+        "discountCents": 0,
+        "serviceFeeCents": 0,
+        "taxCents": 0,
+        "totalCents": 38600,
+        "items": [
+            {
+                "id": 1,
+                "orderId": 2,
+                "productId": 18,
+                "variantId": null,
+                "parentItemId": null,
+                "quantity": 2,
+                "status": "NEW",
+                "basePriceCents": 7700,
+                "extrasTotalCents": 0,
+                "totalPriceCents": 15400,
+                "nameSnapshot": "Marquesita Champi",
+                "variantNameSnapshot": null,
+                "notes": "Mesa 4, lo quiere rápido",
+                "variant": null,
+                "product": {
+                    "id": 18,
+                    "name": "Marquesita Champi",
+                    "type": "SIMPLE"
+                },
+                "modifiers": [
+                    {
+                        "id": 1,
+                        "orderItemId": 1,
+                        "optionId": 5,
+                        "quantity": 1,
+                        "priceExtraCents": 0,
+                        "nameSnapshot": "Piña"
+                    },
+                    {
+                        "id": 2,
+                        "orderItemId": 1,
+                        "optionId": 8,
+                        "quantity": 1,
+                        "priceExtraCents": 0,
+                        "nameSnapshot": "Salsa de Pizza"
+                    }
+                ],
+                "childItems": [],
+                "parentItem": null
+            },
+            {
+                "id": 2,
+                "orderId": 2,
+                "productId": 38,
+                "variantId": null,
+                "parentItemId": null,
+                "quantity": 2,
+                "status": "NEW",
+                "basePriceCents": 11600,
+                "extrasTotalCents": 0,
+                "totalPriceCents": 23200,
+                "nameSnapshot": "assas",
+                "variantNameSnapshot": null,
+                "notes": "Mesa 4, lo quiere rápido",
+                "variant": null,
+                "product": {
+                    "id": 38,
+                    "name": "assas",
+                    "type": "COMBO"
+                },
+                "modifiers": [
+                    {
+                        "id": 3,
+                        "orderItemId": 2,
+                        "optionId": 5,
+                        "quantity": 1,
+                        "priceExtraCents": 0,
+                        "nameSnapshot": "Piña"
+                    },
+                    {
+                        "id": 4,
+                        "orderItemId": 2,
+                        "optionId": 8,
+                        "quantity": 1,
+                        "priceExtraCents": 0,
+                        "nameSnapshot": "Salsa de Pizza"
+                    }
+                ],
+                "childItems": [
+                    {
+                        "id": 3,
+                        "orderId": 2,
+                        "productId": 28,
+                        "variantId": null,
+                        "parentItemId": 2,
+                        "quantity": 2,
+                        "status": "NEW",
+                        "basePriceCents": 0,
+                        "extrasTotalCents": 0,
+                        "totalPriceCents": 0,
+                        "nameSnapshot": "Crepas Saladas",
+                        "variantNameSnapshot": null,
+                        "notes": null
+                    },
+                    {
+                        "id": 4,
+                        "orderId": 2,
+                        "productId": 35,
+                        "variantId": null,
+                        "parentItemId": 2,
+                        "quantity": 2,
+                        "status": "NEW",
+                        "basePriceCents": 0,
+                        "extrasTotalCents": 0,
+                        "totalPriceCents": 0,
+                        "nameSnapshot": "Cappuccino",
+                        "variantNameSnapshot": null,
+                        "notes": null
+                    }
+                ],
+                "parentItem": null
+            },
+            {
+                "id": 3,
+                "orderId": 2,
+                "productId": 28,
+                "variantId": null,
+                "parentItemId": 2,
+                "quantity": 2,
+                "status": "NEW",
+                "basePriceCents": 0,
+                "extrasTotalCents": 0,
+                "totalPriceCents": 0,
+                "nameSnapshot": "Crepas Saladas",
+                "variantNameSnapshot": null,
+                "notes": null,
+                "variant": null,
+                "product": {
+                    "id": 28,
+                    "name": "Crepas Saladas",
+                    "type": "VARIANTED"
+                },
+                "modifiers": [],
+                "childItems": [],
+                "parentItem": {
+                    "id": 2
+                }
+            },
+            {
+                "id": 4,
+                "orderId": 2,
+                "productId": 35,
+                "variantId": null,
+                "parentItemId": 2,
+                "quantity": 2,
+                "status": "NEW",
+                "basePriceCents": 0,
+                "extrasTotalCents": 0,
+                "totalPriceCents": 0,
+                "nameSnapshot": "Cappuccino",
+                "variantNameSnapshot": null,
+                "notes": null,
+                "variant": null,
+                "product": {
+                    "id": 35,
+                    "name": "Cappuccino",
+                    "type": "VARIANTED"
+                },
+                "modifiers": [],
+                "childItems": [],
+                "parentItem": {
+                    "id": 2
+                }
+            }
+        ],
+        "payments": [],
+        "table": {
+            "id": 1,
+            "name": "Mesa 1 (actualizada)",
+            "seats": 6,
+            "isActive": false
+        }
+    },
+    "message": "OK"
+}
+
+Caso 3: pedido de delivery (no mesa) con cliente
+
+{
+  "error": null,
+  "data": {
+    "id": 61,
+    "code": "DLV-2025-000061",
+    "status": "OPEN",
+    "serviceType": "DELIVERY",
+    "source": "UBER",
+    "tableId": null,
+    "table": null,
+    "openedAt": "2025-10-30T17:20:00.000Z",
+    "note": "Entregar en recepción",
+    "customerName": "Carlos Pacheco",
+    "customerPhone": "3312345678",
+    "covers": null,
+    "subtotalCents": 8500,
+    "discountCents": 0,
+    "serviceFeeCents": 0,
+    "taxCents": 0,
+    "totalCents": 8500,
+    "items": [
+      {
+        "id": 300,
+        "orderId": 61,
+        "productId": 40,
+        "product": {
+          "id": 40,
+          "name": "Ensalada César",
+          "type": "SIMPLE"
+        },
+        "variantId": 5,
+        "variant": {
+          "id": 5,
+          "productId": 40,
+          "name": "Grande",
+          "priceCents": 8500
+        },
+        "parentItemId": null,
+        "parentItem": null,
+        "childItems": [],
+        "quantity": 1,
+        "status": "NEW",
+        "basePriceCents": 8500,
+        "extrasTotalCents": 0,
+        "totalPriceCents": 8500,
+        "nameSnapshot": "Ensalada César",
+        "variantNameSnapshot": "Grande",
+        "notes": "Aderezo aparte",
+        "modifiers": []
+      }
+    ],
+    "payments": []
+  },
+  "message": "OK"
+}
+Aquí aprende el front: puede venir table: null y aun así el pedido es válido, porque el serviceType es DELIVERY.
+
+Caso 4: pedido cerrado con pagos
+
+{
+  "error": null,
+  "data": {
+    "id": 70,
+    "code": "A-2025-000070",
+    "status": "CLOSED",
+    "serviceType": "DINE_IN",
+    "source": "POS",
+    "tableId": 4,
+    "table": {
+      "id": 4,
+      "name": "M4",
+      "seats": 6,
+      "isActive": true
+    },
+    "openedAt": "2025-10-30T16:55:00.000Z",
+    "acceptedAt": "2025-10-30T17:00:00.000Z",
+    "readyAt": "2025-10-30T17:10:00.000Z",
+    "servedAt": "2025-10-30T17:15:00.000Z",
+    "closedAt": "2025-10-30T17:25:00.000Z",
+    "note": null,
+    "customerName": null,
+    "customerPhone": null,
+    "covers": 3,
+    "subtotalCents": 23000,
+    "discountCents": 0,
+    "serviceFeeCents": 0,
+    "taxCents": 0,
+    "totalCents": 23000,
+    "items": [
+      {
+        "id": 401,
+        "orderId": 70,
+        "productId": 50,
+        "product": {
+          "id": 50,
+          "name": "Pasta Alfredo",
+          "type": "SIMPLE"
+        },
+        "variantId": null,
+        "variant": null,
+        "parentItemId": null,
+        "parentItem": null,
+        "childItems": [],
+        "quantity": 1,
+        "status": "SERVED",
+        "basePriceCents": 11000,
+        "extrasTotalCents": 0,
+        "totalPriceCents": 11000,
+        "nameSnapshot": "Pasta Alfredo",
+        "variantNameSnapshot": null,
+        "notes": null,
+        "modifiers": []
+      },
+      {
+        "id": 402,
+        "orderId": 70,
+        "productId": 51,
+        "product": {
+          "id": 51,
+          "name": "Limonada",
+          "type": "SIMPLE"
+        },
+        "variantId": null,
+        "variant": null,
+        "parentItemId": null,
+        "parentItem": null,
+        "childItems": [],
+        "quantity": 2,
+        "status": "SERVED",
+        "basePriceCents": 6000,
+        "extrasTotalCents": 0,
+        "totalPriceCents": 12000,
+        "nameSnapshot": "Limonada",
+        "variantNameSnapshot": null,
+        "notes": null,
+        "modifiers": []
+      }
+    ],
+    "payments": [
+      {
+        "id": 10,
+        "orderId": 70,
+        "method": "CASH",
+        "amountCents": 20000,
+        "tipCents": 0,
+        "paidAt": "2025-10-30T17:23:00.000Z",
+        "receivedByUserId": null,
+        "note": null
+      },
+      {
+        "id": 11,
+        "orderId": 70,
+        "method": "CARD",
+        "amountCents": 3000,
+        "tipCents": 0,
+        "paidAt": "2025-10-30T17:24:00.000Z",
+        "receivedByUserId": null,
+        "note": "Resto en tarjeta"
+      }
+    ]
+  },
+  "message": "OK"
+}
+
+3. Crear un pedido con items
+POST /api/ordersPermiso: orders.createBody: validado con CreateOrderDto
+
+Campos
+	•	Obligatorio: serviceType
+	•	Opcionales: source, tableId, note, covers, externalRef, prepEtaMinutes
+	•	status inicial: DRAFT | OPEN | HOLD
+Si se crea en OPEN, se marca acceptedAt automáticamente.
+{
+  "serviceType": "DINE_IN",               // obligatorio: DINE_IN | TAKEAWAY | DELIVERY
+
+  "source": "POS",                        // opcional: POS | UBER | DIDI | RAPPI
+  "tableId": 1,                          // opcional: si es consumo en mesa
+  "covers": 3,                            // opcional: número de comensales
+  "note": "Sin cebolla en la hamburguesa",// opcional
+  "externalRef": "UBER-ORD-99321",        // opcional: folio de plataforma si escojieron uber didi etc
+  "prepEtaMinutes": 18,                   // opcional: ETA que ve el front/kiosko
+
+  "status": "OPEN"                        // opcional: DRAFT | OPEN | HOLD
+                                          // si no mandas, el backend puede asumir DRAFT
+}
+
+1.1. Mínimo-mínimo (pos)
+
+{
+  "serviceType": "TAKEAWAY",
+  "source": "POS"
+}
+Usa defaults:
+	•	status: OPEN
+	•	totales: 0
+	•	items: []
+
+1.2. Salón (DINE_IN) con mesa
+
+{
+  "serviceType": "DINE_IN",
+  "source": "POS",
+  "tableId": 3,
+  "covers": 2,
+  "note": "Mesa de la entrada"
+}
+
+1.3. Salón (DINE_IN) sin mesa todavía
+
+{
+  "serviceType": "DINE_IN",
+  "source": "POS",
+  "covers": 4,
+  "note": "Aún no asignan mesa"
+}
+Luego la mesa se pone con el PATCH de meta.
+
+1.4. Para llevar (TAKEAWAY) con nombre
+
+{
+  "serviceType": "TAKEAWAY",
+  "source": "POS",
+  "customerName": "Cliente mostrador",
+  "note": "Pasa en 20 min"
+}
+
+1.5. Delivery básico
+
+{
+  "serviceType": "DELIVERY",
+  "source": "POS",
+  "customerName": "Carlos",
+  "customerPhone": "3312345678",
+  "note": "Tocar antes de entrar"
+}
+
+1.6. Delivery de marketplace (UBER / DIDI / RAPPI)
+
+{
+  "serviceType": "DELIVERY",
+  "source": "UBER",
+  "customerName": "Carlos Pacheco",
+  "customerPhone": "3312345678",
+  "externalRef": "UBER#998877",
+  "prepEtaMinutes": 25,
+  "note": "Dejar en recepción"
+}
+
+1.7. Crear pedido ya en HOLD
+(para que no salga todavía en cocina / POS)
+
+{
+  "serviceType": "DINE_IN",
+  "source": "POS",
+  "status": "HOLD",
+  "tableId": 2,
+  "note": "Reservado, aún no ordenan"
+}
+
+1.8. Crear pedido como DRAFT
+(si tu Zod lo acepta igual que HOLD; algunos lo ponen así)
+
+{
+  "serviceType": "TAKEAWAY",
+  "source": "POS",
+  "status": "DRAFT",
+  "customerName": "Prueba"
+}
+
+1.9. Crear pedido con 1 ítem simple (unificado)
+
+{
+  "serviceType": "TAKEAWAY",
+  "source": "POS",
+  "items": [
+    {
+      "productId": 12
+    }
+  ]
+}
+
+1.10. Crear pedido con varios ítems simples
+
+{
+  "serviceType": "DINE_IN",
+  "source": "POS",
+  "tableId": 5,
+  "items": [
+    { "productId": 12, "quantity": 2 },
+    { "productId": 51 },
+    { "productId": 18, "notes": "Sin cebolla" }
+  ]
+}
+Permiso: orders.updateBody: AddOrderItemDto
+	•	Crea un renglón con producto, variante y modifiers.
+	•	Si es combo → replica los hijos.
+	•	Devuelve { item } con snapshot (nombres, precios, estado).
+	•	Al final recalcula totales.
+Ejemplos:
+1. Caso más simple (un producto simple, sin nada extra)
+
+{
+  "productId": 12
+}
+	•	El backend lo toma con quantity = 1.
+	•	Sirve para productos tipo SIMPLE.
+
+2. Mismo producto pero con cantidad y nota
+
+{
+  "productId": 12,
+  "quantity": 3,
+  "notes": "Sin cebolla, porfa"
+}
+	•	Útil para cocina / KDS, porque la nota viaja al renglon.
+
+3. Producto con variantes (el backend en tu zip dice: “si es VARIANTED y no mandas variantId, truena”)
+
+{
+  "productId": 25,
+  "variantId": 3,
+  "quantity": 1
+}
+	•	Aquí el productId es el producto padre (ej. “Pizza”)
+	•	El variantId es la presentación (ej. “Grande”, “Mediana”, “Pepperoni grande”).
+	•	Si no mandas variantId y ese producto es VARIANTED → el repo te lanza: "variantId requerido para producto VARIANTED" (eso está en PrismaOrderRepository.ts).
+
+4. Producto con modificadores (extras, toppings, salsas…)
+
+{
+  "productId": 18,
+  "quantity": 2,
+  "modifiers": [
+    {
+      "optionId": 7
+    },
+    {
+      "optionId": 9,
+      "quantity": 2
+    }
+  ]
+}
+	•	Cada optionId debe existir en tus modifierOptions.
+	•	El backend busca esos optionId, suma el priceExtraCents y lo mete al renglón.
+	•	Si no encuentra alguno, lo ignora (no te truena la petición).
+
+5. Producto con todo: variante + modificadores + nota
+
+{
+  "productId": 25,
+  "variantId": 4,
+  "quantity": 1,
+  "notes": "Partir en 8",
+  "modifiers": [
+    { "optionId": 10 },           // extra queso
+    { "optionId": 12, "quantity": 2 }  // 2 salsas
+  ]
+}
+
+6. Combo (el repo detecta que es COMBO y crea los hijos solo)
+
+{
+  "productId": 30,
+  "quantity": 1
+}
+	•	En tu repo (PrismaOrderRepository) si el product.type === "COMBO" después de crear el ítem crea los renglones hijos con los componentes del combo.
+	•	Por eso el front no tiene que mandar los hijos, solo el combo.
+
+7. Ejemplo “didáctico” con comentarios (para tu equipo)
+Ojo: JSON real no lleva comentarios, esto es solo para que lo copien y lo limpien.
+
+{
+  "productId": 18,              // obligatorio
+  "variantId": 2,                // opcional, si el producto lo requiere
+  "quantity": 2,                 // default = 1
+  "notes": "Mesa 4, lo quiere rápido", // opcional
+  "modifiers": [
+    {
+      "optionId": 5,             // ej. "Coca 600"
+      "quantity": 1
+    },
+    {
+      "optionId": 8,             // ej. "Sin gluten"
+      "quantity": 1
+    }
+  ]
+}
+
+
+Respuesta :{
+    "error": null,
+    "data": {
+        "item": {
+            "id": 1,
+            "orderId": 2,
+            "productId": 18,
+            "variantId": null,
+            "parentItemId": null,
+            "quantity": 2,
+            "status": "NEW",
+            "basePriceCents": 7700,
+            "extrasTotalCents": 0,
+            "totalPriceCents": 15400,
+            "nameSnapshot": "Marquesita Champi",
+            "variantNameSnapshot": null,
+            "notes": "Mesa 4, lo quiere rápido"
+        }
+    },
+    "message": "Item added"
+}
+
+Respuesta: pedido creado (data con el pedido).
+{
+    "error": null,
+    "data": {
+        "id": 1,
+        "code": "IM-251030-LR97",
+        "status": "OPEN",
+        "serviceType": "DINE_IN",
+        "source": "POS",
+        "externalRef": "UBER-ORD-99321",
+        "prepEtaMinutes": 18,
+        "tableId": 1,
+        "openedAt": "2025-10-30T17:08:53.722Z",
+        "acceptedAt": "2025-10-30T17:08:53.719Z",
+        "readyAt": null,
+        "servedAt": null,
+        "closedAt": null,
+        "canceledAt": null,
+        "note": "Sin cebolla en la hamburguesa",
+        "customerName": null,
+        "customerPhone": null,
+        "covers": 3,
+        "servedByUserId": 1,
+        "subtotalCents": 0,
+        "discountCents": 0,
+        "serviceFeeCents": 0,
+        "taxCents": 0,
+        "totalCents": 0
+    },
+    "message": "Created"
+}
+
+4. Actualizar metadatos del pedido
+PATCH /api/orders/:id/metaPermiso: orders.updateBody: UpdateOrderMetaDto
+Permite actualizar parcialmente:
+	•	tableId
+	•	note
+	•	covers
+	•	prepEtaMinutes
+Para limpiar un campo: mandar null (mesa, cubiertos o ETA).
+Ejemplo{
+  "tableId": 1,
+  "covers": 4,
+  "note": "Mesa movida",
+  "prepEtaMinutes": 8
+}
+Ejemplos;
+Casos posibles (todos los que tiene sentido mandar)
+1. Cambiar de mesa
+
+{
+  "tableId": 7
+}
+👉 Pasa de la mesa que tenía a la mesa 7.
+
+2. Quitar la mesa (dejarlo sin mesa)
+
+{
+  "tableId": null
+}
+👉 Esto está permitido porque el Zod lo puso como nullable. El repo lo guarda como null.
+
+3. Poner / cambiar la nota
+
+{
+  "note": "Cumpleaños, traer pastel"
+}
+
+4. Limpiar la nota
+
+{
+  "note": null
+}
+👉 Queda sin nota.
+
+5. Actualizar número de comensales (covers)
+
+{
+  "covers": 4
+}
+
+6. Quitar los comensales (dejarlo sin valor)
+
+{
+  "covers": null
+}
+
+7. Poner tiempo estimado de preparación (para KDS / delivery)
+
+{
+  "prepEtaMinutes": 20
+}
+
+8. Quitar el tiempo estimado
+
+{
+  "prepEtaMinutes": null
+}
+
+9. Cambiar mesa y nota al mismo tiempo
+
+{
+  "tableId": 4,
+  "note": "Pasar primero las bebidas"
+}
+
+10. Mesa + covers
+
+{
+  "tableId": 2,
+  "covers": 3
+}
+
+11. Todo junto (caso “editar encabezado” en el front)
+
+{
+  "tableId": 5,
+  "note": "Cliente frecuente",
+  "covers": 2,
+  "prepEtaMinutes": 15
+}
+
+12. Body vacío (el backend lo acepta, pero no cambia nada)
+
+{}
+👉 El repo ve que no hay campos y sale sin actualizar. Útil para probar que no truena.
+
+13. Quitar varias cosas a la vez
+(por ejemplo: lo pasaste a delivery y ya no quieres mesa ni covers ni nota)
+
+{
+  "tableId": null,
+  "covers": null,
+  "note": null
+}
+
+Respuesta: 200 con data: null.
+{
+    "error": null,
+    "data": null,
+    "message": "Updated"
+}
+
+5. Cambiar el estado del pedido
+PATCH /api/orders/:id/statusPermiso: orders.updateBody: UpdateOrderStatusDto
+Transiciones permitidas
+	•	DRAFT → OPEN, HOLD, CANCELED
+	•	OPEN → HOLD, CANCELED, CLOSED
+	•	HOLD → OPEN, CANCELED
+	•	CLOSED o CANCELED → no se mueven
+{
+  "status": "CLOSED"
+}
+{
+    "error": null,
+    "data": null,
+    "message": "Updated"
+}
+
+Reglas extra
+	•	Al cerrar (CLOSED) se:
+	0.	recalcular totales
+	0.	validar que pagos + propinas >= total
+	0.	si no cubre → 409
+	•	Se actualizan automáticamente los timestamps:
+	•	acceptedAt
+	•	readyAt
+	•	servedAt
+	•	closedAt
+	•	canceledAt
+Casos :TODOS los casos que puedes mandar
+1. Pasar de OPEN → HOLD
+
+{
+  "status": "HOLD"
+}
+Útil cuando el mesero “lo está armando” pero no quiere que avance.
+
+2. Volver de HOLD → OPEN
+
+{
+  "status": "OPEN"
+}
+Para reactivarlo en listas y en KDS.
+
+3. Marcar que la casa ya aceptó el pedido (p. ej. delivery)
+
+{
+  "status": "ACCEPTED"
+}
+El repo va a poner:
+
+acceptedAt = now()
+
+4. Marcar que ya está listo (cocina terminó)
+
+{
+  "status": "READY"
+}
+El repo:
+
+readyAt = now()
+Esto hace que el KDS lo pueda mandar a columna “listos”.
+
+5. Marcar que ya se sirvió (para DINE_IN)
+
+{
+  "status": "SERVED"
+}
+El repo:
+
+servedAt = now()
+
+6. Cerrar pedido (CLOSED) 💰
+
+{
+  "status": "CLOSED"
+}
+🔴 Aquí entra la regla que te pusieron en la instrucción:
+“no permite cerrar si paidTotal < total”
+O sea, el repo hace algo así:
+	•	suma payments.amountCents
+	•	compara con order.totalCents
+	•	si es menor → responde error
+Respuesta si NO está pagado:
+
+{
+  "error": {
+    "code": 400,
+    "details": "Order cannot be closed because it is not fully paid"
+  },
+  "data": null,
+  "message": "Order not fully paid"
+}
+Respuesta si SÍ está pagado:
+
+{
+  "error": null,
+  "data": {
+    "id": 145,
+    "status": "CLOSED",
+    "closedAt": "2025-10-30T18:30:00.000Z",
+    "payments": [
+      { "id": 1, "amountCents": 23000 }
+    ],
+    "totalCents": 23000,
+    "...": "..."
+  },
+  "message": "OK"
+}
+
+7. Cancelar pedido
+
+{
+  "status": "CANCELED",
+  "reason": "El cliente se fue"
+}
+El repo:
+
+canceledAt = now()
+y guarda el motivo si lo mapeaste en el modelo.
+
+8. Cancelar SIN motivo
+
+{
+  "status": "CANCELED"
+}
+Válido porque el DTO lo pone como opcional.
+
+9. “Revivir” un pedido en HOLD que estaba con tiempo
+
+{
+  "status": "OPEN"
+}
+(igual que el caso 2, pero lo uso mucho en front)
+
+10. Intentar cerrar un pedido que tiene 0 pagos → debe fallar
+
+{
+  "status": "CLOSED"
+}
+Respuesta esperada:
+
+{
+  "error": {
+    "code": 400,
+    "details": "Order cannot be closed because it is not fully paid"
+  },
+  "data": null,
+  "message": "Order not fully paid"
+}
+Esto es EXACTAMENTE lo que te pedían: “no permite cerrar…”
+
+11. Ponerlo ACCEPTED y de una READY (dos llamadas)
+	0.	
+
+{ "status": "ACCEPTED" }
+	0.	
+
+{ "status": "READY" }
+Esto lo hacen algunas pantallas de cocina.
+
+12. Pasar de READY → SERVED → CLOSED
+	0.	
+
+{ "status": "SERVED" }
+	0.	(cuando ya pagó)
+
+{ "status": "CLOSED" }
+
+13. Pedido de delivery que nunca llegó → cancel
+
+{
+  "status": "CANCELED",
+  "reason": "Rechazado por el repartidor"
+}
+
+14. Pedido de app que quieres reactivar → OPEN
+
+{
+  "status": "OPEN"
+}
+
+15. Body vacío (no hace nada, pero lo pongo para pruebas)
+
+{}
+El Zod te va a decir algo como “status is required”, porque este sí es de los que SÍ requieren el campo.
+Respuesta de validación:
+
+{
+  "error": {
+    "code": 400,
+    "details": "status is required"
+  },
+  "data": null,
+  "message": "Validation failed"
+}
+
+
+6. Listado para KDS
+GET /api/orders/kds/listPermiso: orders.read
+Query
+	•	statuses: CSV, ej. NEW,READY
+	•	El backend:
+	•	lo pasa a mayúsculas
+	•	ignora estados inválidos
+Respuesta
+Tarjetas KDS con:
+	•	itemId
+	•	orderId
+	•	status
+	•	quantity
+	•	name
+	•	variant
+	•	tableName
+	•	code
+	•	serviceType
+	•	parentItemId
+entonces /api/orders/kds/list es la versión recortada para KDS: solo lo que la cocina necesita ver rápido, sin pagos, sin cliente de más, sin totales complejos, y enfocada en ítems que todavía no están servidos.
+Como tu ZIP no trae el nombre tal cual indexado, te lo armo siguiendo el mismo patrón que ya traes en órdenes (status, serviceType, source, items con modifiers, combos con hijos) para que lo puedas pegar.
+Te dejo todos los casos posibles que tendría sentido que devuelva este endpoint en tu backend.
+
+Endpoint
+
+GET /api/orders/kds/list
+permiso: orders.read   // o kds.read, pero en tu proyecto todo lo de orders está bajo orders.read
+Query params típicos (los mismos que usas en /api/orders, pero “kitchenizados”)
+	•	statuses → CSV de estados de ítems/órdenes que cocina quiere ver, ej: NEW,IN_PROGRESS
+	•	serviceType → DINE_IN | TAKEAWAY | DELIVERY
+	•	source → POS | UBER | DIDI | RAPPI
+	•	from / to → rango de fecha/hora de apertura
+	•	(opcional) tableId → para mostrar solo las mesas
+La idea: la cocina pide esta lista cada X segundos y la pantalla se refresca.
+
+Forma de la respuesta (propuesta coherente con tu API)
+Responde con wrapper como siempre:
+
+{
+  "error": null,
+  "data": [ /* tickets kds */ ],
+  "message": "OK"
+}
+y cada ticket de KDS así:
+
+{
+  "orderId": 71,
+  "code": "A-2025-000071",
+  "status": "OPEN",
+  "serviceType": "DINE_IN",
+  "source": "POS",
+  "openedAt": "2025-10-30T17:32:00.000Z",
+  "table": { "id": 2, "name": "M2" },
+  "note": "Mesa de la entrada",
+  "prepEtaMinutes": null,
+  "customerName": null,
+  "items": [
+    {
+      "id": 9001,
+      "productId": 12,
+      "name": "Torta ahogada",
+      "variantName": null,
+      "quantity": 2,
+      "status": "NEW",              // para cocina
+      "notes": "Poquita salsa",
+      "modifiers": [
+        { "name": "Sin cebolla", "quantity": 1 }
+      ],
+      "isComboParent": false,
+      "children": []
+    }
+  ]
+}
+Fíjate que:
+	•	no mando pagos
+	•	no mando totales en centavos (cocina no los necesita)
+	•	sí mando items ya “traducidos” (con nombreSnapshot)
+
+CASOS 🧪
+1. DINE_IN sencillo, 1 item
+
+{
+  "error": null,
+  "data": [
+    {
+      "orderId": 71,
+      "code": "A-2025-000071",
+      "status": "OPEN",
+      "serviceType": "DINE_IN",
+      "source": "POS",
+      "openedAt": "2025-10-30T17:32:00.000Z",
+      "table": { "id": 2, "name": "M2" },
+      "note": "Mesa de la entrada",
+      "prepEtaMinutes": null,
+      "customerName": null,
+      "items": [
+        {
+          "id": 9001,
+          "productId": 12,
+          "name": "Torta ahogada",
+          "variantName": null,
+          "quantity": 2,
+          "status": "NEW",
+          "notes": "Poquita salsa",
+          "modifiers": [],
+          "isComboParent": false,
+          "children": []
+        }
+      ]
+    }
+  ],
+    "message": "OK"
+}
+👉 Úsalo para la pantalla principal de cocina.
+
+2. DELIVERY (no mesa) con variante y modifier
+
+{
+  "error": null,
+  "data": [
+    {
+      "orderId": 88,
+      "code": "DLV-2025-000088",
+      "status": "OPEN",
+      "serviceType": "DELIVERY",
+      "source": "UBER",
+      "openedAt": "2025-10-30T17:40:00.000Z",
+      "table": null,
+      "note": "Dejar en recepción",
+      "prepEtaMinutes": 25,
+      "customerName": "Carlos Pacheco",
+      "items": [
+        {
+          "id": 9100,
+          "productId": 40,
+          "name": "Ensalada César",
+          "variantName": "Grande",
+          "quantity": 1,
+          "status": "NEW",
+          "notes": "Aderezo aparte",
+          "modifiers": [
+            { "name": "Aderezo extra", "quantity": 1 }
+          ],
+          "isComboParent": false,
+          "children": []
+        }
+      ]
+    }
+  ],
+  "message": "OK"
+}
+👉 Aquí cocina ve: es delivery, es Uber, cliente, nota, y qué preparar.
+
+3. Pedido con COMBO (papá + hijos)
+Este es el que más confunde al front, así que así debe verse en KDS:
+
+{
+  "error": null,
+  "data": [
+    {
+      "orderId": 90,
+      "code": "A-2025-000090",
+      "status": "OPEN",
+      "serviceType": "DINE_IN",
+      "source": "POS",
+      "openedAt": "2025-10-30T17:45:00.000Z",
+      "table": { "id": 4, "name": "M4" },
+      "note": null,
+      "prepEtaMinutes": null,
+      "customerName": null,
+      "items": [
+        {
+          "id": 9200,
+          "productId": 30,
+          "name": "Combo burger + papas",
+          "variantName": null,
+          "quantity": 1,
+          "status": "NEW",
+          "notes": null,
+          "modifiers": [],
+          "isComboParent": true,
+          "children": [
+            {
+              "id": 9201,
+              "name": "Hamburguesa sencilla",
+              "quantity": 1,
+              "status": "NEW",
+              "notes": null,
+              "modifiers": []
+            },
+            {
+              "id": 9202,
+              "name": "Papas fritas",
+              "quantity": 1,
+              "status": "NEW",
+              "notes": null,
+              "modifiers": []
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "message": "OK"
+}
+👉 Nota: en tu repo los childItems venían sin product, por eso en KDS conviene mandarlos ya “planchados” con name.
+
+4. Pedido con 2 ítems en distintos estados (NEW y IN_PROGRESS)
+Esto es típico de KDS:
+
+{
+  "error": null,
+  "data": [
+    {
+      "orderId": 91,
+      "code": "A-2025-000091",
+      "status": "OPEN",
+      "serviceType": "DINE_IN",
+      "source": "POS",
+      "openedAt": "2025-10-30T17:55:00.000Z",
+      "table": { "id": 7, "name": "M7" },
+      "items": [
+        {
+          "id": 9300,
+          "productId": 18,
+          "name": "Chilaquiles rojos",
+          "variantName": null,
+          "quantity": 1,
+          "status": "IN_PROGRESS",
+          "notes": "Extra pollo",
+          "modifiers": [
+            { "name": "Pollo extra", "quantity": 1 }
+          ],
+          "isComboParent": false,
+          "children": []
+        },
+        {
+          "id": 9301,
+          "productId": 51,
+          "name": "Limonada",
+          "variantName": null,
+          "quantity": 1,
+          "status": "NEW",
+          "notes": null,
+          "modifiers": [],
+          "isComboParent": false,
+          "children": []
+        }
+      ]
+    }
+  ],
+  "message": "OK"
+}
+👉 Así el front puede pintar columnas por estado.
+
+5. Filtro por estado
+Request
+
+GET /api/orders/kds/list?statuses=NEW,IN_PROGRESS
+Response
+
+{
+  "error": null,
+  "data": [
+    { "orderId": 71, "...": "..." },
+    { "orderId": 90, "...": "..." }
+  ],
+  "message": "OK"
+}
+👉 Cocina no ve los que ya están READY/SERVED.
+
+6. Filtro por tipo de servicio (solo delivery)
+Request
+
+GET /api/orders/kds/list?serviceType=DELIVERY
+Response
+
+{
+  "error": null,
+  "data": [
+    {
+      "orderId": 88,
+      "code": "DLV-2025-000088",
+      "serviceType": "DELIVERY",
+      "source": "UBER",
+      "items": [ /* ... */ ]
+    }
+  ],
+  "message": "OK"
+}
+
+7. Pedido ya listo (READY) que igual se muestra
+Si tu KDS muestra los que ya están listos para que el mesero los recoja:
+
+{
+  "error": null,
+  "data": [
+    {
+      "orderId": 95,
+      "code": "A-2025-000095",
+      "status": "OPEN",
+      "serviceType": "DINE_IN",
+      "source": "POS",
+      "openedAt": "2025-10-30T18:05:00.000Z",
+      "table": { "id": 9, "name": "Terraza" },
+      "items": [
+        {
+          "id": 9400,
+          "name": "Molletes",
+          "quantity": 1,
+          "status": "READY",
+          "notes": null,
+          "modifiers": [],
+          "isComboParent": false,
+          "children": []
+        }
+      ]
+    }
+  ],
+  "message": "OK"
+}
+
+8. Pedido con nota general + nota en ítem
+
+{
+  "error": null,
+  "data": [
+    {
+      "orderId": 99,
+      "code": "A-2025-000099",
+      "status": "OPEN",
+      "serviceType": "DINE_IN",
+      "table": { "id": 10, "name": "M10" },
+      "note": "Alergia a mariscos",         // nota del pedido
+      "items": [
+        {
+          "id": 9500,
+          "name": "Pasta Alfredo",
+          "quantity": 1,
+          "status": "NEW",
+          "notes": "Sin camarón",           // nota del ítem
+          "modifiers": [],
+          "isComboParent": false,
+          "children": []
+        }
+      ]
+    }
+  ],
+  "message": "OK"
+}
+👉 Esto es importante que lo pintes doble en cocina.
+
+9. Sin resultados (filtro muy cerrado)
+
+{
+  "error": null,
+  "data": [],
+  "message": "OK"
+}
+👉 El front tiene que mostrar “no hay tickets”.
+
+
+
+7. Ítems del pedido
+
+7.2 Actualizar ítem
+PATCH /api/orders/items/:itemIdPermiso: orders.updateBody: UpdateOrderItemDto
+Permite:
+	•	cambiar quantity
+	•	cambiar notes
+	•	reemplazar modifiers
+El backend:
+	•	ajusta extras
+	•	actualiza combos hijos
+	•	recalcula totales
+
+Casos:
+O sea: solo puedes tocar estas 3 cosas:
+	1	quantity → cambiar cantidad
+	2	notes → cambiar nota del renglón
+	3	replaceModifiers → reemplazar TODOS los modifiers que tenía el item por estos nuevos
+No puedes:
+	•	cambiar productId
+	•	cambiar variantId
+	•	cambiar price directo
+	•	cambiar el estado del item (eso es otra ruta: PATCH /api/orders/items/:itemId/status)
+	•	cambiar el pedido (eso ya lo hace internamente el repo cuando recalcula)
+Qué hace el repo (esto es lo importante del zip)
+En PrismaOrderRepository.updateItem(...) hace esto:
+	1	Busca el item con:
+	◦	product (para ver si es combo)
+	◦	modifiers actuales
+	◦	childItems
+	2	Si mandaste replaceModifiers:
+	◦	borra todos los modifiers actuales del item
+	◦	busca las opciones que mandaste
+	◦	crea los nuevos modifiers con su priceExtraCents y nameSnapshot
+	◦	suma los extras (extrasTotalCents)
+	3	Calcula:
+	◦	newQty = body.quantity ?? current.quantity
+	◦	totalUnit = basePriceCents + extras
+	◦	totalPriceCents = totalUnit * newQty
+	4	Actualiza el item con:
+	◦	quantity
+	◦	notes
+	◦	extrasTotalCents
+	◦	totalPriceCents
+	5	Si el item es combo padre (tiene childItems):
+	◦	escala las cantidades de los hijos para que sigan al papá
+	6	Llama a recalcTotalsTx(...) → recalcula los totales del pedido 👈
+Listo. Ahora sí vamos con TODOS los casos que tiene sentido mandar.
+
+CASOS ✅
+1. Cambiar solo la cantidad
+
+{
+  "quantity": 3
+}
+	•	Sube de lo que tenga (ej. 1) a 3
+	•	Recalcula totalPriceCents
+	•	Recalcula totales del pedido
+
+2. Cambiar solo la nota
+
+{
+  "notes": "Sin cebolla, porfa"
+}
+	•	No toca quantity
+	•	No toca modifiers
+	•	Útil cuando cocina quiere dejar aclaración
+
+3. Cambiar cantidad y nota
+
+{
+  "quantity": 2,
+  "notes": "Para mesa 4"
+}
+
+4. Reemplazar todos los modifiers por estos
+
+{
+  "replaceModifiers": [
+    { "optionId": 7 },
+    { "optionId": 9, "quantity": 2 }
+  ]
+}
+Esto hace exactamente:
+	1	borra los modifiers que tenía ese item
+	2	crea solo estos 2
+	3	suma sus extras
+	4	recalcula el total del item
+	5	recalcula el total del pedido
+
+5. Quitar todos los modifiers
+(esto es lo chido: se hace mandando un array vacío 👇)
+
+{
+  "replaceModifiers": []
+}
+El repo:
+	•	borra todos los modifiers
+	•	extrasTotalCents = 0
+	•	totalPriceCents = basePriceCents * quantity
+
+6. Cambiar cantidad y reemplazar modifiers
+
+{
+  "quantity": 3,
+  "replaceModifiers": [
+    { "optionId": 10 }
+  ]
+}
+	•	Sube cantidad a 3
+	•	Borra modifiers viejos
+	•	Mete el 10
+	•	Recalcula total (base + extra) * 3
+	•	Recalcula totales del pedido
+
+7. Cambiar solo un modifier pero dejando los demás
+👉 Esto NO se puede con esta ruta, porque el campo es replaceModifiers.Si lo mandas, reemplaza todos.O sea, si quieres “agregar uno más y dejar los otros”, tienes que:
+	1	traer la lista actual
+	2	sumarle el nuevo
+	3	mandarla completa en replaceModifiers
+Ejemplo:
+
+{
+  "replaceModifiers": [
+    { "optionId": 5 },
+    { "optionId": 6 },
+    { "optionId": 9, "quantity": 2 }
+  ]
+}
+
+8. Item que es combo padre → cambiar cantidad
+
+{
+  "quantity": 2
+}
+Como en el repo se ve:
+	•	ve que el item tiene childItems
+	•	calcula cuánto traía cada hijo por cada 1 del papá
+	•	los vuelve a escribir multiplicados por 2
+🟣 Ejemplo:
+	•	antes: combo padre qty=1, hijo papas qty=1
+	•	PATCH padre a qty=2
+	•	repo deja hijo papas en qty=2
+	•	y recalcula totales
+
+9. Item que es combo padre → cambiar nota
+
+{
+  "notes": "Una coca sin hielo"
+}
+	•	Solo cambia la nota del padre
+	•	Los hijos se quedan igual
+
+10. Item que es combo padre → reemplazar modifiers
+
+{
+  "replaceModifiers": [
+    { "optionId": 21 }
+  ]
+}
+	•	Solo reemplaza los modifiers del padre
+	•	Los hijos no los toca
+	•	Recalcula totales
+
+11. Item que es combo hijo (o sea, le pegas al itemId del hijo)
+Esto también funciona, porque el repo hace findUnique por item. Si el item no tiene hijos, no escala nada.
+
+{
+  "quantity": 2,
+  "notes": "Este va sin sal"
+}
+
+12. Cambiar nota y quitar modifiers
+
+{
+  "notes": "Muy picante",
+  "replaceModifiers": []
+}
+
+13. Actualizar solo modifiers con cantidades
+
+{
+  "replaceModifiers": [
+    { "optionId": 15, "quantity": 3 },
+    { "optionId": 18, "quantity": 1 }
+  ]
+}
+El repo busca esos optionId; si uno no existe, tira:
+
+Modifier option 15 inválido
+y tu controller responde 500.
+
+14. Body vacío (para probar validación)
+
+{}
+El Zod lo acepta porque todo es opcional, peeero el update no cambiará nada. Igual te responde:
+
+{
+  "error": null,
+  "data": null,
+  "message": "Updated"
+}
+(esto pasa así porque en el usecase solo pasa lo que llegó)
+
+15. quantity = 0 (esto NO te lo va a aceptar)
+
+{
+  "quantity": 0
+}
+Tu Zod pide int().positive(), así que te va a regresar 400:
+
+{
+  "error": {
+    "code": 400,
+    "details": "quantity must be greater than 0"
+  },
+  "data": null,
+  "message": "Validation failed"
+}
+
+16. Modifier que no existe → error
+
+{
+  "replaceModifiers": [
+    { "optionId": 999999 }
+  ]
+}
+Respuesta (del controller):
+
+{
+  "error": {
+    "code": 500,
+    "details": "Modifier option 999999 inválido"
+  },
+  "data": null,
+  "message": "Error updating order item"
+}
+(El 500 es porque el repo lanzó error directo.)
+
+17. Cambiar cantidad de combo padre de 3 → 1 (baja hijos)
+
+{
+  "quantity": 1
+}
+El repo calcula:
+	•	antes: padre=3, hijo=3
+	•	ahora: padre=1 → hijo=1
+
+7.3 Cambiar estado de un ítem
+PATCH /api/orders/items/:itemId/statusPermiso: orders.updateBody: UpdateOrderItemStatusDto
+Flujo permitido:
+	•	NEW → IN_PROGRESS → READY → SERVED
+	•	o CANCELED en cualquier punto
+Reglas:
+	•	si todos los ítems quedan READY/SERVED → se marca readyAt
+	•	si todos quedan SERVED → se marca servedAt
+	•	si hay cancelaciones → se recalculan totales
+Casos:
+El patrón es igualito al de la orden, pero a nivel item:
+	1	Lee :itemId y lo fuerza a número.
+	2	Valida el body con un Zod tipo:{
+	3	  status: z.enum(["NEW","IN_PROGRESS","READY","SERVED","CANCELED"]),
+	4	  reason?: z.string().optional()
+	5	}
+	6	
+	7	Llama al repo: orderRepository.updateItemStatus(itemId, dto)
+	8	El repo:
+	◦	actualiza solo ese renglón
+	◦	si el renglón es combo padre, suele propagar el estado a los hijos (al menos para READY / CANCELED), porque si no en KDS se desincroniza
+	◦	recalcula los totales del pedido (para no dejar totales colgados cuando cancelas)
+	9	Devuelve el pedido o el item actualizado dentro del wrapper:{ "error": null, "data": { ... }, "message": "OK" }
+	10	
+Los estados de ITEM que ya vimos en tu API (por KDS y por lo que regresa el GET) son:
+	•	NEW
+	•	IN_PROGRESS
+	•	READY
+	•	SERVED
+	•	CANCELED
+(son los mismos que ya usaste en /api/orders/kds/list).
+Vamos a los casos 👇
+
+1. Pasar un item a “lo está preparando” (NEW → IN_PROGRESS)
+
+{
+  "status": "IN_PROGRESS"
+}
+Se usa cuando cocina “agarra” el ticket.
+
+2. Marcar un item como listo (IN_PROGRESS → READY)
+
+{
+  "status": "READY"
+}
+Esto es lo más típico de KDS: “ya quedó este plato”.
+
+3. Servir un item (READY → SERVED)
+
+{
+  "status": "SERVED"
+}
+Se usa más en DINE_IN cuando el mesero ya lo llevó a la mesa.
+
+4. Cancelar un item (cualquiera → CANCELED)
+
+{
+  "status": "CANCELED",
+  "reason": "Cliente lo cambió por otra cosa"
+}
+Aquí es donde el repo suele:
+	•	marcar el item en CANCELED
+	•	volver a calcular el total de la orden (porque un item menos = total menos)
+
+5. Cancelar sin motivo
+
+{
+  "status": "CANCELED"
+}
+Válido: el reason era opcional.
+
+6. Volver un item a NEW (p.ej. se equivocaron)
+
+{
+  "status": "NEW"
+}
+Esto lo usan cuando cocina dijo READY pero se dieron cuenta que no estaba.
+
+7. Item que es combo padre → marcar READY (propaga)
+
+{
+  "status": "READY"
+}
+Qué hace el repo (lo esperado con tu modelo):
+	•	pone el padre en READY
+	•	pone los childItems en READY también
+	•	para que en el KDS no te salgan los hijos “colgados”
+
+8. Item que es combo padre → cancelar TODO el combo
+
+{
+  "status": "CANCELED",
+  "reason": "El cliente canceló el combo"
+}
+Lo normal en este diseño:
+	•	padre → CANCELED
+	•	hijos → CANCELED
+	•	recalc → baja el total
+
+9. Item que es combo hijo → cancelar SOLO ese hijo
+Si pegas al itemId del hijo, también funciona:
+
+{
+  "status": "CANCELED",
+  "reason": "Sin papas"
+}
+	•	ese hijo queda CANCELED
+	•	el padre queda como estaba
+	•	el total se recalcula
+
+10. Marcar READY algo que venía de delivery
+
+{
+  "status": "READY"
+}
+Sirve porque en /api/orders/kds/list mostraste delivery también.
+
+11. Intentar SERVED directo desde NEW (no recomendado pero posible)
+
+{
+  "status": "SERVED"
+}
+Tu API no hace un “workflow estricto” aquí, así que lo va a aceptar; el front debe decidir si lo permite o no.
+
+12. Body vacío → error de validación
+
+{}
+Respuesta esperada:
+
+{
+  "error": {
+    "code": 400,
+    "details": "status is required"
+  },
+  "data": null,
+  "message": "Validation failed"
+}
+
+13. Estado no válido → error
+
+{
+  "status": "DONE"
+}
+Respuesta:
+
+{
+  "error": {
+    "code": 400,
+    "details": "Invalid enum value for status"
+  },
+  "data": null,
+  "message": "Validation failed"
+}
+
+14. Item no existe → 404
+
+{
+  "status": "READY"
+}
+→ si el :itemId no existe:
+
+{
+  "error": {
+    "code": 404,
+    "details": null
+  },
+  "data": null,
+  "message": "Order item not found"
+}
+
+15. Cancelar item ya SERVED (cocina se equivocó) 👀
+
+{
+  "status": "CANCELED",
+  "reason": "Se sirvió mal"
+}
+En tu repositorio este tipo de cambio no está bloqueado (el bloqueo fuerte estaba en “no cerrar si no está pagado”), así que lo va a dejar pasar y va a recalcular.
+
+16. Ready con razón (para cocina)
+
+{
+  "status": "READY",
+  "reason": "Sin azúcar, lo pidió así"
+}
+Se guarda el status; la razón puede ir a log o a nota.
+
+Resumen rápido
+	•	Ruta: PATCH /api/orders/items/:itemId/status
+	•	Campos: { "status": "...", "reason"?: "..." }
+	•	Estados válidos: NEW, IN_PROGRESS, READY, SERVED, CANCELED
+	•	Recalcula: sí, el pedido completo
+	•	Combos: si tocas el padre, toca a los hijos (READY y CANCELED)
+	•	Errores: 400 si no manda status, 404 si no existe item
+Con esto ya tienes TODO lo que tu front puede mandar y TODO lo que debe esperar 👌
+
+
+
+7.4 Eliminar ítem
+DELETE /api/orders/items/:itemIdPermiso: orders.update
+	•	Elimina el ítem
+	•	Elimina hijos / modifiers
+	•	Recalcula totales
+	1	Lee :itemId y lo convierte a número.
+	2	Llama al repo: orderRepository.deleteItem(itemId).
+	3	El repo:
+	◦	busca el item (con parentItemId y childItems)
+	◦	lo borra
+	◦	si el item era combo padre → borra también los hijos
+	◦	si el item era combo hijo → solo borra ese hijo
+	◦	al final llama a recalcTotals del pedido para que los totales queden bien.
+	4	Devuelve tu wrapper típico:{
+	5	  "error": null,
+	6	  "data": { "deleted": true, "orderId": 45 },
+	7	  "message": "OK"
+	8	}
+	9	(algunas veces regresan el pedido completo; pero en tu proyecto de órdenes casi siempre regresan algo con data + message)
+
+Casos que SÍ tienen sentido
+1. Borrar un ítem simple
+
+DELETE /api/orders/items/101
+Antes el pedido tenía:
+	•	item #101 → “Torta ahogada” x2 → 13,000
+	•	totalCents: 13,000
+Después:
+
+{
+  "error": null,
+  "data": {
+    "deleted": true,
+    "orderId": 45
+  },
+  "message": "OK"
+}
+y el pedido queda con:
+	•	items: []
+	•	totalCents: 0
+(esto lo hace el recalcTotalsTx)
+
+2. Borrar un ítem VARIANTED
+
+DELETE /api/orders/items/205
+Ese item tenía:
+
+{
+  "id": 205,
+  "productId": 25,
+  "variantId": 4,
+  "quantity": 1
+}
+→ se va completo, no tienes que mandar la variante. El repo ya sabe cuál era.
+
+3. Borrar un ítem con modifiers
+
+DELETE /api/orders/items/310
+Aunque ese item tenía modifiers asociados, el repo los borra en cascada (porque están relacionados por orderItemId), y luego recalc.Resultado:
+
+{
+  "error": null,
+  "data": {
+    "deleted": true,
+    "orderId": 61
+  },
+  "message": "OK"
+}
+
+4. Borrar un combo padre (borra también los hijos)
+
+DELETE /api/orders/items/400
+Supongamos que el pedido tenía:
+	•	item 400 → “Combo burger + papas” (padre)
+	◦	child 401 → “Hamburguesa sencilla”
+	◦	child 402 → “Papas fritas”
+Al borrar 400 el repo ve que tiene childItems y:
+	•	borra 400
+	•	borra 401
+	•	borra 402
+	•	recalcula el pedido
+Respuesta:
+
+{
+  "error": null,
+  "data": {
+    "deleted": true,
+    "orderId": 90
+  },
+  "message": "OK"
+}
+👉 Esto es importante: no tienes que mandar los IDs de los hijos; el backend ya los conoce porque en tu getById los incluías con childItems: true.
+
+5. Borrar solo un hijo del combo
+Sí se puede, si llamas al hijo:
+
+DELETE /api/orders/items/402
+	•	No borra al padre
+	•	Solo borra ese hijo
+	•	Recalcula totales (el combo va a bajar el total de extras si ese hijo tenía)
+	•	Te responde igual:{
+	•	  "error": null,
+	•	  "data": {
+	•	    "deleted": true,
+	•	    "orderId": 90
+	•	  },
+	•	  "message": "OK"
+	•	  }
+	•	
+Esto sirve cuando en cocina dijeron “el combo sin papas”.
+
+6. Borrar el último ítem del pedido
+
+DELETE /api/orders/items/555
+Si era el único:
+	•	el pedido no se borra
+	•	solo se queda con items: [] y totales en 0
+	•	así luego le puedes volver a meter items
+
+7. Borrar un ítem de un pedido ya en HOLD / OPEN
+Es válido, porque el permiso es orders.update y tu proyecto permite editar mientras no esté CLOSED.
+
+DELETE /api/orders/items/777
+
+8. Intentar borrar un item que no existe → 404
+
+DELETE /api/orders/items/999999
+Respuesta esperada:
+
+{
+  "error": {
+    "code": 404,
+    "details": null
+  },
+  "data": null,
+  "message": "Order item not found"
+}
+
+9. Intentar borrar un ítem de un pedido cerrado (si el repo lo protege)
+En tu instrucción de órdenes había una regla fuerte para cerrar, no tanto para borrar, pero muchas veces el repo hace:
+	•	busca el item
+	•	ve que el pedido está CLOSED
+	•	responde 400
+Entonces:
+
+DELETE /api/orders/items/880
+Respuesta probable:
+
+{
+  "error": {
+    "code": 400,
+    "details": "Cannot edit items from a closed order"
+  },
+  "data": null,
+  "message": "Order is closed"
+}
+(esto depende de si en tu repo pusiste el check; lo pongo porque en tu proyecto sí pusiste el check “no permitir cerrar si no está pagado”, o sea sí cuidas integridad)
+
+10. Borrar un ítem con cantidad alta
+No hace falta decir la cantidad; la cantidad está en la fila.
+
+DELETE /api/orders/items/620
+→ se borra la línea entera (no “1 de 5”), ese endpoint es de delete line, no de “remove 1”.
+Si quisieras “bajar de 5 a 4”, usas:
+
+PATCH /api/orders/items/:itemId
+{
+  "quantity": 4
+}
+
+11. Borrar un ítem que tenía extras caros → baja totales
+Esto es justamente por lo que el repo hace recalc después del delete.Ejemplo:
+
+DELETE /api/orders/items/701
+Ese item tenía:
+	•	basePriceCents: 8000
+	•	extrasTotalCents: 3000
+	•	totalPriceCents: 11000
+Al borrarlo:
+	•	order.subtotalCents baja 8000
+	•	order.totalCents baja 11000
+	•	si los pagos ya eran = total, ahora el pedido quedará “sobrepagado” → ese ajuste suele quedar ya en otro endpoint, pero al menos el order.total ya se corrigió.
+
+Resumen para tu front
+	•	Ruta: DELETE /api/orders/items/:itemId
+	•	Permiso: orders.update
+	•	Qué borra: 1 línea. Si es combo padre → borra también hijos.
+	•	Siempre recalcula: sí.
+	•	Errores que debes manejar:
+	◦	404 → item no existe
+	◦	400 → pedido cerrado / no editable
+	•	No hay body: es un DELETE puro.
+Con esto ya tienes TODOS los casos que tu backend (como lo traes en el zip) puede usar con este endpoint ✅
+
+8. Pagos
+POST /api/orders/:id/paymentsPermiso: orders.updateBody: AddPaymentDto
+	•	Registra pago + propina
+	•	Revisa el acumulado
+	•	Si ya cubre el total → cierra automáticamente el pedido
+DTO exacto (de tu zip)
+
+export const AddPaymentDto = z.object({
+  method: z.enum(["CASH", "CARD", "TRANSFER", "OTHER"]),
+  amountCents: z.number().int().nonnegative(),
+  tipCents: z.number().int().nonnegative().default(0),
+  note: z.string().optional()
+});
+Traducción:
+	•	method → obligatorio → CASH | CARD | TRANSFER | OTHER
+	•	amountCents → obligatorio → entero ≥ 0 (en centavos)
+	•	tipCents → opcional → entero ≥ 0 (default 0)
+	•	note → opcional
+
+Qué hace el repo (esto es lo chido)
+En PrismaOrderRepository.addPayment(...) hace:
+	1	Crea el pago:
+	◦	orderId: el que viene en la ruta
+	◦	method: el que mandaste
+	◦	amountCents
+	◦	tipCents (o 0)
+	◦	receivedByUserId: el user que sacó del token
+	◦	note
+	2	Luego agrega todos los pagos de la orden:const agg = await tx.payment.aggregate({
+	3	  where: { orderId },
+	4	  _sum: { amountCents: true, tipCents: true },
+	5	});
+	6	const ord = await tx.order.findUnique({ where: { id: orderId } });
+	7	const paid = (agg._sum.amountCents || 0) + (agg._sum.tipCents || 0);
+	8	if (ord && paid >= (ord.totalCents || 0)) {
+	9	  await tx.order.update({
+	10	    where: { id: orderId },
+	11	    data: { status: "CLOSED", closedAt: new Date() },
+	12	  });
+	13	}
+	14	🔴 Eso significa: si con este pago ya alcanzaste o superaste el total, la orden se cierra sola (status: "CLOSED").
+	15	Te regresa el pago que creó.
+
+Respuesta típica
+
+{
+  "error": null,
+  "data": {
+    "id": 25,
+    "orderId": 70,
+    "method": "CASH",
+    "amountCents": 20000,
+    "tipCents": 0,
+    "paidAt": "2025-10-30T18:20:00.000Z",
+    "receivedByUserId": 1,
+    "note": null
+  },
+  "message": "Paid"
+}
+status HTTP: 201
+Ojo: NO te devuelve la orden; te devuelve el pago. Si el front quiere ver que se cerró, hace luego GET /api/orders/:id.
+
+TODOS los casos que puedes mandar 💰
+1. Pago en efectivo (simple)
+
+{
+  "method": "CASH",
+  "amountCents": 15000
+}
+	•	tip = 0
+	•	si el total de la orden ≤ 150.00 → la cierra
+
+2. Pago con propina
+
+{
+  "method": "CASH",
+  "amountCents": 15000,
+  "tipCents": 2000
+}
+Aquí el repo suma amountCents + tipCents para ver si cierra.O sea, si la orden costaba 17,000 → con esto la cierra.
+
+3. Pago con tarjeta
+
+{
+  "method": "CARD",
+  "amountCents": 23000
+}
+Sirve igual. El método solo se guarda.
+
+4. Pago por transferencia con nota
+
+{
+  "method": "TRANSFER",
+  "amountCents": 12000,
+  "note": "Transferencia BBVA ref 123"
+}
+
+5. Pago “otro” (vales, etc.)
+
+{
+  "method": "OTHER",
+  "amountCents": 5000,
+  "note": "Vale restaurante"
+}
+
+6. Pago parcial (para luego complementar)
+
+{
+  "method": "CASH",
+  "amountCents": 10000
+}
+	•	Si el pedido era de 23,000 → NO la cierra
+	•	El front puede mostrar: pagado 100.00 / total 230.00
+	•	Luego mandas otro pago (ver caso 7)
+
+7. Segundo pago que completa la orden
+1er pago:
+
+{
+  "method": "CASH",
+  "amountCents": 10000
+}
+2do pago:
+
+{
+  "method": "CARD",
+  "amountCents": 13000
+}
+	•	El 2do pago hace que paid >= totalCents → el repo cierra la orden.
+
+8. Pago que supera el total (pago “de más”)
+
+{
+  "method": "CASH",
+  "amountCents": 30000
+}
+Si la orden era 23,000:
+	•	paid = 30,000
+	•	30,000 ≥ 23,000 → se cierra
+	•	NO hace cambio, solo guarda el pago así
+
+9. Pago solo de propina (amount 0, tip > 0)
+Como tu DTO permite amountCents = 0 y tipCents ≥ 0:
+
+{
+  "method": "CASH",
+  "amountCents": 0,
+  "tipCents": 500
+}
+	•	Guarda el pago
+	•	Suma 500 al “paid”
+	•	Si con eso alcanza → cierra (raro, pero posible)
+
+10. Pago en 0 total (para probar validación)
+
+{
+  "method": "CASH",
+  "amountCents": 0
+}
+Lo acepta porque es nonnegative().No va a cerrar a menos que la orden sea 0.
+
+11. Pago con nota larga
+
+{
+  "method": "CARD",
+  "amountCents": 8000,
+  "note": "Pagó con tarjeta física, aprobaron en terminal"
+}
+
+12. Intentar pagar sin method → 400
+
+{
+  "amountCents": 10000
+}
+Respuesta:
+
+{
+  "error": {
+    "code": 500,
+    "details": {}
+  },
+  "data": null,
+  "message": "Error adding payment"
+}
+(el 500 te lo da porque Zod lanzó error y tu controller lo está mapeando a 500 salvo que sea “Id inválido”; si quieres 400 aquí, hay que ajustar el controller)
+
+13. Intentar pagar sin auth → 401
+Porque el controller hace:
+
+if (!receivedByUserId) return fail(res, "Unauthorized", 401);
+Respuesta:
+
+{
+  "error": {
+    "code": 401,
+    "details": null
+  },
+  "data": null,
+  "message": "Unauthorized"
+}
+
+14. Intentar pagar una orden que NO existe → 500 (desde repo)
+
+{
+  "method": "CASH",
+  "amountCents": 10000
+}
+si el :id no existe, Prisma truena dentro de la tx → el controller responde:
+
+{
+  "error": {
+    "code": 500,
+    "details": {}
+  },
+  "data": null,
+  "message": "Error adding payment"
+}
+(si quieres 404, hay que envolver el create y checar existencia antes)
+
+15. Pagar una orden que ya estaba CLOSED
+Tu repo no bloquea el create de pago si ya está CLOSED: lo que hace es crear el pago y volver a checar.O sea, esto va a funcionar igual:
+
+{
+  "method": "CASH",
+  "amountCents": 1000
+}
+pero la orden seguirá CLOSED.
+
+Cosas importantes para tu front
+	1	Siempre manda method y amountCents.
+	2	El usuario autenticado es el que se guarda en receivedByUserId (no lo mandes tú).
+	3	Después de pagar, si quieres ver que la orden se cerró, haz:GET /api/orders/:id
+	4	porque el POST te regresa solo el pago.
+	5	Los montos son en centavos.
+	6	Si quieres “pago mixto”, solo llamas varias veces a este endpoint.
+
+9. Split de pedido
+POST /api/orders/:id/splitPermiso: orders.updateBody: SplitOrderByItemsDto
+	•	Duplica los ítems seleccionados a un nuevo pedido
+	•	Incluye combos
+	•	El nuevo pedido hereda:
+	•	serviceType
+	•	tableId
+	•	covers
+	•	source
+	•	Se pueden sobrescribir
+	•	Marca acceptedAt de inmediato
+Qué hace el controller (exacto)
+	1	const orderId = ensureNumericId(req.params.id);
+	2	const dto = SplitOrderByItemsDto.parse(req.body);
+	3	saca servedByUserId de req.auth.userId → si no hay → 401
+	4	llama:this.splitOrderByItemsUC.exec(orderId, {
+	5	  ...dto,
+	6	  servedByUserId,
+	7	});
+	8	
+	9	responde:{
+	10	  "error": null,
+	11	  "data": {
+	12	    "newOrderId": 123,
+	13	    "code": "A-2025-000123"
+	14	  },
+	15	  "message": "Order split"
+	16	}
+	17	con HTTP 201
+
+DTO exacto (de orders.dto.ts)
+
+export const SplitOrderByItemsDto = z.object({
+  itemIds: z.array(z.number().int().positive()).min(1),
+  // Puedes sobreescribir metadatos del pedido nuevo (opcionales)
+  serviceType: ServiceTypeEnum.optional(),
+  tableId: z.number().int().positive().nullable().optional(),
+  note: z.string().optional(),
+  covers: z.number().int().positive().optional()
+});
+Traducción:
+	•	itemIds ✅ obligatorio, al menos 1
+	•	serviceType ❓ opcional → si no lo mandas, usa el del pedido original
+	•	tableId ❓ opcional → puedes poner mesa nueva o null para que NO tenga
+	•	note ❓ opcional → nota del nuevo pedido
+	•	covers ❓ opcional → comensales del nuevo pedido
+
+Lo MÁS importante de tu repo (esto es lo que lo hace especial)
+En PrismaOrderRepository.splitOrderByItems(...) hace 5 pasos:
+	1	Valida que todos los itemIds sean de ese pedido (sourceOrderId).Si hay uno que no… → "Todos los items deben pertenecer al mismo pedido"
+	2	Expande combos:
+	◦	si mandaste un padre → mete todos sus hijos
+	◦	si mandaste un hijo → mete su padre y todos los hermanos
+	3	Crea el pedido nuevo copiando del original:
+	◦	status: "OPEN"
+	◦	serviceType: input.serviceType ?? src.serviceType
+	◦	source: src.source ?? "POS"
+	◦	tableId: input.tableId ?? src.tableId ?? null
+	◦	note: input.note ?? null
+	◦	covers: input.covers ?? src.covers ?? null
+	◦	servedByUserId: input.servedByUserId
+	◦	acceptedAt: new Date()
+	◦	code: generateOrderCode()
+	4	Mueve esos items al nuevo pedido (updateMany ... data: { orderId: newOrder.id })
+	5	Recalcula totales en los dos pedidos:
+	◦	el original (porque le quitaste cosas)
+	◦	el nuevo (porque le pusiste cosas)
+y te regresa:
+
+{ "newOrderId": ..., "code": "..." }
+Listo 👌
+
+CASOS 💥
+1. Dividir un pedido de mesa en dos mesas
+Pedido original: id = 45, DINE_IN, mesa 3Quiero pasar 2 platillos a la mesa 7
+Request
+
+{
+  "itemIds": [101, 102],
+  "tableId": 7
+}
+Qué pasa:
+	•	crea NUEVO pedido:
+	◦	status: OPEN
+	◦	serviceType: DINE_IN (copiado)
+	◦	tableId: 7 (lo que mandaste)
+	◦	note: null
+	◦	covers: los del original
+	•	mueve los items 101 y 102 ahí
+	•	recalcula los dos
+Response
+
+{
+  "error": null,
+  "data": {
+    "newOrderId": 120,
+    "code": "A-2025-000120"
+  },
+  "message": "Order split"
+}
+
+2. Dividir sin cambiar mesa (solo separar ticket)
+Pedido original: mesa 3Solo quiero mandar estos items a “otra cuenta” pero misma mesa.
+
+{
+  "itemIds": [101, 103]
+}
+(no mandas mesa)
+→ el repo hace:
+	•	tableId: src.tableId (o sea, la misma 3)
+
+3. Dividir y quitar mesa (p.ej. para cobrar en caja)
+
+{
+  "itemIds": [200, 201],
+  "tableId": null,
+  "note": "Cobro en caja"
+}
+→ nuevo pedido nace sin mesa y con nota “Cobro en caja”.
+
+4. Dividir y cambiar serviceType (de DINE_IN a TAKEAWAY)
+Esto es útil cuando alguien de la mesa dice “ese es para llevar”.
+
+{
+  "itemIds": [300],
+  "serviceType": "TAKEAWAY",
+  "note": "Para llevar"
+}
+→ nuevo pedido:
+	•	serviceType = TAKEAWAY
+	•	tableId = null (porque no mandaste y TAKEAWAY no ocupa)
+	•	note = “Para llevar”
+
+5. Dividir un combo padre (manda SOLO el padre)
+Supón que en el pedido hay un combo con itemId 400.
+
+{
+  "itemIds": [400]
+}
+El repo ve que 400 tiene hijos → busca a todos sus hijos → los mete también → se van JUNTOS al nuevo pedido.Así no te queda el combo descuadrado.
+
+6. Dividir un hijo de combo (manda SOLO el hijo)
+Supón que el papá es 400 y el hijo que quieres mover es 402.
+
+{
+  "itemIds": [402]
+}
+El repo hace EXACTAMENTE esto:
+	1	“Ah, este es hijo”
+	2	trae a su padre
+	3	trae a sus hermanos
+	4	mete a TODOS juntos en el nuevo pedido
+Resultado: nunca te quedas con un combo “partido”.
+
+7. Dividir y poner covers distintos
+
+{
+  "itemIds": [501, 502],
+  "covers": 1
+}
+→ nuevo pedido con covers = 1→ pedido origen se queda con sus covers originales.
+
+8. Dividir con nota específica (para cocina / caja)
+
+{
+  "itemIds": [601],
+  "note": "Cliente paga por separado"
+}
+
+9. Intentar dividir sin items → ERROR
+
+{
+  "itemIds": []
+}
+Respuesta:
+
+{
+  "error": {
+    "code": 400,
+    "details": "itemIds must contain at least 1 element(s)"
+  },
+  "data": null,
+  "message": "Error splitting order"
+}
+(esto viene del Zod porque pusiste .min(1))
+
+10. Intentar dividir items de 2 pedidos diferentes → ERROR
+Supón que mandas [101, 9999] y 9999 es de otro pedido.
+
+{
+  "itemIds": [101, 9999]
+}
+Respuesta (del repo):
+
+{
+  "error": {
+    "code": 500,
+    "details": "Todos los items deben pertenecer al mismo pedido"
+  },
+  "data": null,
+  "message": "Error splitting order"
+}
+
+11. Intentar dividir con usuario no autenticado → 401
+(no tiene req.auth.userId)
+
+{
+  "itemIds": [101]
+}
+Respuesta:
+
+{
+  "error": {
+    "code": 401,
+    "details": null
+  },
+  "data": null,
+  "message": "Unauthorized"
+}
+Porque el controller hace:
+
+if (!servedByUserId) return fail(res, "Unauthorized", 401);
+
+12. Dividir y mandar serviceType + tableId juntos
+
+{
+  "itemIds": [710, 711],
+  "serviceType": "DINE_IN",
+  "tableId": 12,
+  "note": "Se cambiaron de mesa"
+}
+→ válido; el nuevo pedido nace como DINE_IN en mesa 12.
+
+13. Pedido origen no existe → ERROR
+Si el :id no existe:
+Request
+
+POST /api/orders/99999/split
+Body
+
+{ "itemIds": [1] }
+Response (del repo):
+
+{
+  "error": {
+    "code": 500,
+    "details": "Pedido origen no existe"
+  },
+  "data": null,
+  "message": "Error splitting order"
+}
+
+Cosas que tu front TIENE que saber
+	1	Este endpoint NO regresa el pedido nuevo completo, solo:{ "newOrderId": ..., "code": "..." }
+	2	→ si lo quieres completo haces luego:GET /api/orders/{{newOrderId}}
+	3	
+	4	Siempre recalcula los dos pedidos. O sea: en la pantalla de la mesa original te va a bajar el total.
+	5	Nunca te deja combos “rotos”: si mandas papá o hijo, mueve el combo entero (padre + hijos + hermanos).
+	6	Puedes usarlo para “pagar por separado”: divides, pagas el nuevo, dejas el viejo abierto.
+	7	Se guarda quién hizo el split (servedByUserId), lo cual está chido para auditoría.
+
+10. Notas funcionales clave
+	•	Los totales siempre se recalculan ignorando ítems cancelados.
+	•	Se respetan descuentos / impuestos / service fee ya guardados.
+	•	prepEtaMinutes sirve para mostrar ETA en front / kiosko.
+	•	source y externalRef diferencian interno vs plataforma.
+	•	Con esto el front puede hacer todo el flujo:
+	0.	creación
+	0.	agregar / editar ítems
+	0.	KDS
+	0.	cobros
+	0.	cierre
+	0.	listado con filtros
+
+11. Glosario para el front
+Permisos
+	•	orders.read: puede listar y ver
+	•	orders.create: puede crear
+	•	orders.update: puede editar, pagar, mover estado
+serviceType (tipo de servicio)
+	•	DINE_IN: consumo en mesa
+	•	TAKEAWAY: para llevar
+	•	DELIVERY: a domicilio
+source (canal)
+	•	POS: pedido directo
+	•	UBER, DIDI, RAPPI: plataformas externas
+status del pedido
+	•	DRAFT: borrador, no cocina
+	•	OPEN: activo
+	•	HOLD: en pausa
+	•	CLOSED: cobrado y cerrado
+	•	CANCELED: cancelado
+OrderItem.status
+	•	NEW
+	•	IN_PROGRESS
+	•	READY
+	•	SERVED
+	•	CANCELED
+Timestamps
+	•	acceptedAt: el pedido salió de borrador / cocina lo tomó
+	•	readyAt: todos los ítems están listos
+	•	servedAt: todos servidos o cancelados
+	•	closedAt: se cobró
+	•	canceledAt: se canceló
+Totales (centavos)
+	•	subtotalCents: suma de renglones
+	•	discountCents: descuentos
+	•	serviceFeeCents: propina/fee fijo
+	•	taxCents: impuestos
+	•	totalCents: subtotal - descuento + service + tax
+	•	paymentsTotalCents: suma de pagos
+	•	paymentsTipCents: suma de propinas
+Pagos (payments[])
+	•	method: CASH | CARD | TRANSFER | OTHER
+	•	amountCents
+	•	tipCents
+	•	paidAt
+	•	note
+Mesa
+	•	tableId: id de la mesa
+	•	table: { id, name } para mostrar “Mesa 12”
+	•	covers: número de comensales
+DTOs clave
+	•	ListOrdersQueryDto: filtros del GET
+	•	UpdateOrderMetaDto: para editar nota, mesa, cubiertos, ETA
+	•	UpdateOrderStatusDto: para mover el pedido validando pagos
+
+Si quieres, en la siguiente te lo bajo todavía más a “doc para front” (solo campos + ejemplo), pero así ya está ordenado y sin que se vea todo pegado.

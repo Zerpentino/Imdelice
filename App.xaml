@@ -186,12 +186,30 @@
 </Style>
 
 
-<Style x:Key="PrimaryPillSmButtonStyle" TargetType="Button">
+  <Style x:Key="PrimaryPillButtonStyle" TargetType="Button">
+    <Setter Property="FontSize" Value="15"/>
+    <Setter Property="CornerRadius" Value="22"/>
+    <Setter Property="Padding" Value="18,10"/>
+    <Setter Property="BackgroundColor" Value="{StaticResource BrandPrimary}"/>
+    <Setter Property="TextColor" Value="{StaticResource BrandOnPrimary}"/>
+    <Setter Property="FontAttributes" Value="Bold"/>
+  </Style>
+
+  <Style x:Key="PrimaryPillSmButtonStyle" TargetType="Button">
     <Setter Property="FontSize" Value="13"/>
     <Setter Property="CornerRadius" Value="18"/>
     <Setter Property="Padding" Value="14,8"/>
     <Setter Property="BackgroundColor" Value="{StaticResource BrandPrimary}"/>
     <Setter Property="TextColor" Value="{StaticResource BrandOnPrimary}"/>
+  </Style>
+
+  <!-- Botón pill estándar: secundario -->
+  <Style x:Key="SecondaryPillButtonStyle" TargetType="Button">
+    <Setter Property="FontSize" Value="15"/>
+    <Setter Property="CornerRadius" Value="20"/>
+    <Setter Property="Padding" Value="16,10"/>
+    <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#EEE, Dark=#333}"/>
+    <Setter Property="TextColor" Value="{AppThemeBinding Light=#222, Dark=#EEE}"/>
   </Style>
 
   <!-- Botón pill pequeño: secundario -->
@@ -213,7 +231,7 @@
   </Style>
 
   
-  <x:String x:Key="urlbase">http://172.20.14.24:3000</x:String>
+  <x:String x:Key="urlbase">http://192.168.49.129:3000</x:String>
       <x:String x:Key="urlloginemail">/api/auth/email</x:String>
       <x:String x:Key="urlloginpin">/api/auth/pin</x:String>
 

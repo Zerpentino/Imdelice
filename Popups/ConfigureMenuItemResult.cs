@@ -10,4 +10,5 @@ public record ConfigureMenuItemResult(
     int Quantity,
     string? Notes,
     IReadOnlyList<TakeOrderPage.CartModifierSelection> Modifiers,
+    IReadOnlyList<TakeOrderPage.ComboChildSelection> Children,
     Guid? EditedLineId = null);

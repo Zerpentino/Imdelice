@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<toolkit:Popup
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+    x:Class="Imdeliceapp.Popups.OrderSplitPopup"
+    CanBeDismissedByTappingOutsideOfPopup="False">
+  <Border Stroke="{AppThemeBinding Light=#DDDDDD, Dark=#333333}"
+          StrokeShape="{RoundRectangle CornerRadius=22}"
+          BackgroundColor="{AppThemeBinding Light=White, Dark=#181818}"
+          Padding="0">
+    <ScrollView>
+      <VerticalStackLayout Padding="20"
+                           Spacing="16"
+                           WidthRequest="380">
+        <Grid ColumnDefinitions="*,Auto"
+              ColumnSpacing="8">
+          <Label Text="Dividir pedido"
+                 FontSize="20"
+                 FontAttributes="Bold"/>
+          <Button Text="✕"
+                  Grid.Column="1"
+                  WidthRequest="32"
+                  HeightRequest="32"
+                  Padding="0"
+                  BackgroundColor="Transparent"
+                  Clicked="Cancel_Clicked"/>
+        </Grid>
+
+        <Label Text="Selecciona los productos que moverás a la nueva cuenta y, si lo necesitas, sobreescribe los datos del pedido nuevo."
+               TextColor="{AppThemeBinding Light=#555, Dark=#BBB}"
+               FontSize="13"/>
+
+        <CollectionView ItemsSource="{Binding Items}"
+                        SelectionMode="None">
+          <CollectionView.EmptyView>
+            <Label Text="No hay productos disponibles para dividir."
+                   TextColor="{AppThemeBinding Light=#777, Dark=#AAA}"
+                   HorizontalTextAlignment="Center"/>
+          </CollectionView.EmptyView>
+          <CollectionView.ItemTemplate>
+            <DataTemplate>
+              <Border Stroke="{AppThemeBinding Light=#EEEEEE, Dark=#333333}"
+                      StrokeShape="{RoundRectangle CornerRadius=14}"
+                      BackgroundColor="{AppThemeBinding Light=#FBFBFB, Dark=#232323}"
+                      Padding="12"
+                      Margin="{Binding RowMargin}">
+                <Grid ColumnDefinitions="Auto,*"
+                      RowDefinitions="Auto,Auto"
+                      ColumnSpacing="12">
+                  <CheckBox Grid.RowSpan="2"
+                            IsChecked="{Binding IsSelected}"
+                            IsEnabled="{Binding IsSelectable}"
+                            VerticalOptions="Center"
+                            CheckedChanged="ItemCheckBox_CheckedChanged"/>
+                  <VerticalStackLayout Grid.Column="1"
+                                       Spacing="2">
+                    <Label Text="{Binding DisplayTitle}"
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+                    <Label Text="{Binding Detail}"
+                           FontSize="12"
+                           TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"/>
+                    <Label Text="Se moverá junto con el combo seleccionado"
+                           FontSize="11"
+                           TextColor="{AppThemeBinding Light=#AA5500, Dark=#FFCC80}"
+                           IsVisible="{Binding IsChild}"/>
+                  </VerticalStackLayout>
+
+                  <HorizontalStackLayout Grid.Column="1"
+                                         Grid.Row="1"
+                                         Spacing="8"
+                                         HorizontalOptions="End"
+                                         IsVisible="{Binding HasQuantityPicker}">
+                    <Label Text="Cantidad:"
+                           FontSize="12"
+                           TextColor="{AppThemeBinding Light=#555, Dark=#AAA}"/>
+                    <HorizontalStackLayout Spacing="4">
+                      <Button Text="-"
+                              WidthRequest="32"
+                              HeightRequest="32"
+                              Padding="0"
+                              Style="{StaticResource SecondaryPillSmButtonStyle}"
+                              CommandParameter="{Binding}"
+                              Clicked="DecreaseQuantity_Clicked"/>
+                      <Label Text="{Binding QuantityLabel}"
+                             FontAttributes="Bold"
+                             VerticalTextAlignment="Center"
+                             TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+                      <Button Text="+"
+                              WidthRequest="32"
+                              HeightRequest="32"
+                              Padding="0"
+                              Style="{StaticResource SecondaryPillSmButtonStyle}"
+                              CommandParameter="{Binding}"
+                              Clicked="IncreaseQuantity_Clicked"/>
+                    </HorizontalStackLayout>
+                  </HorizontalStackLayout>
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <VerticalStackLayout Spacing="6">
+          <Label Text="Tipo de servicio"
+                 FontAttributes="Bold"
+                 FontSize="14"/>
+          <Picker x:Name="ServiceTypePicker"
+                  Title="Usar el del pedido original"
+                  ItemDisplayBinding="{Binding Label}"/>
+        </VerticalStackLayout>
+
+        <VerticalStackLayout Spacing="6">
+          <Label Text="Mesa destino"
+                 FontAttributes="Bold"
+                 FontSize="14"/>
+          <Picker x:Name="TablePicker"
+                  Title="Mantener la mesa actual"
+                  ItemDisplayBinding="{Binding DisplayName}"/>
+        </VerticalStackLayout>
+
+        <VerticalStackLayout Spacing="6">
+          <Label Text="Comensales"
+                 FontAttributes="Bold"
+                 FontSize="14"/>
+          <Entry x:Name="CoversEntry"
+                 Keyboard="Numeric"
+                 Placeholder="Mantener"
+                 MaxLength="3"/>
+        </VerticalStackLayout>
+
+        <VerticalStackLayout Spacing="6">
+          <Label Text="Nota"
+                 FontAttributes="Bold"
+                 FontSize="14"/>
+          <Editor x:Name="NoteEditor"
+                  AutoSize="TextChanges"
+                  Placeholder="Ej. Cobrar por separado"/>
+        </VerticalStackLayout>
+
+        <Label x:Name="ValidationLabel"
+               TextColor="#E53935"
+               FontSize="12"
+               IsVisible="False"/>
+
+        <Grid ColumnDefinitions="*,*"
+              ColumnSpacing="12">
+          <Button Text="Cancelar"
+                  Clicked="Cancel_Clicked"
+                  BackgroundColor="{AppThemeBinding Light=#F1E9F1, Dark=#2B1D29}"
+                  TextColor="{AppThemeBinding Light=#894164, Dark=#D5B2C2}"/>
+          <Button Grid.Column="1"
+                  Text="Dividir pedido"
+                  BackgroundColor="#894164"
+                  TextColor="White"
+                  Clicked="Split_Clicked"/>
+        </Grid>
+      </VerticalStackLayout>
+    </ScrollView>
+  </Border>
+</toolkit:Popup>

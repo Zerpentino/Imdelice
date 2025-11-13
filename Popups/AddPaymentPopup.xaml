@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<toolkit:Popup xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+               xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+               xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+               x:Class="Imdeliceapp.Popups.AddPaymentPopup"
+               x:Name="PopupRoot"
+               Size="460,660"
+               CanBeDismissedByTappingOutsideOfPopup="False">
+  <Border Stroke="{AppThemeBinding Light=#E5E5E5, Dark=#333333}"
+          StrokeShape="{RoundRectangle CornerRadius=28}"
+          BackgroundColor="{AppThemeBinding Light=#F8F8F8, Dark=#121212}"
+          Padding="20">
+    <Border.Resources>
+      <Style x:Key="SectionCardStyle"
+             TargetType="Border">
+        <Setter Property="Stroke" Value="{AppThemeBinding Light=#E5E5E5, Dark=#2A2A2A}"/>
+        <Setter Property="StrokeShape" Value="{RoundRectangle CornerRadius=18}"/>
+        <Setter Property="Padding" Value="16"/>
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#FFFFFF, Dark=#1A1A1A}"/>
+      </Style>
+
+      <Style x:Key="MutedLabelStyle"
+             TargetType="Label">
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="TextColor" Value="{AppThemeBinding Light=#6B6F7B, Dark=#B5B9C4}"/>
+      </Style>
+
+      <Style x:Key="ChipBorderStyle"
+             TargetType="Border">
+        <Setter Property="Padding" Value="10,6"/>
+        <Setter Property="StrokeShape" Value="{RoundRectangle CornerRadius=20}"/>
+        <Setter Property="Stroke" Value="Transparent"/>
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#F4F4F6, Dark=#2B2F36}"/>
+      </Style>
+
+      <Style x:Key="QuickAmountButtonStyle"
+             TargetType="Button"
+             BasedOn="{StaticResource SecondaryPillButtonStyle}">
+        <Setter Property="Padding" Value="12,8"/>
+        <Setter Property="FontSize" Value="13"/>
+      </Style>
+    </Border.Resources>
+    <ScrollView>
+      <VerticalStackLayout Spacing="20">
+        <Grid ColumnDefinitions="*,Auto"
+              ColumnSpacing="12">
+          <Label Text="Registrar pago"
+                 FontAttributes="Bold"
+                 FontSize="22"
+                 VerticalOptions="Center"/>
+          <Border Style="{StaticResource SectionCardStyle}"
+                  Padding="14,10">
+            <VerticalStackLayout Spacing="2">
+              <Label Text="Pendiente por cobrar"
+                     Style="{StaticResource MutedLabelStyle}"/>
+              <Label Text="{Binding OutstandingDisplay}"
+                     FontAttributes="Bold"
+                     FontSize="16"/>
+            </VerticalStackLayout>
+          </Border>
+        </Grid>
+
+        <Border Style="{StaticResource SectionCardStyle}">
+          <VerticalStackLayout Spacing="12">
+            <Grid ColumnDefinitions="*,Auto"
+                  ColumnSpacing="12">
+              <VerticalStackLayout Spacing="2">
+                <Label Text="Monto a cobrar"
+                       Style="{StaticResource MutedLabelStyle}"/>
+                <Label Text="{Binding AmountDisplay}"
+                       FontAttributes="Bold"
+                       FontSize="24"/>
+              </VerticalStackLayout>
+              <Button Text="Editar"
+                      WidthRequest="90"
+                      Style="{StaticResource SecondaryPillButtonStyle}"
+                      Command="{Binding BeginAmountEditCommand}"/>
+            </Grid>
+
+            <Grid IsVisible="{Binding IsEditingAmount}">
+              <VerticalStackLayout Spacing="12">
+                <Entry Text="{Binding AmountEditText}"
+                       Keyboard="Numeric"
+                       Placeholder="Ej. 150.00"
+                       HorizontalTextAlignment="Center"/>
+                <HorizontalStackLayout Spacing="12">
+                  <Button Text="Cancelar"
+                          Style="{StaticResource SecondaryPillButtonStyle}"
+                          HorizontalOptions="FillAndExpand"
+                          Command="{Binding CancelAmountEditCommand}"/>
+                  <Button Text="Guardar"
+                          Style="{StaticResource PrimaryPillButtonStyle}"
+                          HorizontalOptions="FillAndExpand"
+                          Command="{Binding SaveAmountEditCommand}"/>
+                </HorizontalStackLayout>
+              </VerticalStackLayout>
+            </Grid>
+          </VerticalStackLayout>
+        </Border>
+
+        <VerticalStackLayout Spacing="8">
+          <Label Text="Método de pago"
+                 FontAttributes="Bold"/>
+          <FlexLayout Wrap="Wrap"
+                      Direction="Row"
+                      AlignItems="Start"
+                      AlignContent="Start"
+                      JustifyContent="Start"
+                      BindableLayout.ItemsSource="{Binding Methods}">
+            <BindableLayout.ItemTemplate>
+              <DataTemplate>
+                <Border Style="{StaticResource ChipBorderStyle}"
+                        Margin="0,0,10,10">
+                  <Border.Triggers>
+                    <DataTrigger TargetType="Border"
+                                 Binding="{Binding IsSelected}"
+                                 Value="True">
+                      <Setter Property="BackgroundColor"
+                              Value="{AppThemeBinding Light=#E8F2FF, Dark=#1D2B3F}"/>
+                      <Setter Property="Stroke" Value="#3A7AFE"/>
+                    </DataTrigger>
+                  </Border.Triggers>
+                  <Border.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding BindingContext.SelectMethodCommand, Source={x:Reference PopupRoot}}"
+                                          CommandParameter="{Binding .}"/>
+                  </Border.GestureRecognizers>
+                  <Label Text="{Binding Display}"
+                         FontAttributes="Bold"
+                         HorizontalTextAlignment="Center"/>
+                </Border>
+              </DataTemplate>
+            </BindableLayout.ItemTemplate>
+          </FlexLayout>
+        </VerticalStackLayout>
+
+        <Border Style="{StaticResource SectionCardStyle}">
+          <VerticalStackLayout Spacing="8">
+            <Label Text="{Binding ReceivedTitle}"
+                   Style="{StaticResource MutedLabelStyle}"/>
+            <Entry Text="{Binding ReceivedText}"
+                   Keyboard="Numeric"
+                   Placeholder="0.00"
+                   HorizontalTextAlignment="Center"
+                   IsEnabled="{Binding ShowCashFields}"/>
+            <Label Text="{Binding ReceivedDisplay}"
+                   FontAttributes="Bold"
+                   FontSize="24"/>
+            <Label Text="{Binding CashStatusMessage}"
+                   IsVisible="{Binding HasCashStatusMessage}"
+                   TextColor="{Binding CashStatusColor}"
+                   FontSize="12"
+                   LineBreakMode="WordWrap"/>
+          </VerticalStackLayout>
+        </Border>
+
+        <FlexLayout Wrap="Wrap"
+                    Direction="Row"
+                    AlignItems="Start"
+                    JustifyContent="Start"
+                    IsVisible="{Binding ShowCashFields}"
+                    BindableLayout.ItemsSource="{Binding SuggestedAmounts}">
+          <BindableLayout.ItemTemplate>
+            <DataTemplate>
+              <Button Text="{Binding Label}"
+                      Margin="0,0,10,10"
+                      Style="{StaticResource QuickAmountButtonStyle}"
+                      Command="{Binding BindingContext.ApplySuggestedAmountCommand, Source={x:Reference PopupRoot}}"
+                      CommandParameter="{Binding AmountCents}"/>
+            </DataTemplate>
+          </BindableLayout.ItemTemplate>
+        </FlexLayout>
+
+        <Button Text="Exacto"
+                IsVisible="{Binding ShowCashFields}"
+                Style="{StaticResource SecondaryPillButtonStyle}"
+                Command="{Binding FillExactCommand}"/>
+
+        <VerticalStackLayout Spacing="12">
+          <VerticalStackLayout Spacing="4">
+            <Label Text="Propina (opcional)"
+                   FontAttributes="Bold"/>
+            <Entry Text="{Binding TipText}"
+                   Keyboard="Numeric"
+                   Placeholder="0.00"
+                   HorizontalTextAlignment="Center"/>
+          </VerticalStackLayout>
+
+          <VerticalStackLayout Spacing="4">
+            <Label Text="Nota (opcional)"
+                   FontAttributes="Bold"/>
+            <Editor Text="{Binding Note}"
+                    AutoSize="TextChanges"
+                    Placeholder="Referencia del pago"
+                    HeightRequest="80"/>
+          </VerticalStackLayout>
+        </VerticalStackLayout>
+
+        <Label Text="{Binding OutstandingHint}"
+               IsVisible="{Binding HasOutstandingHint}"
+               FontSize="12"
+               TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"/>
+
+        <Label Text="{Binding ValidationMessage}"
+               IsVisible="{Binding HasValidationMessage}"
+               TextColor="{AppThemeBinding Light=#D84315, Dark=#FFAB91}"/>
+
+        <Border Style="{StaticResource SectionCardStyle}"
+                IsVisible="{Binding IsConfirming}">
+          <VerticalStackLayout Spacing="12">
+            <Label Text="Confirma el registro"
+                   FontAttributes="Bold"/>
+
+            <VerticalStackLayout Spacing="10">
+              <Grid ColumnDefinitions="Auto,*"
+                    ColumnSpacing="12">
+                <Label Text="Método"
+                       Style="{StaticResource MutedLabelStyle}"/>
+                <Label Grid.Column="1"
+                       Text="{Binding SelectedMethodDisplay}"
+                       FontAttributes="Bold"
+                       HorizontalOptions="End"
+                       LineBreakMode="TailTruncation"/>
+              </Grid>
+
+              <Grid ColumnDefinitions="Auto,*"
+                    ColumnSpacing="12">
+                <Label Text="Monto"
+                       Style="{StaticResource MutedLabelStyle}"/>
+                <Label Grid.Column="1"
+                       Text="{Binding AmountDisplay}"
+                       FontAttributes="Bold"
+                       HorizontalOptions="End"/>
+              </Grid>
+
+              <Grid ColumnDefinitions="Auto,*"
+                    ColumnSpacing="12">
+                <Label Text="Recibido"
+                       Style="{StaticResource MutedLabelStyle}"/>
+                <Label Grid.Column="1"
+                       Text="{Binding ReceivedDisplay}"
+                       HorizontalOptions="End"/>
+              </Grid>
+
+              <Grid ColumnDefinitions="Auto,*"
+                    ColumnSpacing="12">
+                <Label Text="Cambio"
+                       Style="{StaticResource MutedLabelStyle}"/>
+                <Label Grid.Column="1"
+                       Text="{Binding ChangeDisplay}"
+                       HorizontalOptions="End"/>
+              </Grid>
+
+              <Grid ColumnDefinitions="Auto,*"
+                    ColumnSpacing="12">
+                <Label Text="Propina"
+                       Style="{StaticResource MutedLabelStyle}"/>
+                <Label Grid.Column="1"
+                       Text="{Binding TipSummary}"
+                       HorizontalOptions="End"/>
+              </Grid>
+
+              <VerticalStackLayout Spacing="2">
+                <Label Text="Nota"
+                       Style="{StaticResource MutedLabelStyle}"/>
+                <Label Text="{Binding NoteSummary}"
+                       LineBreakMode="WordWrap"/>
+              </VerticalStackLayout>
+            </VerticalStackLayout>
+          </VerticalStackLayout>
+        </Border>
+
+        <Grid ColumnDefinitions="*,*"
+              ColumnSpacing="12"
+              IsVisible="{Binding IsEditingStage}">
+          <Button Grid.Column="0"
+                  Text="Continuar"
+                  Style="{StaticResource PrimaryPillButtonStyle}"
+                  HorizontalOptions="FillAndExpand"
+                  Command="{Binding ContinueCommand}"/>
+          <Button Grid.Column="1"
+                  Text="Cancelar"
+                  Style="{StaticResource SecondaryPillButtonStyle}"
+                  HorizontalOptions="FillAndExpand"
+                  Clicked="Cancel_Clicked"/>
+        </Grid>
+
+        <Grid ColumnDefinitions="*,*"
+              ColumnSpacing="12"
+              IsVisible="{Binding IsConfirming}">
+          <Button Grid.Column="0"
+                  Text="Cancelar"
+                  Style="{StaticResource SecondaryPillButtonStyle}"
+                  HorizontalOptions="FillAndExpand"
+                  Command="{Binding BackFromConfirmationCommand}"/>
+          <Button Grid.Column="1"
+                  Text="Registrar"
+                  Style="{StaticResource PrimaryPillButtonStyle}"
+                  HorizontalOptions="FillAndExpand"
+                  Clicked="Save_Clicked"/>
+        </Grid>
+      </VerticalStackLayout>
+    </ScrollView>
+  </Border>
+</toolkit:Popup>

@@ -6,8 +6,10 @@ obj/Debug/net9.0-android/resizetizer/r/mipmap-hdpi/appicon_foreground.png
 obj/Debug/net9.0-android/resizetizer/r/mipmap-hdpi/appicon_round.png
 obj/Debug/net9.0-android/resizetizer/r/mipmap-hdpi/appicon.png
 obj/Debug/net9.0-android/resizetizer/r/mipmap-hdpi/appicon_background.png
+obj/Debug/net9.0-android/resizetizer/r/drawable/filtrar_dark.png
 obj/Debug/net9.0-android/resizetizer/r/drawable/ojo_abierto.png
 obj/Debug/net9.0-android/resizetizer/r/drawable/up.png
+obj/Debug/net9.0-android/resizetizer/r/drawable/filtrar_light.png
 obj/Debug/net9.0-android/resizetizer/r/drawable/no_disponible.png
 obj/Debug/net9.0-android/resizetizer/r/drawable/contratos_on.png
 obj/Debug/net9.0-android/resizetizer/r/drawable/ojo_abierto_blanco.png

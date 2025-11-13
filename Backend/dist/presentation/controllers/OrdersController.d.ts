@@ -1,0 +1,47 @@
+import type { Response } from "express";
+import { CreateOrder } from "../../core/usecases/orders/CreateOrder";
+import { AddOrderItem } from "../../core/usecases/orders/AddOrderItem";
+import { UpdateOrderItemStatus } from "../../core/usecases/orders/UpdateOrderItemStatus";
+import { AddPayment } from "../../core/usecases/orders/AddPayment";
+import { GetOrderDetail } from "../../core/usecases/orders/GetOrderDetail";
+import { ListKDS } from "../../core/usecases/orders/ListKDS";
+import { UpdateOrderItem } from "../../core/usecases/orders/UpdateOrderItem";
+import { RemoveOrderItem } from "../../core/usecases/orders/RemoveOrderItem";
+import { SplitOrderByItems } from "../../core/usecases/orders/SplitOrderByItems";
+import { UpdateOrderMeta } from "../../core/usecases/orders/UpdateOrderMeta";
+import { UpdateOrderStatus } from "../../core/usecases/orders/UpdateOrderStatus";
+import { ListOrders } from "../../core/usecases/orders/ListOrders";
+import { RefundOrder } from "../../core/usecases/orders/RefundOrder";
+import type { AuthRequest } from "../middlewares/authenticate";
+import { AdminAuthService } from "../../infra/services/AdminAuthService";
+export declare class OrdersController {
+    private createOrderUC;
+    private addItemUC;
+    private updateItemStatusUC;
+    private addPaymentUC;
+    private getOrderDetailUC;
+    private listKDSUC;
+    private updateOrderItemUC;
+    private removeOrderItemUC;
+    private splitOrderByItemsUC;
+    private updateOrderMetaUC;
+    private updateOrderStatusUC;
+    private listOrdersUC;
+    private refundOrderUC;
+    private adminAuthService;
+    constructor(createOrderUC: CreateOrder, addItemUC: AddOrderItem, updateItemStatusUC: UpdateOrderItemStatus, addPaymentUC: AddPayment, getOrderDetailUC: GetOrderDetail, listKDSUC: ListKDS, updateOrderItemUC: UpdateOrderItem, removeOrderItemUC: RemoveOrderItem, splitOrderByItemsUC: SplitOrderByItems, updateOrderMetaUC: UpdateOrderMeta, updateOrderStatusUC: UpdateOrderStatus, listOrdersUC: ListOrders, refundOrderUC: RefundOrder, adminAuthService: AdminAuthService);
+    list: (req: AuthRequest, res: Response) => Promise<Response<any, Record<string, any>>>;
+    create: (req: AuthRequest, res: Response) => Promise<Response<any, Record<string, any>>>;
+    get: (req: AuthRequest, res: Response) => Promise<Response<any, Record<string, any>>>;
+    addItem: (req: AuthRequest, res: Response) => Promise<Response<any, Record<string, any>>>;
+    setItemStatus: (req: AuthRequest, res: Response) => Promise<Response<any, Record<string, any>>>;
+    addPayment: (req: AuthRequest, res: Response) => Promise<Response<any, Record<string, any>>>;
+    kds: (req: AuthRequest, res: Response) => Promise<Response<any, Record<string, any>>>;
+    updateItem: (req: AuthRequest, res: Response) => Promise<Response<any, Record<string, any>>>;
+    removeItem: (req: AuthRequest, res: Response) => Promise<Response<any, Record<string, any>>>;
+    splitByItems: (req: AuthRequest, res: Response) => Promise<Response<any, Record<string, any>>>;
+    updateMeta: (req: AuthRequest, res: Response) => Promise<Response<any, Record<string, any>>>;
+    updateStatus: (req: AuthRequest, res: Response) => Promise<Response<any, Record<string, any>>>;
+    refund: (req: AuthRequest, res: Response) => Promise<Response<any, Record<string, any>>>;
+}
+//# sourceMappingURL=OrdersController.d.ts.map

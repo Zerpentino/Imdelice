@@ -9,4 +9,7 @@ public enum CartPopupAction
     EditLine
 }
 
-public record CartPopupResult(CartPopupAction Action, TakeOrderPage.CartEntry? LineToEdit = null);
+public record CartPopupResult(
+    CartPopupAction Action,
+    TakeOrderPage.CartEntry? LineToEdit = null,
+    TakeOrderPage.OrderHeaderState? Header = null);

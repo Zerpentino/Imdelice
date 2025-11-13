@@ -1,0 +1,1 @@
+{"version":3,"file":"ListArchivedMenus.js","sourceRoot":"","sources":["../../../../src/core/usecases/menu/ListArchivedMenus.ts"],"names":[],"mappings":";;;AAEA,MAAa,iBAAiB;IAC5B,YAA6B,IAAqB;QAArB,SAAI,GAAJ,IAAI,CAAiB;IAAG,CAAC;IAEtD,IAAI;QACF,OAAO,IAAI,CAAC,IAAI,CAAC,iBAAiB,EAAE,CAAC;IACvC,CAAC;CACF;AAND,8CAMC"}
