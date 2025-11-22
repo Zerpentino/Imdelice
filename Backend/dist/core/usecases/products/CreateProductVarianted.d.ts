@@ -9,9 +9,11 @@ export declare class CreateProductVarianted {
             name: string;
             priceCents: number;
             sku?: string;
+            barcode?: string | null;
         }[];
         description?: string;
         sku?: string;
+        barcode?: string | null;
         image?: {
             buffer: Buffer;
             mimeType: string;
@@ -28,6 +30,7 @@ export declare class CreateProductVarianted {
         categoryId: number;
         priceCents: number | null;
         sku: string | null;
+        barcode: string | null;
         image: Uint8Array | null;
         imageMimeType: string | null;
         imageSize: number | null;

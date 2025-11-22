@@ -81,12 +81,17 @@ private HashSet<string> _origPerms = new(StringComparer.OrdinalIgnoreCase);
     ("orders.read", "Órdenes: Ver"),
     ("orders.create", "Órdenes: Crear"),
     ("orders.update", "Órdenes: Editar"),
+    ("orders.refund", "Órdenes: Reembolsar"),
     ("menu.read", "Menús: Ver"),
     ("menu.create", "Menús: Crear"),
     ("menu.update", "Menús: Editar"),
-    ("menu.delete", "Menús: Eliminar")
- 
+    ("menu.delete", "Menús: Eliminar"),
+    ("inventory.read", "Inventario: Ver"),
+    ("inventory.adjust", "Inventario: Ajustar"),
+    ("expenses.read", "Gastos: Ver / reportes"),
+    ("expenses.manage", "Gastos: Crear/editar/eliminar")
 
+ 
 };
 
 public ObservableCollection<PermItem> PermItems { get; } = new();

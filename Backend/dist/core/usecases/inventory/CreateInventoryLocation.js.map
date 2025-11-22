@@ -1,0 +1,1 @@
+{"version":3,"file":"CreateInventoryLocation.js","sourceRoot":"","sources":["../../../../src/core/usecases/inventory/CreateInventoryLocation.ts"],"names":[],"mappings":";;;AAGA,MAAa,uBAAuB;IAClC,YAAoB,IAA0B;QAA1B,SAAI,GAAJ,IAAI,CAAsB;IAAG,CAAC;IAElD,IAAI,CAAC,KAKJ;QACC,OAAO,IAAI,CAAC,IAAI,CAAC,cAAc,CAAC,KAAK,CAAC,CAAC;IACzC,CAAC;CACF;AAXD,0DAWC"}

@@ -14,4 +14,10 @@ router.get(
   asyncHandler(reportsController.payments)
 );
 
+router.get(
+  "/profit-loss",
+  authorize("orders.read"),
+  asyncHandler(reportsController.profitLoss)
+);
+
 export default router;

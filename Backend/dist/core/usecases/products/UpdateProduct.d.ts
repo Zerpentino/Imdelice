@@ -13,6 +13,7 @@ export declare class UpdateProduct {
         categoryId: number;
         priceCents: number | null;
         sku: string | null;
+        barcode: string | null;
         image: Uint8Array | null;
         imageMimeType: string | null;
         imageSize: number | null;

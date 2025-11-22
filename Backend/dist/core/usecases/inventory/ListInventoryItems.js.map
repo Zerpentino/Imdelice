@@ -1,0 +1,1 @@
+{"version":3,"file":"ListInventoryItems.js","sourceRoot":"","sources":["../../../../src/core/usecases/inventory/ListInventoryItems.ts"],"names":[],"mappings":";;;AAKA,MAAa,kBAAkB;IAC7B,YAAoB,IAA0B;QAA1B,SAAI,GAAJ,IAAI,CAAsB;IAAG,CAAC;IAElD,IAAI,CAAC,MAAgC;QACnC,OAAO,IAAI,CAAC,IAAI,CAAC,SAAS,CAAC,MAAM,CAAC,CAAC;IACrC,CAAC;CACF;AAND,gDAMC"}

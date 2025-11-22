@@ -8,6 +8,7 @@ export class CreateProductSimple {
     priceCents: number;
     description?: string;
     sku?: string;
+    barcode?: string | null;
     image?: { buffer: Buffer; mimeType: string; size: number }; // 👈 AQUI
   }) {
     return this.repo.createSimple(input);

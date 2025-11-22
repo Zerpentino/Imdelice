@@ -15,6 +15,7 @@ router.get("/variants/:variantId/modifier-groups", (0, authorize_1.authorize)('p
 router.post("/variants/:variantId/modifier-groups", (0, authorize_1.authorize)('products.update'), (0, asyncHandler_1.asyncHandler)(container_1.productsController.attachModifierToVariant));
 router.patch("/variants/:variantId/modifier-groups/:groupId", (0, authorize_1.authorize)('products.update'), (0, asyncHandler_1.asyncHandler)(container_1.productsController.updateVariantModifierGroup));
 router.delete("/variants/:variantId/modifier-groups/:groupId", (0, authorize_1.authorize)('products.update'), (0, asyncHandler_1.asyncHandler)(container_1.productsController.detachModifierFromVariant));
+router.get("/by-barcode/:barcode", (0, authorize_1.authorize)('products.read'), (0, asyncHandler_1.asyncHandler)(container_1.productsController.getByBarcode));
 router.get("/:id", (0, authorize_1.authorize)('products.read'), (0, asyncHandler_1.asyncHandler)(container_1.productsController.getDetail));
 router.post("/attach-modifier", (0, authorize_1.authorize)('products.update'), (0, asyncHandler_1.asyncHandler)(container_1.productsController.attachModifier));
 router.post('/detach-modifier', (0, authorize_1.authorize)('products.update'), (0, asyncHandler_1.asyncHandler)(container_1.productsController.detachModifierGroup)); // 👈 NUEVA

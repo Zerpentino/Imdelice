@@ -9,6 +9,8 @@ import { OrdersController } from "../presentation/controllers/OrdersController";
 import { ReportsController } from "../presentation/controllers/ReportsController";
 import { ChannelConfigController } from "../presentation/controllers/ChannelConfigController";
 import { TablesController } from '../presentation/controllers/TablesController';
+import { InventoryController } from '../presentation/controllers/InventoryController';
+import { ExpensesController } from '../presentation/controllers/ExpensesController';
 declare const usersController: UsersController;
 declare const rolesController: RolesController;
 declare const authController: AuthController;
@@ -20,5 +22,7 @@ export declare const menuController: MenuController;
 export declare const ordersController: OrdersController;
 export declare const channelConfigController: ChannelConfigController;
 export declare const reportsController: ReportsController;
+export declare const inventoryController: InventoryController;
+export declare const expensesController: ExpensesController;
 export { usersController, rolesController, authController };
 //# sourceMappingURL=index.d.ts.map

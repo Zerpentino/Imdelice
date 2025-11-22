@@ -1,4 +1,5 @@
 import type { Response } from "express";
+import { InventoryMovementType } from "@prisma/client";
 import { success, fail } from "../utils/apiResponse";
 import {
   CreateOrderDto,
@@ -30,6 +31,7 @@ import { ListOrders } from "../../core/usecases/orders/ListOrders";
 import { RefundOrder } from "../../core/usecases/orders/RefundOrder";
 import type { AuthRequest } from "../middlewares/authenticate";
 import { AdminAuthService } from "../../infra/services/AdminAuthService";
+import { RegisterOrderInventoryMovements } from "../../core/usecases/inventory/RegisterOrderInventoryMovements";
 
 function ensureNumericId(param: string | undefined) {
   const id = Number(param);
@@ -106,6 +108,7 @@ export class OrdersController {
     private updateOrderStatusUC: UpdateOrderStatus,
     private listOrdersUC: ListOrders,
     private refundOrderUC: RefundOrder,
+    private registerInventoryMovementsUC: RegisterOrderInventoryMovements,
     private adminAuthService: AdminAuthService
   ) {}
 
@@ -205,6 +208,16 @@ export class OrdersController {
       const receivedByUserId = req.auth?.userId;
       if (!receivedByUserId) return fail(res, "Unauthorized", 401);
       const payment = await this.addPaymentUC.exec(id, { ...dto, receivedByUserId });
+
+      const order = await this.getOrderDetailUC.exec(id);
+      if (order?.status === "CLOSED") {
+        await this.syncOrderInventory(
+          id,
+          InventoryMovementType.SALE,
+          receivedByUserId,
+        );
+      }
+
       return success(res, payment, "Paid", 201);
     } catch (e: any) {
       const status = e?.message === "Id inválido"
@@ -306,10 +319,33 @@ export class OrdersController {
       const dto = SplitOrderByItemsDto.parse(req.body);
       const servedByUserId = req.auth?.userId;
       if (!servedByUserId) return fail(res, "Unauthorized", 401);
+      const orderBeforeSplit = await this.getOrderDetailUC.exec(orderId);
       const result = await this.splitOrderByItemsUC.exec(orderId, {
         ...dto,
         servedByUserId,
       });
+      if (orderBeforeSplit?.status === "CLOSED") {
+        await this.syncOrderInventory(
+          orderId,
+          InventoryMovementType.SALE_RETURN,
+          servedByUserId,
+          { requireSaleToExist: true }
+        );
+        await this.syncOrderInventory(
+          orderId,
+          InventoryMovementType.SALE,
+          servedByUserId,
+          { force: true }
+        );
+      }
+      if (result?.newOrderId) {
+        await this.syncOrderInventory(
+          result.newOrderId,
+          InventoryMovementType.SALE,
+          servedByUserId,
+          { force: true }
+        );
+      }
       return success(res, result, "Order split", 201);
     } catch (e: any) {
       const status = e?.message === "Id inválido" ? 400 : 500;
@@ -334,6 +370,18 @@ export class OrdersController {
       const orderId = ensureNumericId(req.params.id);
       const dto = UpdateOrderStatusDto.parse(req.body);
       await this.updateOrderStatusUC.exec(orderId, dto.status);
+      if (dto.status === "CLOSED" || dto.status === "REFUNDED" || dto.status === "CANCELED") {
+        await this.syncOrderInventory(
+          orderId,
+          dto.status === "CLOSED"
+            ? InventoryMovementType.SALE
+            : InventoryMovementType.SALE_RETURN,
+          req.auth?.userId ?? null,
+          dto.status === "CANCELED"
+            ? { requireSaleToExist: true }
+            : undefined
+        );
+      }
       return success(res, null, "Updated");
     } catch (e: any) {
       const status =
@@ -360,10 +408,50 @@ export class OrdersController {
         adminUserId: admin.id,
         reason: dto.reason ?? null,
       });
+      await this.syncOrderInventory(
+        orderId,
+        InventoryMovementType.SALE_RETURN,
+        admin.id,
+      );
       return success(res, result, "Refunded");
     } catch (e: any) {
       const status = e?.status || (e?.message?.toLowerCase?.().includes("pedido") ? 400 : 500);
       return fail(res, e?.message || "Error refunding order", status, e);
     }
+  };
+
+  private syncOrderInventory = async (
+    orderId: number,
+    movementType: InventoryMovementType,
+    userId: number | null,
+    options?: { force?: boolean; requireSaleToExist?: boolean },
+  ) => {
+    const order = await this.getOrderDetailUC.exec(orderId);
+    if (!order) return;
+
+    if (
+      movementType === InventoryMovementType.SALE &&
+      order.status !== "CLOSED" &&
+      !options?.force
+    ) {
+      return;
+    }
+    if (
+      movementType === InventoryMovementType.SALE_RETURN &&
+      order.status !== "REFUNDED" &&
+      order.status !== "CANCELED"
+    ) {
+      // allow SALE_RETURN when forcefully reconciling (e.g., split on closed order) by honoring force flag
+      if (!options?.force && !options?.requireSaleToExist) {
+        return;
+      }
+    }
+
+    await this.registerInventoryMovementsUC.exec({
+      order: order as any,
+      movementType,
+      userId,
+      options,
+    });
   };
 }

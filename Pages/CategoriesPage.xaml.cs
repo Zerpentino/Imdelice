@@ -87,6 +87,7 @@ public partial class CategoriesPage : ContentPage
     public bool CanCreate => Perms.CategoriesCreate;
     public bool CanUpdate => Perms.CategoriesUpdate;
     public bool CanDelete => Perms.CategoriesDelete;
+    bool _warnedNoUpdate; // evita mostrar muchas alertas al intentar toggles sin permiso
 
     static readonly JsonSerializerOptions _json = new() { PropertyNameCaseInsensitive = true };
     public ObservableCollection<CategoryListItem> Categories { get; } = new();
@@ -268,7 +269,9 @@ public partial class CategoriesPage : ContentPage
             }
 
             var env = JsonSerializer.Deserialize<ApiEnvelopeCategoria<List<CategoryDTO>>>(body, _json);
-            var list = env?.data ?? new();
+            var list = (env?.data ?? new())
+                .Where(c => !string.Equals(c.slug, "inventario", StringComparison.OrdinalIgnoreCase))
+                .ToList();
 
             _all = list
                 .Select(c => new CategoryListItem
@@ -452,7 +455,11 @@ public partial class CategoriesPage : ContentPage
             sw.IsToggled = anterior;   // vuelve al estado anterior
             _silenceSwitch = false;
 
-            await DisplayAlert("Acceso restringido", "No puedes actualizar categorías.", "OK");
+            if (!_warnedNoUpdate)
+            {
+                _warnedNoUpdate = true;
+                await DisplayAlert("Acceso restringido", "No puedes actualizar categorías.", "OK");
+            }
             return;
         }
 

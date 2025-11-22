@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:Imdeliceapp.Pages"
+             x:Class="Imdeliceapp.Pages.InventoryScannerPage"
+             Title="Escanear movimientos"
+              Shell.NavBarIsVisible="True"
+             BackgroundColor="{AppThemeBinding Light=White, Dark=Black}">
+  <Grid>
+    <ScrollView>
+      <VerticalStackLayout Padding="24" Spacing="18">
+        <Label Text="Escanea códigos con la pistola"
+               FontSize="22"
+               FontAttributes="Bold"
+               TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+        <Label Text="Mantén enfocado el campo inferior. Cada lectura se agregará a la lista para enviarla al inventario."
+               FontSize="13"
+               TextColor="{AppThemeBinding Light=#6F6F6F, Dark=#BFBFBF}"/>
+
+        <Entry x:Name="BarcodeEntry"
+               Placeholder="Coloca aquí la pistola y escanea..."
+               Completed="BarcodeEntry_Completed"
+               TextChanged="BarcodeEntry_TextChanged"/>
+
+        <CollectionView ItemsSource="{Binding PendingScans}"
+                        SelectionMode="None">
+          <CollectionView.EmptyView>
+            <Label Text="Sin lecturas aún."
+                   HorizontalOptions="Center"
+                   TextColor="{AppThemeBinding Light=#777, Dark=#AAA}"/>
+          </CollectionView.EmptyView>
+          <CollectionView.ItemTemplate>
+            <DataTemplate>
+              <SwipeView>
+                <SwipeView.RightItems>
+                  <SwipeItems Mode="Reveal">
+                    <SwipeItem Text="Quitar"
+                               BackgroundColor="#B71C1C"
+                               Command="{Binding Source={RelativeSource AncestorType={x:Type local:InventoryScannerPage}}, Path=BindingContext.RemoveCommand}"
+                               CommandParameter="{Binding}" />
+                  </SwipeItems>
+                </SwipeView.RightItems>
+                <Grid ColumnDefinitions="*,Auto"
+                      RowDefinitions="Auto,Auto"
+                      Padding="12"
+                      Margin="0,6"
+                      BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1F1F1F}">
+                  <Label Text="{Binding DisplayName}"
+                         FontAttributes="Bold"
+                         TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+                  <Label Grid.Row="1"
+                         Text="{Binding Barcode}"
+                         FontSize="12"
+                         TextColor="{AppThemeBinding Light=#757575, Dark=#BDBDBD}"/>
+
+                  <VerticalStackLayout Grid.Column="1"
+                                       HorizontalOptions="End"
+                                       Spacing="4">
+                    <Entry Text="{Binding Quantity, Mode=TwoWay}"
+                           Keyboard="Numeric"
+                           WidthRequest="120"
+                           Placeholder="Cantidad"/>
+                  </VerticalStackLayout>
+                </Grid>
+              </SwipeView>
+            </DataTemplate>
+          </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <Label Text="{Binding StatusMessage}"
+               TextColor="{Binding StatusColor}"
+               IsVisible="{Binding HasStatus}"/>
+
+        <HorizontalStackLayout Spacing="12">
+          <Button Text="Enviar movimientos"
+                  Style="{StaticResource PrimaryButtonStyle}"
+                  HorizontalOptions="FillAndExpand"
+                  Clicked="SendButton_Clicked"/>
+          <Button Text="Limpiar"
+                  Style="{StaticResource SecondaryButtonStyle}"
+                  Clicked="ClearButton_Clicked"/>
+        </HorizontalStackLayout>
+      </VerticalStackLayout>
+    </ScrollView>
+  </Grid>
+</ContentPage>

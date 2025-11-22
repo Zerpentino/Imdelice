@@ -1,0 +1,1 @@
+{"version":3,"file":"GetExpense.d.ts","sourceRoot":"","sources":["../../../../src/core/usecases/expenses/GetExpense.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,kBAAkB,EAAE,MAAM,8CAA8C,CAAC;AAEvF,qBAAa,UAAU;IACT,OAAO,CAAC,IAAI;gBAAJ,IAAI,EAAE,kBAAkB;IAE5C,IAAI,CAAC,EAAE,EAAE,MAAM;;;;;;;;;;;;;CAGhB"}

@@ -6,6 +6,7 @@ export declare class ReplaceProductVariants {
         name: string;
         priceCents: number;
         sku?: string;
+        barcode?: string | null;
     }[]): Promise<void>;
 }
 //# sourceMappingURL=ReplaceProductVariants.d.ts.map

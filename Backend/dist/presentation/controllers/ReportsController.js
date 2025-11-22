@@ -51,8 +51,9 @@ function parseDate(value, endOfDay = false, tzOffsetMinutes = 0) {
     return parsed;
 }
 class ReportsController {
-    constructor(paymentsReportUC) {
+    constructor(paymentsReportUC, profitLossReportUC) {
         this.paymentsReportUC = paymentsReportUC;
+        this.profitLossReportUC = profitLossReportUC;
         this.payments = async (req, res) => {
             try {
                 const query = reports_dto_1.PaymentsReportQueryDto.parse(req.query);
@@ -76,6 +77,31 @@ class ReportsController {
             }
             catch (e) {
                 return (0, apiResponse_1.fail)(res, e?.message || "Error generating payments report", 400, e);
+            }
+        };
+        this.profitLoss = async (req, res) => {
+            try {
+                const query = reports_dto_1.PaymentsReportQueryDto.parse(req.query);
+                const tzOffsetRaw = req.query.tzOffsetMinutes;
+                let tzOffsetMinutes = 0;
+                if (tzOffsetRaw !== undefined) {
+                    tzOffsetMinutes = Number(tzOffsetRaw);
+                    if (Number.isNaN(tzOffsetMinutes) ||
+                        tzOffsetMinutes < -720 ||
+                        tzOffsetMinutes > 840) {
+                        throw new Error("tzOffsetMinutes inválido");
+                    }
+                }
+                const filters = {
+                    from: parseDate(query.from, false, tzOffsetMinutes),
+                    to: parseDate(query.to, true, tzOffsetMinutes),
+                    includeOrders: query.includeOrders,
+                };
+                const report = await this.profitLossReportUC.exec(filters);
+                return (0, apiResponse_1.success)(res, report);
+            }
+            catch (e) {
+                return (0, apiResponse_1.fail)(res, e?.message || "Error generating profit/loss report", 400, e);
             }
         };
     }

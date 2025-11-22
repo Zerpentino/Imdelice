@@ -44,6 +44,17 @@ public partial class AppShell : Shell
 		Routing.RegisterRoute(nameof(ChannelConfigPage), typeof(ChannelConfigPage));
 		Routing.RegisterRoute(nameof(KdsPage), typeof(KdsPage));
 		Routing.RegisterRoute(nameof(PaymentsReportPage), typeof(PaymentsReportPage));
+		Routing.RegisterRoute(nameof(InventoryProductsPage), typeof(InventoryProductsPage));
+		Routing.RegisterRoute(nameof(InventoryLocationsPage), typeof(InventoryLocationsPage));
+		Routing.RegisterRoute(nameof(InventoryLocationEditorPage), typeof(InventoryLocationEditorPage));
+		Routing.RegisterRoute(nameof(InventoryMovementsPage), typeof(InventoryMovementsPage));
+		Routing.RegisterRoute(nameof(InventoryScannerPage), typeof(InventoryScannerPage));
+		Routing.RegisterRoute(nameof(InventoryManualMovementPage), typeof(InventoryManualMovementPage));
+		Routing.RegisterRoute(nameof(InventoryInsumoEditorPage), typeof(InventoryInsumoEditorPage));
+		Routing.RegisterRoute(nameof(ExpensesPage), typeof(ExpensesPage));
+		Routing.RegisterRoute(nameof(ExpenseEditorPage), typeof(ExpenseEditorPage));
+		Routing.RegisterRoute(nameof(ProfitLossPage), typeof(ProfitLossPage));
+
 
 
 

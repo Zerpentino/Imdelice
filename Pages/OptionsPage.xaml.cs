@@ -23,11 +23,17 @@ public partial class OptionsPage : ContentPage
         BtnUsuarios.IsVisible = Perms.UsersRead;       // ver listado de usuarios
         BtnRoles.IsVisible = Perms.RolesRead;       // ver listado de roles
         BtnCategorias.IsVisible = Perms.CategoriesRead;  // ver categorías
+        BtnCategorias.IsEnabled = Perms.CategoriesRead;
         BtnModifierGroups.IsVisible = Perms.ModifiersRead;   // ver grupos de modificadores
         BtnTables.IsVisible = Perms.TablesRead; // ver mesas
         BtnMenu.IsVisible = Perms.MenusRead;      // editar/publicar menú
         BtnChannelConfig.IsVisible = Perms.OrdersUpdate;
-        BtnPaymentsReport.IsVisible = Perms.OrdersRead;
+        BtnPaymentsReport.IsVisible = Perms.ExpensesRead;
+        BtnPaymentsReport.IsEnabled = Perms.ExpensesRead;
+        BtnInventory.IsVisible = Perms.InventoryRead;
+        BtnInventory.IsEnabled = Perms.InventoryRead;
+        BtnExpenses.IsVisible = Perms.ExpensesRead;
+        BtnProfitLoss.IsVisible = Perms.OrdersRead && Perms.ExpensesRead;
     }
 
     private async void BtnUsuarios_Clicked(object sender, EventArgs e)
@@ -64,6 +70,17 @@ public partial class OptionsPage : ContentPage
         await Shell.Current.GoToAsync(nameof(ModifierGroupsPage));
     }
 
+    private async void OpenProfitLoss_Clicked(object sender, EventArgs e)
+    {
+        if (!(Perms.OrdersRead && Perms.ExpensesRead))
+        {
+            await DisplayAlert("Acceso restringido", "No puedes ver el reporte de ganancias vs gastos.", "OK");
+            return;
+        }
+
+        await Shell.Current.GoToAsync(nameof(ProfitLossPage));
+    }
+
     private async void OpenTables_Clicked(object sender, EventArgs e)
     {
         if (!Perms.TablesRead) { await DisplayAlert("Acceso restringido", "No puedes ver mesas.", "OK"); return; }
@@ -91,6 +108,29 @@ public partial class OptionsPage : ContentPage
 
         await Shell.Current.GoToAsync(nameof(PaymentsReportPage));
     }
+
+    private async void OpenInventory_Clicked(object sender, EventArgs e)
+    {
+        if (!Perms.InventoryRead)
+        {
+            await DisplayAlert("Acceso restringido", "No puedes ver el inventario.", "OK");
+            return;
+        }
+
+        await Shell.Current.GoToAsync(nameof(InventoryLocationsPage));
+    }
+
+    private async void OpenExpenses_Clicked(object sender, EventArgs e)
+    {
+        if (!Perms.ExpensesRead)
+        {
+            await DisplayAlert("Acceso restringido", "No puedes ver los gastos.", "OK");
+            return;
+        }
+
+        await Shell.Current.GoToAsync(nameof(ExpensesPage));
+    }
+
 
 
     private async void BtnLogout_Clicked(object sender, EventArgs e)

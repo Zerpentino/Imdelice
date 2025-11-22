@@ -9,7 +9,9 @@ const PERMS = [
   'products.read','products.create','products.update','products.delete',
   'orders.read','orders.create','orders.update','orders.delete','orders.refund',
   'menu.read','menu.create','menu.update','menu.delete','menu.publish',
-  'tables.read','tables.create','tables.update','tables.delete'
+  'tables.read','tables.create','tables.update','tables.delete',
+  'inventory.read','inventory.adjust',
+  'expenses.read','expenses.manage'
 ]
 
 const CHANNEL_CONFIGS: Array<{ source: 'POS' | 'UBER' | 'DIDI' | 'RAPPI'; markupPct: number }> = [
@@ -18,6 +20,13 @@ const CHANNEL_CONFIGS: Array<{ source: 'POS' | 'UBER' | 'DIDI' | 'RAPPI'; markup
   { source: 'DIDI', markupPct: 40 },
   { source: 'RAPPI', markupPct: 35 },
 ];
+
+const INVENTORY_CATEGORY = {
+  name: 'Inventario',
+  slug: 'inventario',
+  isComboOnly: false,
+  isActive: true
+};
 
 async function main() {
   // Permisos
@@ -50,7 +59,17 @@ async function main() {
     create: { name: 'MESERO', description: 'Operación en piso' }
   })
   const meseroPerms = await prisma.permission.findMany({
-    where: { code: { in: ['categories.read', 'modifiers.read', 'menu.read', 'orders.read', 'orders.create', 'orders.update', 'tables.read'] } }
+    where: { code: { in: [
+      'categories.read',
+      'modifiers.read',
+      'menu.read',
+      'orders.read',
+      'orders.create',
+      'orders.update',
+      'tables.read',
+      'inventory.read',
+      'expenses.read'
+    ] } }
   })
   await prisma.rolePermission.deleteMany({ where: { roleId: mesero.id }})
   if (meseroPerms.length) {
@@ -59,6 +78,17 @@ async function main() {
       skipDuplicates: true
     })
   }
+
+  // Categoría especial para inventario/bodega
+  await prisma.category.upsert({
+    where: { slug: INVENTORY_CATEGORY.slug },
+    update: {
+      name: INVENTORY_CATEGORY.name,
+      isComboOnly: INVENTORY_CATEGORY.isComboOnly,
+      isActive: INVENTORY_CATEGORY.isActive
+    },
+    create: INVENTORY_CATEGORY
+  });
 
   // Configuración de markup por canal
   for (const cfg of CHANNEL_CONFIGS) {

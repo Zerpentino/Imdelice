@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Imdeliceapp.Pages.InventoryLocationEditorPage"
+             Title="Ubicación"
+             BackgroundColor="{AppThemeBinding Light=White, Dark=Black}">
+  <ScrollView>
+    <VerticalStackLayout Padding="24" Spacing="14">
+      <Label Text="Editar ubicación"
+             FontSize="26"
+             FontAttributes="Bold"
+             TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+
+      <Entry x:Name="NameEntry"
+             Placeholder="Nombre (ej. Bodega, Cocina)"
+             TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+
+      <Entry x:Name="CodeEntry"
+             Placeholder="Código interno (opcional)"
+             TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+
+      <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+        <Label Text="Tipo"
+               VerticalTextAlignment="Center"
+               FontSize="13"
+               TextColor="{AppThemeBinding Light=#696969, Dark=#BEBEBE}"/>
+        <Picker x:Name="TypePicker"
+                Grid.Column="1"
+                ItemDisplayBinding="{Binding Label}"/>
+      </Grid>
+
+      <HorizontalStackLayout Spacing="12" VerticalOptions="Center">
+        <Label Text="Predeterminada"
+               VerticalTextAlignment="Center"
+               TextColor="{AppThemeBinding Light=#696969, Dark=#BEBEBE}"/>
+        <Switch x:Name="DefaultSwitch"/>
+      </HorizontalStackLayout>
+
+      <HorizontalStackLayout Spacing="12" VerticalOptions="Center">
+        <Label Text="Activa"
+               VerticalTextAlignment="Center"
+               TextColor="{AppThemeBinding Light=#696969, Dark=#BEBEBE}"/>
+        <Switch x:Name="ActiveSwitch" IsToggled="True"/>
+      </HorizontalStackLayout>
+
+      <Button Text="Guardar"
+              Style="{StaticResource PrimaryButtonStyle}"
+              Clicked="Save_Clicked"/>
+    </VerticalStackLayout>
+  </ScrollView>
+</ContentPage>

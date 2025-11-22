@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Imdeliceapp.Pages.InventoryInsumoEditorPage"
+             Title="Registrar insumo"
+              Shell.NavBarIsVisible="True"
+             BackgroundColor="{AppThemeBinding Light=White, Dark=Black}">
+  <ContentPage.Resources>
+    <Style TargetType="Entry" x:Key="CompactEntry">
+      <Setter Property="HeightRequest" Value="44"/>
+      <Setter Property="FontSize" Value="14"/>
+    </Style>
+    <Style TargetType="Border" x:Key="EntryBorderStyle">
+      <Setter Property="StrokeThickness" Value="1"/>
+      <Setter Property="Stroke">
+        <Setter.Value>
+          <AppThemeBinding Light="#DDDDDD" Dark="#444444"/>
+        </Setter.Value>
+      </Setter>
+      <Setter Property="BackgroundColor">
+        <Setter.Value>
+          <AppThemeBinding Light="#FFFFFF" Dark="#1C1C1C"/>
+        </Setter.Value>
+      </Setter>
+      <Setter Property="Padding" Value="10,2"/>
+      <Setter Property="StrokeShape">
+        <Setter.Value>
+          <RoundRectangle CornerRadius="10"/>
+        </Setter.Value>
+      </Setter>
+    </Style>
+    <Style TargetType="Label" x:Key="TinyLabel">
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="TextColor" Value="{AppThemeBinding Light=#555, Dark=#BBBBBB}"/>
+    </Style>
+  </ContentPage.Resources>
+
+  <ScrollView>
+    <VerticalStackLayout Padding="20" Spacing="18">
+      <Label x:Name="HeaderLabel"
+             Text="Registrar insumo"
+             FontSize="20"
+             FontAttributes="Bold"
+             TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+
+      <Border Style="{StaticResource EntryBorderStyle}">
+        <Entry x:Name="NameEntry"
+               Placeholder="Nombre del insumo"
+               Style="{StaticResource CompactEntry}"/>
+      </Border>
+
+      <Border Style="{StaticResource EntryBorderStyle}">
+        <Entry x:Name="SkuEntry"
+               Placeholder="SKU (opcional)"
+               Style="{StaticResource CompactEntry}"/>
+      </Border>
+
+      <Border Style="{StaticResource EntryBorderStyle}">
+        <Entry x:Name="BarcodeEntry"
+               Placeholder="Código de barras"
+               Keyboard="Text"
+               Style="{StaticResource CompactEntry}"/>
+      </Border>
+
+      <VerticalStackLayout Spacing="6">
+        <Label Text="Descripción" Style="{StaticResource TinyLabel}"/>
+        <Editor x:Name="DescEditor"
+                Placeholder="Notas opcionales"
+                AutoSize="TextChanges"
+                MaxLength="200"/>
+      </VerticalStackLayout>
+
+      <VerticalStackLayout Spacing="6">
+        <Label Text="Imagen del insumo" Style="{StaticResource TinyLabel}"/>
+        <Border Style="{StaticResource EntryBorderStyle}" HeightRequest="180">
+          <Grid>
+            <Image x:Name="PreviewImage"
+                   Aspect="AspectFill"/>
+            <Label x:Name="ImagePlaceholderLabel"
+                   Text="Sin imagen"
+                   FontSize="12"
+                   TextColor="{AppThemeBinding Light=#999, Dark=#777}"
+                   HorizontalOptions="Center"
+                   VerticalOptions="Center"/>
+          </Grid>
+        </Border>
+        <HorizontalStackLayout Spacing="12">
+          <Button Text="Seleccionar foto"
+                  Style="{StaticResource PickFileButtonStyle}"
+                  Clicked="PickImageButton_Clicked"/>
+          <Button Text="Quitar"
+                  Style="{StaticResource SecondaryButtonStyle}"
+                  Clicked="RemoveImageButton_Clicked"/>
+        </HorizontalStackLayout>
+      </VerticalStackLayout>
+
+      <Border x:Name="QuantityBorder" Style="{StaticResource EntryBorderStyle}">
+        <Entry x:Name="QuantityEntry"
+               Placeholder="Cantidad inicial"
+               Keyboard="Numeric"
+               Style="{StaticResource CompactEntry}"/>
+      </Border>
+
+      <Grid x:Name="AvailabilityGrid" ColumnDefinitions="*,Auto" Padding="4,0">
+        <Label Text="Disponible en menús"
+               VerticalOptions="Center"
+               TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+        <Switch x:Name="IsActiveSwitch"
+                Grid.Column="1"
+                IsToggled="True"/>
+      </Grid>
+
+      <Grid x:Name="MovementGrid" ColumnDefinitions="*,Auto" Padding="4,0">
+        <Label Text="Registrar movimiento inicial"
+               VerticalOptions="Center"
+               TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+        <Switch x:Name="RecordMovementSwitch"
+                Grid.Column="1"
+                IsToggled="True"/>
+      </Grid>
+
+      <Label x:Name="ErrorLabel"
+             TextColor="#C62828"
+             IsVisible="False"
+             FontSize="12"/>
+
+      <Button x:Name="SaveButton"
+              Text="Registrar insumo"
+              Style="{StaticResource PrimaryButtonStyle}"
+              Clicked="SaveButton_Clicked"/>
+    </VerticalStackLayout>
+  </ScrollView>
+</ContentPage>

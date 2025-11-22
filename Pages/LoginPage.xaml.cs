@@ -340,11 +340,11 @@ await Application.Current.MainPage.DisplayAlert("Error inesperado", ex.Message, 
     }
 
 
-    private async void OlvidasteContrasena_Tapped(object sender, EventArgs e)
-    {
-        //  await DisplayAlert("Info", "Se abrirá el cambio de contraseña como prueba", "OK");
-        // await Navigation.PushAsync(new ForgotPwdEmailPage());
-    }
+    // private async void OlvidasteContrasena_Tapped(object sender, EventArgs e)
+    // {
+    //     //  await DisplayAlert("Info", "Se abrirá el cambio de contraseña como prueba", "OK");
+    //     // await Navigation.PushAsync(new ForgotPwdEmailPage());
+    // }
 
     private bool EsCorreoValido(string correo)
     {
@@ -402,11 +402,11 @@ await Application.Current.MainPage.DisplayAlert("Error inesperado", ex.Message, 
         SetError(frameContrasena, vacio);
     labelContraseniaError.IsVisible = vacio;
     }
-private async void ProblemasIniciarSesion_Tapped(object sender, EventArgs e)
-    {
-        //  await DisplayAlert("Info", "Se abrirá el cambio de contraseña como prueba", "OK");
-        // await Navigation.PushAsync(new ComunicacionEmailPage());
-    }
+// private async void ProblemasIniciarSesion_Tapped(object sender, EventArgs e)
+//     {
+//         //  await DisplayAlert("Info", "Se abrirá el cambio de contraseña como prueba", "OK");
+//         // await Navigation.PushAsync(new ComunicacionEmailPage());
+//     }
 
 
 private void SetError(Border border, bool isError)

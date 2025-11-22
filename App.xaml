@@ -75,6 +75,20 @@
         </Setter>
     </Style>
 
+    <Style x:Key="SecondaryButtonStyle" TargetType="Button">
+        <Setter Property="CornerRadius"  Value="25"/>
+        <Setter Property="HeightRequest" Value="46"/>
+        <Setter Property="FontAttributes" Value="Bold"/>
+        <Setter Property="BackgroundColor"
+                Value="{AppThemeBinding Light=#F7F6F9, Dark=#1F1B24}"/>
+        <Setter Property="TextColor"
+                Value="{AppThemeBinding Light=#894164, Dark=#E1C4D2}"/>
+        <Setter Property="BorderColor"
+                Value="{AppThemeBinding Light=#E2D8E4, Dark=#3A2D38}"/>
+        <Setter Property="BorderWidth" Value="1"/>
+        <Setter Property="Padding" Value="18,0"/>
+    </Style>
+
     <!-- Sombra muy difusa -->
 <Shadow x:Key="CardShadowLight"
         Brush="#00000033"  Offset="0,8" Radius="24" Opacity="0.40"/>
@@ -231,7 +245,7 @@
   </Style>
 
   
-  <x:String x:Key="urlbase">http://192.168.49.129:3000</x:String>
+  <x:String x:Key="urlbase">http://172.20.14.24:3000</x:String>
       <x:String x:Key="urlloginemail">/api/auth/email</x:String>
       <x:String x:Key="urlloginpin">/api/auth/pin</x:String>
 

@@ -72,6 +72,18 @@ build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.ChannelC
 build_metadata.AdditionalFiles.TargetPath = Pages/ChannelConfigPage.xaml
 build_metadata.AdditionalFiles.RelativePath = Pages/ChannelConfigPage.xaml
 
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/ExpenseEditorPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.ExpenseEditorPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages/ExpenseEditorPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages/ExpenseEditorPage.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/ExpensesPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.ExpensesPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages/ExpensesPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages/ExpensesPage.xaml
+
 [/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/GroupEditorPage.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.GroupEditorPage.xaml
@@ -83,6 +95,48 @@ build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.GroupLinkedProductsPage.xaml
 build_metadata.AdditionalFiles.TargetPath = Pages/GroupLinkedProductsPage.xaml
 build_metadata.AdditionalFiles.RelativePath = Pages/GroupLinkedProductsPage.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/InventoryInsumoEditorPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.InventoryInsumoEditorPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages/InventoryInsumoEditorPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages/InventoryInsumoEditorPage.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/InventoryLocationEditorPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.InventoryLocationEditorPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages/InventoryLocationEditorPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages/InventoryLocationEditorPage.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/InventoryLocationsPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.InventoryLocationsPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages/InventoryLocationsPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages/InventoryLocationsPage.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/InventoryManualMovementPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.InventoryManualMovementPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages/InventoryManualMovementPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages/InventoryManualMovementPage.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/InventoryMovementsPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.InventoryMovementsPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages/InventoryMovementsPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages/InventoryMovementsPage.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/InventoryProductsPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.InventoryProductsPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages/InventoryProductsPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages/InventoryProductsPage.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/InventoryScannerPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.InventoryScannerPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages/InventoryScannerPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages/InventoryScannerPage.xaml
 
 [/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/KdsPage.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
@@ -162,6 +216,12 @@ build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.Products
 build_metadata.AdditionalFiles.TargetPath = Pages/ProductsPage.xaml
 build_metadata.AdditionalFiles.RelativePath = Pages/ProductsPage.xaml
 
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/ProfitLossPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.ProfitLossPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages/ProfitLossPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages/ProfitLossPage.xaml
+
 [/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Pages/RoleEditorPage.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Pages.RoleEditorPage.xaml
@@ -239,6 +299,12 @@ build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Popups.ConfigureMenuItemPopup.xaml
 build_metadata.AdditionalFiles.TargetPath = Popups/ConfigureMenuItemPopup.xaml
 build_metadata.AdditionalFiles.RelativePath = Popups/ConfigureMenuItemPopup.xaml
+
+[/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Popups/InventoryMovementPopup.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Imdeliceapp.Popups.InventoryMovementPopup.xaml
+build_metadata.AdditionalFiles.TargetPath = Popups/InventoryMovementPopup.xaml
+build_metadata.AdditionalFiles.RelativePath = Popups/InventoryMovementPopup.xaml
 
 [/Users/salvador/Downloads/Proyectos netMaui/Imdeliceapp/Popups/KdsTicketDetailPopup.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml

@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { CreateProductSimple } from "../../core/usecases/products/CreateProductSimple";
 import { CreateProductVarianted } from "../../core/usecases/products/CreateProductVarianted";
 import { GetProductDetail } from "../../core/usecases/products/GetProductDetail";
+import { GetProductByBarcode } from "../../core/usecases/products/GetProductByBarcode";
 import { ListProducts } from "../../core/usecases/products/ListProducts";
 import { AttachModifierGroupToProduct } from "../../core/usecases/products/AttachModifierGroupToProduct";
 import { UpdateProduct } from "../../core/usecases/products/UpdateProduct";
@@ -24,6 +25,7 @@ export declare class ProductsController {
     private createSimpleUC;
     private createVariantedUC;
     private getDetailUC;
+    private getByBarcodeUC;
     private listUC;
     private attachModUC;
     private updateUC;
@@ -42,11 +44,12 @@ export declare class ProductsController {
     private updateVariantModUC;
     private detachVariantModUC;
     private listVariantModUC;
-    constructor(createSimpleUC: CreateProductSimple, createVariantedUC: CreateProductVarianted, getDetailUC: GetProductDetail, listUC: ListProducts, attachModUC: AttachModifierGroupToProduct, updateUC: UpdateProduct, replaceVariantsUC: ReplaceProductVariants, deleteUC: DeleteProduct, convertToVariantedUC: ConvertProductToVarianted, convertToSimpleUC: ConvertProductToSimple, createComboUC: CreateProductCombo, addComboItemsUC: AddComboItems, updateComboItemUC: UpdateComboItem, removeComboItemUC: RemoveComboItem, detachModGroupUC: DetachModifierGroupFromProduct, updateModGroupPosUC: UpdateModifierGroupPosition, reorderModGroupsUC: ReorderModifierGroups, attachVariantModUC: AttachModifierGroupToVariant, updateVariantModUC: UpdateVariantModifierGroup, detachVariantModUC: DetachModifierGroupFromVariant, listVariantModUC: ListVariantModifierGroups);
+    constructor(createSimpleUC: CreateProductSimple, createVariantedUC: CreateProductVarianted, getDetailUC: GetProductDetail, getByBarcodeUC: GetProductByBarcode, listUC: ListProducts, attachModUC: AttachModifierGroupToProduct, updateUC: UpdateProduct, replaceVariantsUC: ReplaceProductVariants, deleteUC: DeleteProduct, convertToVariantedUC: ConvertProductToVarianted, convertToSimpleUC: ConvertProductToSimple, createComboUC: CreateProductCombo, addComboItemsUC: AddComboItems, updateComboItemUC: UpdateComboItem, removeComboItemUC: RemoveComboItem, detachModGroupUC: DetachModifierGroupFromProduct, updateModGroupPosUC: UpdateModifierGroupPosition, reorderModGroupsUC: ReorderModifierGroups, attachVariantModUC: AttachModifierGroupToVariant, updateVariantModUC: UpdateVariantModifierGroup, detachVariantModUC: DetachModifierGroupFromVariant, listVariantModUC: ListVariantModifierGroups);
     private getImagePayload;
     createSimple: (req: Request, res: Response) => Promise<Response<any, Record<string, any>>>;
     createVarianted: (req: Request, res: Response) => Promise<Response<any, Record<string, any>>>;
     getDetail: (req: Request, res: Response) => Promise<Response<any, Record<string, any>>>;
+    getByBarcode: (req: Request, res: Response) => Promise<Response<any, Record<string, any>>>;
     list: (req: Request, res: Response) => Promise<Response<any, Record<string, any>>>;
     attachModifier: (req: Request, res: Response) => Promise<Response<any, Record<string, any>>>;
     listVariantModifierGroups: (req: Request, res: Response) => Promise<Response<any, Record<string, any>>>;
@@ -66,5 +69,6 @@ export declare class ProductsController {
     detachModifierGroup: (req: Request, res: Response) => Promise<Response<any, Record<string, any>>>;
     updateModifierGroupPosition: (req: Request, res: Response) => Promise<Response<any, Record<string, any>>>;
     reorderModifierGroups: (req: Request, res: Response) => Promise<Response<any, Record<string, any>>>;
+    private mapProductForResponse;
 }
 //# sourceMappingURL=ProductsController.d.ts.map

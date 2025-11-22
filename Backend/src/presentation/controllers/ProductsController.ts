@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { CreateProductSimple } from "../../core/usecases/products/CreateProductSimple";
 import { CreateProductVarianted } from "../../core/usecases/products/CreateProductVarianted";
 import { GetProductDetail } from "../../core/usecases/products/GetProductDetail";
+import { GetProductByBarcode } from "../../core/usecases/products/GetProductByBarcode";
 import { ListProducts } from "../../core/usecases/products/ListProducts";
 import { AttachModifierGroupToProduct } from "../../core/usecases/products/AttachModifierGroupToProduct";
 import {
@@ -50,6 +51,7 @@ export class ProductsController {
     private createSimpleUC: CreateProductSimple,
     private createVariantedUC: CreateProductVarianted,
     private getDetailUC: GetProductDetail,
+    private getByBarcodeUC: GetProductByBarcode,
     private listUC: ListProducts,
     private attachModUC: AttachModifierGroupToProduct,
     private updateUC: UpdateProduct,
@@ -101,7 +103,11 @@ private getImagePayload(
     try {
       const dto = CreateProductSimpleDto.parse(req.body);
       const image = this.getImagePayload(req as any, false);
-      const prod  = await this.createSimpleUC.exec({ ...dto, image });
+      const prod  = await this.createSimpleUC.exec({
+        ...dto,
+        barcode: dto.barcode?.trim() ?? null,
+        image
+      });
 
       return success(res, prod, "Created", 201);
     } catch (err: any) {
@@ -114,7 +120,15 @@ private getImagePayload(
     try {
       const dto = CreateProductVariantedDto.parse(req.body);
       const image = this.getImagePayload(req as any, false);
-      const prod  = await this.createVariantedUC.exec({ ...dto, image });
+      const prod  = await this.createVariantedUC.exec({
+        ...dto,
+        barcode: dto.barcode?.trim() ?? null,
+        variants: dto.variants.map(variant => ({
+          ...variant,
+          barcode: variant.barcode?.trim() ?? null
+        })),
+        image
+      });
 
 
       return success(res, prod, "Created", 201);
@@ -129,9 +143,21 @@ private getImagePayload(
       const id = Number(req.params.id);
       const prod = await this.getDetailUC.exec(id);
       if (!prod) return fail(res, "Not found", 404);
-      return success(res, prod);
+      return success(res, this.mapProductForResponse(prod));
     } catch (err: any) {
       return fail(res, err?.message || "Error getting product", 400, err);
+    }
+  };
+
+  getByBarcode = async (req: Request, res: Response) => {
+    try {
+      const barcode = req.params.barcode?.trim();
+      if (!barcode) return fail(res, "Barcode requerido", 400);
+      const prod = await this.getByBarcodeUC.exec(barcode);
+      if (!prod) return fail(res, "Producto no encontrado", 404);
+      return success(res, this.mapProductForResponse(prod));
+    } catch (err: any) {
+      return fail(res, err?.message || "Error buscando producto", 400, err);
     }
   };
 
@@ -198,12 +224,21 @@ private getImagePayload(
       return fail(res, err?.message || 'Error detaching modifier from variant', 400, err);
     }
   };
-   update = async (req: Request, res: Response) => {
+  update = async (req: Request, res: Response) => {
     try {
       const id = Number(req.params.id);
       const dto = UpdateProductDto.parse(req.body);
       const image = this.getImagePayload(req as any, true);
-      const prod  = await this.updateUC.exec(id, { ...dto, image });
+      const prod  = await this.updateUC.exec(id, {
+        ...dto,
+        barcode:
+          dto.barcode === undefined
+            ? undefined
+            : dto.barcode === null
+            ? null
+            : dto.barcode.trim(),
+        image
+      });
       return success(res, prod, "Updated");
     } catch (err: any) {
       return fail(res, err?.message || "Error updating product", 400, err);
@@ -215,7 +250,10 @@ private getImagePayload(
       const id = Number(req.params.id);
       const dto = ReplaceVariantsDto.parse(req.body);
       await this.replaceVariantsUC.exec(id, dto.variants.map(v => ({
-        name: v.name, priceCents: v.priceCents, sku: v.sku
+        name: v.name,
+        priceCents: v.priceCents,
+        sku: v.sku,
+        barcode: v.barcode?.trim() ?? null
       })));
       return success(res, null, "Variants replaced", 204);
     } catch (err: any) { return fail(res, err?.message || "Error replacing variants", 400, err); }
@@ -246,7 +284,13 @@ private getImagePayload(
     try {
       const id = Number(req.params.id);
       const dto = ConvertToVariantedDto.parse(req.body);
-      await this.convertToVariantedUC.exec(id, dto.variants);
+      await this.convertToVariantedUC.exec(
+        id,
+        dto.variants.map(v => ({
+          ...v,
+          barcode: v.barcode?.trim() ?? null
+        }))
+      );
       return success(res, null, "Converted to VARIANTED");
     } catch (err: any) {
       return fail(res, err?.message || "Error converting product", 400, err);
@@ -342,4 +386,18 @@ removeComboItem = async (req: Request, res: Response) => {
     }
   };
 
+  private mapProductForResponse(prod: any) {
+    if (!prod) return prod;
+    const { image, ...rest } = prod;
+    const updatedAt =
+      prod.updatedAt instanceof Date ? prod.updatedAt : new Date(prod.updatedAt);
+    const imageUrl = prod.imageMimeType
+      ? `/products/${prod.id}/image?v=${updatedAt.getTime()}`
+      : null;
+    return {
+      ...rest,
+      imageUrl,
+      hasImage: Boolean(prod.imageMimeType),
+    };
+  }
 }

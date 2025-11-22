@@ -69,6 +69,7 @@ export interface IProductRepository {
         priceCents: number;
         description?: string;
         sku?: string;
+        barcode?: string | null;
         image?: {
             buffer: Buffer;
             mimeType: string;
@@ -82,16 +83,18 @@ export interface IProductRepository {
             name: string;
             priceCents: number;
             sku?: string;
+            barcode?: string | null;
         }[];
         description?: string;
         sku?: string;
+        barcode?: string | null;
         image?: {
             buffer: Buffer;
             mimeType: string;
             size: number;
         };
     }): Promise<Product>;
-    update(id: number, data: Partial<Pick<Product, 'name' | 'categoryId' | 'priceCents' | 'description' | 'sku' | 'isActive'>> & {
+    update(id: number, data: Partial<Pick<Product, 'name' | 'categoryId' | 'priceCents' | 'description' | 'sku' | 'isActive' | 'barcode'>> & {
         image?: {
             buffer: Buffer;
             mimeType: string;
@@ -102,12 +105,14 @@ export interface IProductRepository {
         name: string;
         priceCents: number;
         sku?: string;
+        barcode?: string | null;
     }[]): Promise<void>;
     convertToSimple(productId: number, priceCents: number): Promise<void>;
     replaceVariants(productId: number, variants: {
         name: string;
         priceCents: number;
         sku?: string;
+        barcode?: string | null;
     }[]): Promise<void>;
     getById(id: number): Promise<ProductWithDetails | null>;
     list(filter?: {
@@ -183,5 +188,6 @@ export interface IProductRepository {
         linkId: number;
         position: number;
     }>): Promise<void>;
+    findByBarcode(barcode: string): Promise<ProductWithDetails | null>;
 }
 //# sourceMappingURL=IProductRepository.d.ts.map

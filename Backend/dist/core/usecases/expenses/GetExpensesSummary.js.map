@@ -1,0 +1,1 @@
+{"version":3,"file":"GetExpensesSummary.js","sourceRoot":"","sources":["../../../../src/core/usecases/expenses/GetExpensesSummary.ts"],"names":[],"mappings":";;;AAEA,MAAa,kBAAkB;IAC7B,YAAoB,IAAwB;QAAxB,SAAI,GAAJ,IAAI,CAAoB;IAAG,CAAC;IAEhD,IAAI,CAAC,OAAwB;QAC3B,OAAO,IAAI,CAAC,IAAI,CAAC,UAAU,CAAC,OAAO,CAAC,CAAC;IACvC,CAAC;CACF;AAND,gDAMC"}

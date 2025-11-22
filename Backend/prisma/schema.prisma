@@ -9,20 +9,20 @@ datasource db {
 }
 
 model Role {
-  id          Int     @id @default(autoincrement())
-  name        String  @unique
+  id          Int              @id @default(autoincrement())
+  name        String           @unique
   description String?
   users       User[]
-    permissions RolePermission[]
-
+  permissions RolePermission[]
 }
+
 model Permission {
-  id          Int      @id @default(autoincrement())
-  code        String   @unique // ej. "users.read"
+  id          Int              @id @default(autoincrement())
+  code        String           @unique // ej. "users.read"
   name        String?
   description String?
   roles       RolePermission[]
-  createdAt   DateTime @default(now())
+  createdAt   DateTime         @default(now())
 }
 
 model RolePermission {
@@ -37,20 +37,23 @@ model RolePermission {
 }
 
 model User {
-  id            Int       @id @default(autoincrement())
-  email         String    @unique
-  name          String?
-  passwordHash  String
-  pinCodeHash   String?             // bcrypt (con salt) — para login
-  pinCodeDigest String?  @unique    // HMAC determinístico — para UNICIDAD
-  roleId        Int
-  role          Role      @relation(fields: [roleId], references: [id])
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-// 🔁 back-relations
-  ordersServed      Order[]    // ← Order.servedBy
-  paymentsReceived  Payment[]  // ← Payment.receivedBy
-  refundsAuthorized OrderRefundLog[] @relation("OrderRefundAdmin")
+  id                Int                 @id @default(autoincrement())
+  email             String              @unique
+  name              String?
+  passwordHash      String
+  pinCodeHash       String? // bcrypt (con salt) — para login
+  pinCodeDigest     String?             @unique // HMAC determinístico — para UNICIDAD
+  roleId            Int
+  role              Role                @relation(fields: [roleId], references: [id])
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  // 🔁 back-relations
+  ordersServed      Order[] // ← Order.servedBy
+  paymentsReceived  Payment[] // ← Payment.receivedBy
+  refundsAuthorized OrderRefundLog[]    @relation("OrderRefundAdmin")
+  InventoryMovement InventoryMovement[]
+  Expense           Expense[]
+
   @@index([roleId])
 }
 
@@ -58,21 +61,21 @@ model User {
 
 // Árbol de categorías (p. ej. "BEBIDAS" > "FRAPPES")
 model Category {
-  id        Int        @id @default(autoincrement())
-  name      String
-  slug      String     @unique
-  parentId  Int?
-  parent    Category?  @relation("CategoryToParent", fields: [parentId], references: [id])
-  children  Category[] @relation("CategoryToParent")
+  id       Int        @id @default(autoincrement())
+  name     String
+  slug     String     @unique
+  parentId Int?
+  parent   Category?  @relation("CategoryToParent", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryToParent")
 
   // back-relations
-  products        Product[]
-  modifierGroups  ModifierGroup[] @relation("ModifierGroupsByCategory")
-  menuSections    MenuSection[]   @relation("CategoryToMenuSections")
+  products       Product[]
+  modifierGroups ModifierGroup[] @relation("ModifierGroupsByCategory")
+  menuSections   MenuSection[]   @relation("CategoryToMenuSections")
 
-  position  Int        @default(0)
-  isActive  Boolean    @default(true)
-isComboOnly Boolean @default(false)
+  position    Int     @default(0)
+  isActive    Boolean @default(true)
+  isComboOnly Boolean @default(false)
 
   @@index([parentId])
 }
@@ -86,73 +89,78 @@ enum ProductType {
 }
 
 model Product {
-  id            Int              @id @default(autoincrement())
-  name          String
-  description   String?
-  type          ProductType
-  categoryId    Int
-  category      Category         @relation(fields: [categoryId], references: [id])
+  id          Int         @id @default(autoincrement())
+  name        String
+  description String?
+  type        ProductType
+  categoryId  Int
+  category    Category    @relation(fields: [categoryId], references: [id])
 
   // Para SIMPLE: usar priceCents directamente.
   // Para VARIANTED: dejar priceCents nulo y usar ProductVariant.
-  priceCents    Int?
-  isActive      Boolean          @default(true)
-  sku           String?          @unique
+  priceCents Int?
+  isActive   Boolean @default(true)
+  sku        String? @unique
+  barcode    String? @unique
 
   // ⬇️ NUEVO: almacenar imagen binaria y metadatos
   image         Bytes?
-  imageMimeType String?   // "image/jpeg" | "image/png"
-  imageSize     Int?      // bytes
+  imageMimeType String? // "image/jpeg" | "image/png"
+  imageSize     Int? // bytes
 
-
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
-  isAvailable  Boolean   @default(true)  // ← DISPONIBLE HOY (independiente de isActive)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  isAvailable Boolean  @default(true) // ← DISPONIBLE HOY (independiente de isActive)
 
   // back-relations
-  variants        ProductVariant[]
-  modifierGroups  ProductModifierGroup[]
-  comboItemsAsCombo     ComboItem[] @relation("ComboItemsAsCombo")
-  comboItemsAsComponent ComboItem[] @relation("ComboItemsAsComponent")
+  variants              ProductVariant[]
+  modifierGroups        ProductModifierGroup[]
+  comboItemsAsCombo     ComboItem[]            @relation("ComboItemsAsCombo")
+  comboItemsAsComponent ComboItem[]            @relation("ComboItemsAsComponent")
   orderItems            OrderItem[] // ← OrderItem.product
 
+  InventoryItem     InventoryItem[]
+  InventoryMovement InventoryMovement[]
 }
 
 // Variantes (p. ej. CH/GDE, 5/10/15 pzas, “al panko/capeado”, “tostada/litro”)
 model ProductVariant {
-  id         Int      @id @default(autoincrement())
-  productId  Int
-  product    Product  @relation(fields: [productId], references: [id])
-  name       String   // ej: "CH", "GDE", "5 pzas", "Litro", "Capeado", "Panko"
-  priceCents Int
-  sku        String?  @unique
-  isActive   Boolean  @default(true)
-  position   Int      @default(0)
-  isAvailable  Boolean   @default(true)  // ← DISPONIBLE HOY (independiente de isActive)
+  id                 Int                           @id @default(autoincrement())
+  productId          Int
+  product            Product                       @relation(fields: [productId], references: [id])
+  name               String // ej: "CH", "GDE", "5 pzas", "Litro", "Capeado", "Panko"
+  priceCents         Int
+  sku                String?                       @unique
+  barcode            String?                       @unique
+  isActive           Boolean                       @default(true)
+  position           Int                           @default(0)
+  isAvailable        Boolean                       @default(true) // ← DISPONIBLE HOY (independiente de isActive)
   // 🔁 back-relation
-  orderItems  OrderItem[] // ← OrderItem.variant
+  orderItems         OrderItem[] // ← OrderItem.variant
   modifierGroupLinks ProductVariantModifierGroup[] @relation("VariantModifierGroups")
-  comboItems  ComboItem[] @relation("ComboComponentVariant")
+  comboItems         ComboItem[]                   @relation("ComboComponentVariant")
+  InventoryItem      InventoryItem[]
+  InventoryMovement  InventoryMovement[]
 
-  @@index([productId])
   @@unique([productId, name]) // evita duplicados por producto/variante
+  @@index([productId])
 }
 
 // Grupos de modificadores (ej. “Ingredientes dulces”, “Salsas alitas”, “Aderezos”)
 // con reglas de selección (min/max) y si son obligatorios.
 model ModifierGroup {
-  id          Int      @id @default(autoincrement())
+  id          Int     @id @default(autoincrement())
   name        String
   description String?
-  minSelect   Int      @default(0)
-  maxSelect   Int?     // null = sin límite
-  isRequired  Boolean  @default(false)
-  isActive    Boolean  @default(true)
-  position    Int      @default(0)
+  minSelect   Int     @default(0)
+  maxSelect   Int? // null = sin límite
+  isRequired  Boolean @default(false)
+  isActive    Boolean @default(true)
+  position    Int     @default(0)
 
   // back-relations
   options      ModifierOption[]
-  productLinks ProductModifierGroup[] @relation("ProductToModifierGroup")
+  productLinks ProductModifierGroup[]        @relation("ProductToModifierGroup")
   variantLinks ProductVariantModifierGroup[] @relation("GroupVariantLinks")
 
   // opcional: limitar por categoría (todos los productos de X cat)
@@ -163,44 +171,44 @@ model ModifierGroup {
 // Opción del modificador (ej. “Nutella”, “Hershey’s”, “Ingrediente extra $15”,
 // “BBQ”, “Mango Habanero”, “Ranch”, etc.) con precio adicional.
 model ModifierOption {
-  id              Int            @id @default(autoincrement())
-  groupId         Int
-  group           ModifierGroup  @relation(fields: [groupId], references: [id])
-  name            String
-  priceExtraCents Int            @default(0)
-  isDefault       Boolean        @default(false)
-  isActive        Boolean        @default(true)
-  position        Int            @default(0)
+  id                 Int                 @id @default(autoincrement())
+  groupId            Int
+  group              ModifierGroup       @relation(fields: [groupId], references: [id])
+  name               String
+  priceExtraCents    Int                 @default(0)
+  isDefault          Boolean             @default(false)
+  isActive           Boolean             @default(true)
+  position           Int                 @default(0)
   // 🔁 back-relation
   orderItemModifiers OrderItemModifier[] // ← OrderItemModifier.option
 
-  @@index([groupId])
   @@unique([groupId, name])
+  @@index([groupId])
 }
 
 // Asociación explícita de un producto con un grupo de modificadores
 // (por si no queremos aplicar sólo por categoría).
 model ProductModifierGroup {
-  id         Int            @id @default(autoincrement())
-  productId  Int
-  product    Product        @relation(fields: [productId], references: [id])
+  id        Int     @id @default(autoincrement())
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
 
-  groupId    Int
-  group      ModifierGroup  @relation("ProductToModifierGroup", fields: [groupId], references: [id])
+  groupId Int
+  group   ModifierGroup @relation("ProductToModifierGroup", fields: [groupId], references: [id])
 
-  position   Int            @default(0)
+  position Int @default(0)
 
   @@unique([productId, groupId])
   @@index([groupId])
 }
 
 model ProductVariantModifierGroup {
-  id         Int      @id @default(autoincrement())
+  id         Int     @id @default(autoincrement())
   variantId  Int
   groupId    Int
-  minSelect  Int      @default(0)
+  minSelect  Int     @default(0)
   maxSelect  Int?
-  isRequired Boolean  @default(false)
+  isRequired Boolean @default(false)
 
   variant ProductVariant @relation("VariantModifierGroups", fields: [variantId], references: [id], onDelete: Cascade)
   group   ModifierGroup  @relation("GroupVariantLinks", fields: [groupId], references: [id], onDelete: Cascade)
@@ -211,35 +219,35 @@ model ProductVariantModifierGroup {
 
 // Ítems de combo: definen que un producto (combo) incluye N unidades de otros productos.
 model ComboItem {
-  id                 Int      @id @default(autoincrement())
+  id                 Int     @id @default(autoincrement())
   comboProductId     Int
   componentProductId Int
   componentVariantId Int?
-  quantity           Int      @default(1)
-  isRequired         Boolean  @default(true)
+  quantity           Int     @default(1)
+  isRequired         Boolean @default(true)
   notes              String?
 
-  comboProduct       Product  @relation("ComboItemsAsCombo", fields: [comboProductId], references: [id])
-  componentProduct   Product  @relation("ComboItemsAsComponent", fields: [componentProductId], references: [id])
-  componentVariant   ProductVariant? @relation("ComboComponentVariant", fields: [componentVariantId], references: [id], onDelete: SetNull)
+  comboProduct     Product         @relation("ComboItemsAsCombo", fields: [comboProductId], references: [id])
+  componentProduct Product         @relation("ComboItemsAsComponent", fields: [componentProductId], references: [id])
+  componentVariant ProductVariant? @relation("ComboComponentVariant", fields: [componentVariantId], references: [id], onDelete: SetNull)
 
+  @@unique([comboProductId, componentProductId, componentVariantId])
   @@index([componentProductId])
   @@index([componentVariantId])
-  @@unique([comboProductId, componentProductId, componentVariantId])
 }
 
 // Menú y secciones: permite armar diferentes cartas (general y mariscos)
 // y ordenar los productos visibles sin alterar categorías internas.
 model Menu {
-  id        Int          @id @default(autoincrement())
-  name      String       @unique
-  isActive  Boolean      @default(true)
+  id          Int           @id @default(autoincrement())
+  name        String        @unique
+  isActive    Boolean       @default(true)
   publishedAt DateTime?
-  version   Int          @default(1)
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
-  deletedAt DateTime?
-  sections  MenuSection[]
+  version     Int           @default(1)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  deletedAt   DateTime?
+  sections    MenuSection[]
 
   @@index([isActive, publishedAt])
 }
@@ -248,7 +256,7 @@ model MenuSection {
   id        Int       @id @default(autoincrement())
   menuId    Int
   menu      Menu      @relation(fields: [menuId], references: [id], onDelete: Restrict)
-  name      String    // p. ej. "CREPAS Y WAFFLES", "BEBIDAS", "MARISCOS"
+  name      String // p. ej. "CREPAS Y WAFFLES", "BEBIDAS", "MARISCOS"
   position  Int       @default(0)
   isActive  Boolean   @default(true)
   createdAt DateTime  @default(now())
@@ -259,7 +267,7 @@ model MenuSection {
   categoryId Int?
   category   Category? @relation("CategoryToMenuSections", fields: [categoryId], references: [id], onDelete: SetNull)
 
-  items     MenuItem[]
+  items MenuItem[]
 
   @@index([menuId, isActive, position])
 }
@@ -272,44 +280,41 @@ enum MenuItemRefType {
 }
 
 model MenuItem {
-  id          Int         @id @default(autoincrement())
-  sectionId   Int
-  section     MenuSection @relation(fields: [sectionId], references: [id], onDelete: Restrict)
+  id        Int         @id @default(autoincrement())
+  sectionId Int
+  section   MenuSection @relation(fields: [sectionId], references: [id], onDelete: Restrict)
 
-  refType     MenuItemRefType
-  refId       Int
+  refType MenuItemRefType
+  refId   Int
 
   displayName       String?
   displayPriceCents Int?
   position          Int       @default(0)
   isFeatured        Boolean   @default(false)
-  isActive         Boolean    @default(true)
-  createdAt        DateTime   @default(now())
-  updatedAt        DateTime   @updatedAt
-  deletedAt        DateTime?
+  isActive          Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  deletedAt         DateTime?
 
+  @@unique([sectionId, refType, refId, deletedAt])
   @@index([sectionId, isActive, position])
   @@index([refType, refId])
-  @@unique([sectionId, refType, refId, deletedAt])
 }
-
-
-
 
 // ========= ENUMS PARA PEDIDOS =========
 enum OrderStatus {
-  DRAFT      // creado pero aún sin enviar a cocina
-  OPEN       // enviado a cocina; puede tener items en preparación
-  HOLD       // “en pausa” (esperando algo)
-  CLOSED     // cobrado/cerrado
-  CANCELED   // cancelado
-  REFUNDED   // reembolsado posterior al cobro
+  DRAFT // creado pero aún sin enviar a cocina
+  OPEN // enviado a cocina; puede tener items en preparación
+  HOLD // “en pausa” (esperando algo)
+  CLOSED // cobrado/cerrado
+  CANCELED // cancelado
+  REFUNDED // reembolsado posterior al cobro
 }
 
 enum ServiceType {
-  DINE_IN    // en mesa
-  TAKEAWAY   // para llevar
-  DELIVERY   // a domicilio (opcional)
+  DINE_IN // en mesa
+  TAKEAWAY // para llevar
+  DELIVERY // a domicilio (opcional)
 }
 
 enum OrderItemStatus {
@@ -334,64 +339,97 @@ enum OrderSource {
   RAPPI
 }
 
+enum InventoryMovementType {
+  PURCHASE
+  SALE
+  ADJUSTMENT
+  WASTE
+  TRANSFER
+  SALE_RETURN
+}
+
+enum InventoryLocationType {
+  GENERAL
+  KITCHEN
+  BAR
+  STORAGE
+}
+
+enum ExpenseCategory {
+  SUPPLIES
+  MAINTENANCE
+  LOSS
+  OTHER
+}
+
+enum UnitOfMeasure {
+  UNIT
+  PORTION
+  GRAM
+  KILOGRAM
+  LITER
+  MILLILITER
+}
+
 model ChannelConfig {
   id        Int         @id @default(autoincrement())
   source    OrderSource @unique
-  markupPct Decimal     @db.Decimal(5,2)
+  markupPct Decimal     @db.Decimal(5, 2)
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
 }
 
 // ========= MESAS (opcional, si manejas salón) =========
 model Table {
-  id        Int     @id @default(autoincrement())
-  name      String  @unique  // ej. "M1", "Barra 2"
-  seats     Int?
-  isActive  Boolean @default(true)
+  id       Int     @id @default(autoincrement())
+  name     String  @unique // ej. "M1", "Barra 2"
+  seats    Int?
+  isActive Boolean @default(true)
 
-  orders    Order[]
+  orders Order[]
 }
 
 // ========= PEDIDO CABECERA =========
 model Order {
-  id             Int          @id @default(autoincrement())
-  code           String       @unique // folio/ticket, ej. "A-2025-000123"
-  status         OrderStatus  @default(OPEN)
-  serviceType    ServiceType
-  source         OrderSource  @default(POS)
+  id          Int         @id @default(autoincrement())
+  code        String      @unique // folio/ticket, ej. "A-2025-000123"
+  status      OrderStatus @default(OPEN)
+  serviceType ServiceType
+  source      OrderSource @default(POS)
 
-  externalRef    String?
-  prepEtaMinutes Int?
-  platformMarkupPct Decimal?  @db.Decimal(5,2)
+  externalRef       String?
+  prepEtaMinutes    Int?
+  platformMarkupPct Decimal? @db.Decimal(5, 2)
 
-  tableId        Int?
-  table          Table?       @relation(fields: [tableId], references: [id], onDelete: SetNull)
+  tableId Int?
+  table   Table? @relation(fields: [tableId], references: [id], onDelete: SetNull)
 
-  openedAt       DateTime     @default(now())
-  acceptedAt     DateTime?
-  readyAt        DateTime?
-  servedAt       DateTime?
-  closedAt       DateTime?
-  canceledAt     DateTime?
-  refundedAt     DateTime?
-  note           String?
-  customerName   String?
-  customerPhone  String?
-  covers         Int?        // # comensales
+  openedAt      DateTime  @default(now())
+  acceptedAt    DateTime?
+  readyAt       DateTime?
+  servedAt      DateTime?
+  closedAt      DateTime?
+  canceledAt    DateTime?
+  refundedAt    DateTime?
+  note          String?
+  customerName  String?
+  customerPhone String?
+  covers        Int? // # comensales
 
   servedByUserId Int?
-  servedBy       User?       @relation(fields: [servedByUserId], references: [id], onDelete: SetNull)
+  servedBy       User? @relation(fields: [servedByUserId], references: [id], onDelete: SetNull)
 
   // Totales "snapshoteados" para auditoría
-  subtotalCents     Int       @default(0)
-  discountCents     Int       @default(0)
-  serviceFeeCents   Int       @default(0)   // propina/servicio si lo manejas fijo
-  taxCents          Int       @default(0)
-  totalCents        Int       @default(0)
+  subtotalCents   Int @default(0)
+  discountCents   Int @default(0)
+  serviceFeeCents Int @default(0) // propina/servicio si lo manejas fijo
+  taxCents        Int @default(0)
+  totalCents      Int @default(0)
 
-  items         OrderItem[]
-  payments      Payment[]
-  refundLogs    OrderRefundLog[]
+  items             OrderItem[]
+  payments          Payment[]
+  refundLogs        OrderRefundLog[]
+  InventoryMovement InventoryMovement[]
 
   @@index([status])
   @@index([serviceType])
@@ -400,36 +438,36 @@ model Order {
 
 // ========= RENGLONES DEL PEDIDO =========
 model OrderItem {
-  id                 Int            @id @default(autoincrement())
-  orderId            Int
-  order              Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  id      Int   @id @default(autoincrement())
+  orderId Int
+  order   Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
-  productId          Int
-  product            Product        @relation(fields: [productId], references: [id])
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
 
-  variantId          Int?
-  variant            ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  variantId Int?
+  variant   ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
 
   // Para combos: los componentes serán hijos del item padre
-  parentItemId       Int?
-  parentItem         OrderItem?     @relation("OrderItemToParent", fields: [parentItemId], references: [id], onDelete: Cascade)
-  childItems         OrderItem[]    @relation("OrderItemToParent")
+  parentItemId Int?
+  parentItem   OrderItem?  @relation("OrderItemToParent", fields: [parentItemId], references: [id], onDelete: Cascade)
+  childItems   OrderItem[] @relation("OrderItemToParent")
 
-  quantity           Int            @default(1)
-  status             OrderItemStatus @default(NEW)
+  quantity Int             @default(1)
+  status   OrderItemStatus @default(NEW)
 
   // Precios "snapshoteados" al momento de ordenar (evita que cambie si subes precios)
-  basePriceCents     Int            // precio del producto o de la variante (unitario)
-  extrasTotalCents   Int            @default(0)
-  totalPriceCents    Int            // (base + extras) * quantity
+  basePriceCents   Int // precio del producto o de la variante (unitario)
+  extrasTotalCents Int @default(0)
+  totalPriceCents  Int // (base + extras) * quantity
 
   // Snapshots de nombres (para ticket)
-  nameSnapshot       String         // ej. "Frappe Moka"
-  variantNameSnapshot String?       // ej. "GDE"
+  nameSnapshot        String // ej. "Frappe Moka"
+  variantNameSnapshot String? // ej. "GDE"
 
-  notes              String?
+  notes String?
 
-  modifiers          OrderItemModifier[]
+  modifiers OrderItemModifier[]
 
   @@index([orderId])
   @@index([productId])
@@ -438,16 +476,16 @@ model OrderItem {
 
 // ========= MODIFICADORES ELEGIDOS POR RENGLÓN =========
 model OrderItemModifier {
-  id               Int             @id @default(autoincrement())
-  orderItemId      Int
-  orderItem        OrderItem       @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  id          Int       @id @default(autoincrement())
+  orderItemId Int
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
 
-  optionId         Int
-  option           ModifierOption  @relation(fields: [optionId], references: [id])
+  optionId Int
+  option   ModifierOption @relation(fields: [optionId], references: [id])
 
-  quantity         Int             @default(1)
-  priceExtraCents  Int             @default(0) // snapshot del extra en ese momento
-  nameSnapshot     String          // ej. "BBQ"
+  quantity        Int    @default(1)
+  priceExtraCents Int    @default(0) // snapshot del extra en ese momento
+  nameSnapshot    String // ej. "BBQ"
 
   @@index([orderItemId])
   @@index([optionId])
@@ -455,37 +493,119 @@ model OrderItemModifier {
 
 // ========= PAGOS =========
 model Payment {
-  id               Int            @id @default(autoincrement())
-  orderId          Int
-  order            Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  id      Int   @id @default(autoincrement())
+  orderId Int
+  order   Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
-  method           PaymentMethod
-  amountCents      Int
-  tipCents         Int            @default(0)
+  method              PaymentMethod
+  amountCents         Int
+  tipCents            Int           @default(0)
   receivedAmountCents Int?
-  changeCents      Int?
-  paidAt           DateTime       @default(now())
+  changeCents         Int?
+  paidAt              DateTime      @default(now())
 
   receivedByUserId Int?
-  receivedBy       User?          @relation(fields: [receivedByUserId], references: [id], onDelete: SetNull)
+  receivedBy       User? @relation(fields: [receivedByUserId], references: [id], onDelete: SetNull)
 
-  note             String?
+  note String?
 
   @@index([orderId])
   @@index([method])
 }
 
 model OrderRefundLog {
-  id           Int      @id @default(autoincrement())
-  orderId      Int
-  order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  adminUserId  Int
-  adminUser    User     @relation("OrderRefundAdmin", fields: [adminUserId], references: [id])
-  amountCents  Int
-  tipCents     Int      @default(0)
-  reason       String?
-  createdAt    DateTime @default(now())
+  id          Int      @id @default(autoincrement())
+  orderId     Int
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  adminUserId Int
+  adminUser   User     @relation("OrderRefundAdmin", fields: [adminUserId], references: [id])
+  amountCents Int
+  tipCents    Int      @default(0)
+  reason      String?
+  createdAt   DateTime @default(now())
 
   @@index([orderId])
   @@index([adminUserId])
+}
+
+model InventoryLocation {
+  id        Int                   @id @default(autoincrement())
+  name      String
+  code      String?               @unique
+  type      InventoryLocationType @default(GENERAL)
+  isDefault Boolean               @default(false)
+  isActive  Boolean               @default(true)
+  createdAt DateTime              @default(now())
+  updatedAt DateTime              @updatedAt
+
+  items     InventoryItem[]
+  movements InventoryMovement[]
+}
+
+model InventoryItem {
+  id              Int               @id @default(autoincrement())
+  productId       Int
+  product         Product           @relation(fields: [productId], references: [id])
+  variantId       Int?
+  variant         ProductVariant?   @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  locationId      Int
+  location        InventoryLocation @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  currentQuantity Decimal           @default(0) @db.Decimal(12, 3)
+  unit            UnitOfMeasure     @default(UNIT)
+  minThreshold    Decimal?          @db.Decimal(12, 3)
+  maxThreshold    Decimal?          @db.Decimal(12, 3)
+  lastMovementAt  DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@unique([productId, variantId, locationId])
+  @@index([locationId])
+  @@index([productId, variantId])
+}
+
+model InventoryMovement {
+  id                Int                   @id @default(autoincrement())
+  productId         Int
+  product           Product               @relation(fields: [productId], references: [id])
+  variantId         Int?
+  variant           ProductVariant?       @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  locationId        Int?
+  location          InventoryLocation?    @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  type              InventoryMovementType
+  quantity          Decimal               @db.Decimal(12, 3)
+  unit              UnitOfMeasure         @default(UNIT)
+  reason            String?
+  relatedOrderId    Int?
+  relatedOrder      Order?                @relation(fields: [relatedOrderId], references: [id], onDelete: SetNull)
+  performedByUserId Int?
+  performedBy       User?                 @relation(fields: [performedByUserId], references: [id], onDelete: SetNull)
+  metadata          Json?
+  createdAt         DateTime              @default(now())
+  expense           Expense?              @relation("InventoryMovementExpense")
+
+  @@index([productId])
+  @@index([variantId])
+  @@index([locationId])
+  @@index([relatedOrderId])
+  @@index([performedByUserId])
+}
+
+model Expense {
+  id                  Int                @id @default(autoincrement())
+  concept             String
+  category            ExpenseCategory    @default(OTHER)
+  amountCents         Int
+  paymentMethod       PaymentMethod?
+  notes               String?
+  incurredAt          DateTime           @default(now())
+  recordedAt          DateTime           @default(now())
+  recordedByUserId    Int
+  recordedBy          User               @relation(fields: [recordedByUserId], references: [id])
+  inventoryMovementId Int?               @unique
+  inventoryMovement   InventoryMovement? @relation("InventoryMovementExpense", fields: [inventoryMovementId], references: [id], onDelete: SetNull)
+  metadata            Json?
+
+  @@index([category])
+  @@index([incurredAt])
+  @@index([recordedByUserId])
 }

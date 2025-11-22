@@ -5,9 +5,10 @@ export class CreateProductVarianted {
   exec(input: {
     name: string;
     categoryId: number;
-    variants: { name: string; priceCents: number; sku?: string }[];
+    variants: { name: string; priceCents: number; sku?: string; barcode?: string | null }[];
     description?: string;
     sku?: string;
+    barcode?: string | null;
     image?: { buffer: Buffer; mimeType: string; size: number }; // 👈 EN VEZ DE imageUrl?
   }) {
     return this.repo.createVarianted(input);

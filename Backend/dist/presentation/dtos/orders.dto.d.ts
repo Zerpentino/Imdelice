@@ -31,10 +31,10 @@ export declare const OrderItemStatusEnum: z.ZodEnum<{
     SERVED: "SERVED";
 }>;
 export declare const PaymentMethodEnum: z.ZodEnum<{
-    CASH: "CASH";
-    CARD: "CARD";
     TRANSFER: "TRANSFER";
     OTHER: "OTHER";
+    CASH: "CASH";
+    CARD: "CARD";
 }>;
 export declare const AddOrderItemDto: z.ZodType<any>;
 export type AddOrderItemDtoType = z.infer<typeof AddOrderItemDto>;
@@ -75,10 +75,10 @@ export declare const UpdateOrderItemStatusDto: z.ZodObject<{
 }, z.core.$strip>;
 export declare const AddPaymentDto: z.ZodObject<{
     method: z.ZodEnum<{
-        CASH: "CASH";
-        CARD: "CARD";
         TRANSFER: "TRANSFER";
         OTHER: "OTHER";
+        CASH: "CASH";
+        CARD: "CARD";
     }>;
     amountCents: z.ZodNumber;
     tipCents: z.ZodDefault<z.ZodNumber>;

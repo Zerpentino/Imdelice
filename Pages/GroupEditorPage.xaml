@@ -6,6 +6,40 @@
   Title="Editar grupo"
   Shell.NavBarIsVisible="True">
 
+  <ContentPage.Resources>
+    <Color x:Key="CardBgLight">#FFFFFF</Color>
+    <Color x:Key="CardBgDark">#1E1E1E</Color>
+    <Color x:Key="CardBorderLight">#E2E2E2</Color>
+    <Color x:Key="CardBorderDark">#383838</Color>
+
+    <Style x:Key="CardContainerStyle" TargetType="Border">
+      <Setter Property="StrokeThickness" Value="1"/>
+      <Setter Property="Stroke">
+        <Setter.Value>
+          <AppThemeBinding Light="{StaticResource CardBorderLight}"
+                           Dark="{StaticResource CardBorderDark}"/>
+        </Setter.Value>
+      </Setter>
+      <Setter Property="BackgroundColor">
+        <Setter.Value>
+          <AppThemeBinding Light="{StaticResource CardBgLight}"
+                           Dark="{StaticResource CardBgDark}"/>
+        </Setter.Value>
+      </Setter>
+      <Setter Property="StrokeShape">
+        <Setter.Value>
+          <RoundRectangle CornerRadius="18"/>
+        </Setter.Value>
+      </Setter>
+      <Setter Property="Padding" Value="18"/>
+    </Style>
+
+    <Style x:Key="TinyLabelStyle" TargetType="Label">
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="TextColor" Value="{AppThemeBinding Light=#555, Dark=#B5B5B5}"/>
+    </Style>
+  </ContentPage.Resources>
+
   <ContentPage.ToolbarItems>
     <ToolbarItem Text="Guardar"
         Order="Primary"
@@ -24,11 +58,8 @@
                          Margin="0,6"/>
 
       <!-- ===== DATOS DEL GRUPO ===== -->
-      <Frame HasShadow="False"
-          CornerRadius="12"
-             Padding="14"
-             BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E1E1E}">
-        <VerticalStackLayout Spacing="12">
+      <Border Style="{StaticResource CardContainerStyle}">
+        <VerticalStackLayout Spacing="14">
 
           <Label Text="Datos del grupo"
               FontAttributes="Bold"
@@ -37,21 +68,19 @@
           <!-- Nombre -->
           <VerticalStackLayout Spacing="4">
             <Label Text="Nombre"
-                FontSize="12"
-                   TextColor="{AppThemeBinding Light=#555, Dark=#BBB}"/>
+                   Style="{StaticResource TinyLabelStyle}"/>
             <Entry x:Name="NameEntry"
-                Placeholder="p. ej. Tamaño"/>
+                   Placeholder="p. ej. Tamaño"/>
           </VerticalStackLayout>
 
           <!-- Descripción -->
           <VerticalStackLayout Spacing="4">
             <Label Text="Descripción"
-                FontSize="12"
-                   TextColor="{AppThemeBinding Light=#555, Dark=#BBB}"/>
+                   Style="{StaticResource TinyLabelStyle}"/>
             <Editor x:Name="DescEntry"
-                Placeholder="p. ej. Elige un tamaño"
+                    Placeholder="p. ej. Elige un tamaño"
                     AutoSize="TextChanges"
-                MaxLength="140"/>
+                    MaxLength="140"/>
 
           </VerticalStackLayout>
 
@@ -60,21 +89,19 @@
                 ColumnSpacing="12">
             <VerticalStackLayout Spacing="4">
               <Label Text="Mín. selecciones"
-                  FontSize="12"
-                     TextColor="{AppThemeBinding Light=#555, Dark=#BBB}"/>
+                     Style="{StaticResource TinyLabelStyle}"/>
               <Entry x:Name="MinEntry"
-                  Keyboard="Numeric"
-                  Placeholder="0"/>
+                     Keyboard="Numeric"
+                     Placeholder="0"/>
             </VerticalStackLayout>
 
             <VerticalStackLayout Spacing="4"
-                Grid.Column="1">
+                                 Grid.Column="1">
               <Label Text="Máx. selecciones"
-                  FontSize="12"
-                     TextColor="{AppThemeBinding Light=#555, Dark=#BBB}"/>
+                     Style="{StaticResource TinyLabelStyle}"/>
               <Entry x:Name="MaxEntry"
-                  Keyboard="Numeric"
-                  Placeholder="vacío = sin tope"/>
+                     Keyboard="Numeric"
+                     Placeholder="vacío = sin tope"/>
             </VerticalStackLayout>
           </Grid>
 
@@ -83,34 +110,30 @@
               ColumnSpacing="12">
             <HorizontalStackLayout Spacing="10">
               <Label Text="Obligatorio"
-                  VerticalTextAlignment="Center"
-                     TextColor="{AppThemeBinding Light=#333, Dark=#CCC}"/>
+                    VerticalTextAlignment="Center"
+                    TextColor="{AppThemeBinding Light=#333, Dark=#CCC}"/>
               <Switch x:Name="ReqSwitch"
-                  HeightRequest="32"/>
+                      HeightRequest="32"/>
 
             </HorizontalStackLayout>
 
             <HorizontalStackLayout Spacing="10"
                 Grid.Column="1">
               <Label Text="Activo"
-                  VerticalTextAlignment="Center"
-                     TextColor="{AppThemeBinding Light=#333, Dark=#CCC}"/>
+                    VerticalTextAlignment="Center"
+                    TextColor="{AppThemeBinding Light=#333, Dark=#CCC}"/>
               <Switch x:Name="ActiveSwitch"
-                  HeightRequest="32"
-                  />
+                      HeightRequest="32"/>
 
             </HorizontalStackLayout>
           </Grid>
 
         </VerticalStackLayout>
-      </Frame>
+      </Border>
 
       <!-- ===== AVANZADO ===== -->
-      <Frame HasShadow="False"
-          CornerRadius="12"
-             Padding="14"
-             BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E1E1E}">
-        <VerticalStackLayout Spacing="12">
+      <Border Style="{StaticResource CardContainerStyle}">
+        <VerticalStackLayout Spacing="14">
           <Label Text="Avanzado"
               FontAttributes="Bold"
                  TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
@@ -119,18 +142,16 @@
                 ColumnSpacing="12">
             <VerticalStackLayout Spacing="4">
               <Label Text="Posición"
-                  FontSize="12"
-                     TextColor="{AppThemeBinding Light=#555, Dark=#BBB}"/>
+                     Style="{StaticResource TinyLabelStyle}"/>
               <Entry x:Name="PositionEntry"
-                  Keyboard="Numeric"
-                  Placeholder="0"/>
+                     Keyboard="Numeric"
+                     Placeholder="0"/>
             </VerticalStackLayout>
 
             <VerticalStackLayout Spacing="4"
                 Grid.Column="1">
               <Label Text="Categoría (opcional)"
-                  FontSize="12"
-                     TextColor="{AppThemeBinding Light=#555, Dark=#BBB}"/>
+                     Style="{StaticResource TinyLabelStyle}"/>
               <Grid ColumnDefinitions="*,Auto"
                   ColumnSpacing="6">
                 <Picker x:Name="CategoryPicker"
@@ -147,7 +168,7 @@
 
           </Grid>
         </VerticalStackLayout>
-      </Frame>
+      </Border>
 
       <!-- ===== OPCIONES ===== -->
       <VerticalStackLayout Spacing="8">
@@ -171,29 +192,23 @@
           <CollectionView.ItemTemplate>
             <DataTemplate>
               <!-- Tarjeta de opción -->
-              <Frame HasShadow="False"
-                  CornerRadius="12"
-                  Padding="12"
-                     BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E1E1E}"
-                     Margin="0,6">
-                <VerticalStackLayout Spacing="10">
+              <Border Style="{StaticResource CardContainerStyle}"
+                      Margin="0,6">
+                <VerticalStackLayout Spacing="12">
 
-                  <!-- Nombre + Precio -->
                   <Grid ColumnDefinitions="*,120"
-                      ColumnSpacing="12">
+                        ColumnSpacing="12">
                     <VerticalStackLayout Spacing="4">
                       <Label Text="Nombre"
-                          FontSize="12"
-                             TextColor="{AppThemeBinding Light=#555, Dark=#BBB}"/>
+                             Style="{StaticResource TinyLabelStyle}"/>
                       <Entry Text="{Binding name}"
-                          Placeholder="Nombre de opción"/>
+                             Placeholder="Nombre de opción"/>
                     </VerticalStackLayout>
 
                     <VerticalStackLayout Spacing="4"
-                        Grid.Column="1">
+                                         Grid.Column="1">
                       <Label Text="Precio (MXN)"
-                          FontSize="12"
-                             TextColor="{AppThemeBinding Light=#555, Dark=#BBB}"/>
+                             Style="{StaticResource TinyLabelStyle}"/>
                       <Entry Text="{Binding priceDisplay, Mode=TwoWay}"
                              Placeholder="0.00"
                              Keyboard="Numeric"
@@ -202,55 +217,36 @@
                   </Grid>
 
                   <!-- Default / Activo + acciones (limpio y alineado) -->
-                  <Grid ColumnDefinitions="120,120,*,Auto,Auto,Auto"
-                      ColumnSpacing="12">
-
-                    <!-- Default -->
-                    <VerticalStackLayout Grid.Column="0"
-                        Spacing="4"
-                        VerticalOptions="Center">
+                  <Grid ColumnDefinitions="*,*,Auto,Auto,Auto"
+                        ColumnSpacing="12">
+                    <VerticalStackLayout Spacing="4"
+                                         VerticalOptions="Center">
                       <Label Text="Default"
-                             FontSize="12"
-                             TextColor="{AppThemeBinding Light=#555, Dark=#BBB}"/>
+                             Style="{StaticResource TinyLabelStyle}"/>
                       <Switch IsToggled="{Binding isDefault}"
-                              Toggled="Default_Toggled"
-                              HorizontalOptions="Start"/>
+                              Toggled="Default_Toggled"/>
                     </VerticalStackLayout>
 
-                    <!-- Activo -->
-                    <VerticalStackLayout Grid.Column="1"
-                        Spacing="4"
-                        VerticalOptions="Center">
+                    <VerticalStackLayout Spacing="4"
+                                         Grid.Column="1"
+                                         VerticalOptions="Center">
                       <Label Text="Activo"
-                             FontSize="12"
-                             TextColor="{AppThemeBinding Light=#555, Dark=#BBB}"/>
+                             Style="{StaticResource TinyLabelStyle}"/>
                       <Switch IsToggled="{Binding isActive, Mode=TwoWay}"
-                              Toggled="OptionActive_Toggled"
-                              HorizontalOptions="Start"/>
-
+                              Toggled="OptionActive_Toggled"/>
                     </VerticalStackLayout>
 
-                    <!-- Espaciador flexible -->
-                    <Grid Grid.Column="2"/>
-
-                    <!-- Acciones -->
-                    <Button Grid.Column="3"
-                        Text="↑"
-                        Padding="10,8"
-                            MinimumHeightRequest="40"
-                        WidthRequest="44"
+                    <Button Grid.Column="2"
+                            Text="↑"
+                            Style="{StaticResource SecondaryPillSmButtonStyle}"
                             Clicked="MoveUp_Clicked"/>
-                    <Button Grid.Column="4"
-                        Text="↓"
-                        Padding="10,8"
-                            MinimumHeightRequest="40"
-                        WidthRequest="44"
+                    <Button Grid.Column="3"
+                            Text="↓"
+                            Style="{StaticResource SecondaryPillSmButtonStyle}"
                             Clicked="MoveDown_Clicked"/>
-                    <Button Grid.Column="5"
-                        Text="✕"
-                        Padding="10,8"
-                            MinimumHeightRequest="40"
-                        WidthRequest="44"
+                    <Button Grid.Column="4"
+                            Text="✕"
+                            Style="{StaticResource SecondaryPillSmButtonStyle}"
                             Clicked="RemoveOption_Clicked"/>
 
                   </Grid>
@@ -258,18 +254,20 @@
 
 
                 </VerticalStackLayout>
-              </Frame>
+              </Border>
             </DataTemplate>
           </CollectionView.ItemTemplate>
         </CollectionView>
 
         <Button Text="Agregar opción"
-            Clicked="AddOption_Clicked"/>
+                Style="{StaticResource SecondaryPillButtonStyle}"
+                Clicked="AddOption_Clicked"/>
       </VerticalStackLayout>
 
       <!-- Botón guardar alternativo (además del Toolbar) -->
       <Button Text="Guardar"
-          Clicked="Save_Clicked"/>
+              Style="{StaticResource PrimaryButtonStyle}"
+              Clicked="Save_Clicked"/>
 
       <!-- Espacio inferior para no chocar con la barra -->
       <Grid HeightRequest="12"/>

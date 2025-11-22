@@ -40,10 +40,17 @@ public static class Perms
     public static bool OrdersRead    => Has("orders.read");
     public static bool OrdersCreate  => Has("orders.create");
     public static bool OrdersUpdate  => Has("orders.update");
+    public static bool OrdersRefund  => Has("orders.refund");
 
     public static bool MenusRead    => Has("menu.read");
     public static bool MenusCreate  => Has("menu.create");
     public static bool MenusUpdate  => Has("menu.update");
     public static bool MenusDelete  => Has("menu.delete");
+
+    public static bool InventoryRead => Has("inventory.read");
+    public static bool InventoryAdjust => Has("inventory.adjust");
+
+    public static bool ExpensesRead => Has("expenses.read");
+    public static bool ExpensesManage => Has("expenses.manage");
 
 }

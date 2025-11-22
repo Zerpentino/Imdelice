@@ -11,4 +11,9 @@ namespace Imdeliceapp.Models
         public bool isComboOnly { get; set; }
         public int? parentId { get; set; }
     }
+
+    public class CategoryListResponse
+    {
+        public List<CategoryDTO> data { get; set; } = new();
+    }
 }

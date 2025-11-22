@@ -8,6 +8,7 @@ exports.CreateProductSimpleDto = zod_1.z.object({
     priceCents: zod_1.z.number().int().nonnegative(),
     description: zod_1.z.string().optional(),
     sku: zod_1.z.string().optional(),
+    barcode: zod_1.z.string().trim().min(3).optional(),
     // imageUrl: z.string().url().optional(),
 });
 exports.VariantInputDto = zod_1.z.object({
@@ -15,6 +16,7 @@ exports.VariantInputDto = zod_1.z.object({
     name: zod_1.z.string().min(1),
     priceCents: zod_1.z.number().int().nonnegative(),
     sku: zod_1.z.string().optional(),
+    barcode: zod_1.z.string().trim().min(3).optional(),
 });
 exports.CreateProductVariantedDto = zod_1.z.object({
     name: zod_1.z.string().min(2),
@@ -22,6 +24,7 @@ exports.CreateProductVariantedDto = zod_1.z.object({
     variants: zod_1.z.array(exports.VariantInputDto.omit({ id: true })).min(1),
     description: zod_1.z.string().optional(),
     sku: zod_1.z.string().optional(),
+    barcode: zod_1.z.string().trim().min(3).optional(),
     //imageUrl: z.string().url().optional(),
 });
 exports.UpdateProductDto = zod_1.z.object({
@@ -30,6 +33,7 @@ exports.UpdateProductDto = zod_1.z.object({
     priceCents: zod_1.z.number().int().nonnegative().nullable().optional(), // SIMPLE o null si varianted
     description: zod_1.z.string().optional(),
     sku: zod_1.z.string().optional(),
+    barcode: zod_1.z.string().trim().min(3).nullable().optional(),
     //imageUrl: z.string().url().optional(),
     isActive: zod_1.z.boolean().optional()
 });
@@ -39,6 +43,7 @@ exports.ConvertToVariantedDto = zod_1.z.object({
         name: zod_1.z.string().min(1),
         priceCents: zod_1.z.number().int().nonnegative(),
         sku: zod_1.z.string().optional(),
+        barcode: zod_1.z.string().trim().min(3).optional(),
     })).min(1),
 });
 exports.ConvertToSimpleDto = zod_1.z.object({

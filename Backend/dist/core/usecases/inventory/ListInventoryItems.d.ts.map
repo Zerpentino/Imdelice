@@ -1,0 +1,1 @@
+{"version":3,"file":"ListInventoryItems.d.ts","sourceRoot":"","sources":["../../../../src/core/usecases/inventory/ListInventoryItems.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EACV,oBAAoB,EACpB,uBAAuB,EACxB,MAAM,gDAAgD,CAAC;AAExD,qBAAa,kBAAkB;IACjB,OAAO,CAAC,IAAI;gBAAJ,IAAI,EAAE,oBAAoB;IAE9C,IAAI,CAAC,MAAM,CAAC,EAAE,uBAAuB;;;;;;;;;;;;;CAGtC"}

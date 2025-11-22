@@ -3,6 +3,7 @@ import type { AuthRequest } from "../middlewares/authenticate";
 import { success, fail } from "../utils/apiResponse";
 import { PaymentsReportQueryDto } from "../dtos/reports.dto";
 import { GetPaymentsReport } from "../../core/usecases/reports/GetPaymentsReport";
+import { GetProfitLossReport } from "../../core/usecases/reports/GetProfitLossReport";
 
 const dateOnlyRegex = /^\d{4}-\d{2}-\d{2}$/;
 const localDateTimeRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?$/;
@@ -58,7 +59,10 @@ function parseDate(value?: string, endOfDay = false, tzOffsetMinutes = 0) {
 }
 
 export class ReportsController {
-  constructor(private readonly paymentsReportUC: GetPaymentsReport) {}
+  constructor(
+    private readonly paymentsReportUC: GetPaymentsReport,
+    private readonly profitLossReportUC: GetProfitLossReport,
+  ) {}
 
   payments = async (req: AuthRequest, res: Response) => {
     try {
@@ -84,6 +88,33 @@ export class ReportsController {
       return success(res, report);
     } catch (e: any) {
       return fail(res, e?.message || "Error generating payments report", 400, e);
+    }
+  };
+
+  profitLoss = async (req: AuthRequest, res: Response) => {
+    try {
+      const query = PaymentsReportQueryDto.parse(req.query);
+      const tzOffsetRaw = req.query.tzOffsetMinutes;
+      let tzOffsetMinutes = 0;
+      if (tzOffsetRaw !== undefined) {
+        tzOffsetMinutes = Number(tzOffsetRaw);
+        if (
+          Number.isNaN(tzOffsetMinutes) ||
+          tzOffsetMinutes < -720 ||
+          tzOffsetMinutes > 840
+        ) {
+          throw new Error("tzOffsetMinutes inválido");
+        }
+      }
+      const filters = {
+        from: parseDate(query.from, false, tzOffsetMinutes),
+        to: parseDate(query.to, true, tzOffsetMinutes),
+        includeOrders: query.includeOrders,
+      };
+      const report = await this.profitLossReportUC.exec(filters);
+      return success(res, report);
+    } catch (e: any) {
+      return fail(res, e?.message || "Error generating profit/loss report", 400, e);
     }
   };
 }

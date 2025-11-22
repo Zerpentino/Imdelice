@@ -1,0 +1,82 @@
+Para registrar esas “pérdidas/compras rápidas” necesitamos un módulo de gastos que complemente los reportes de ganancias. Te propongo el siguiente alcance (sin tocar aún el código) para que confirmes antes de implementarlo:
+
+Modelo nuevo: Expense
+
+Campos: id, concept (texto), category (enum: COMPRA_URGENTE, MANTENIMIENTO, MERMA, etc.), amountCents, paymentMethod, notes, createdAt, incurredAt, recordedByUserId, y opcionalmente inventoryMovementId si quieres enlazarlo a un movimiento de inventario.
+Tabla relacionada a User (quién lo registró) y opcional a InventoryMovement (para que un movimiento WASTE/PURCHASE pueda cargar de una vez el gasto).
+Endpoints dedicados (para que el front tenga su sección)
+
+POST /api/expenses (crear gasto del día).
+GET /api/expenses con filtros from, to, category, recordedBy.
+GET /api/expenses/:id, PATCH /api/expenses/:id, DELETE /api/expenses/:id (opcional si quieren editar/cancelar).
+Permisos nuevos: expenses.read, expenses.manage.
+Integración con reportes
+
+Extender el reporte actual de ganancias (/api/reports/payments) para que incluya un bloque “expenses” con total de egresos y neto (ingresos - egresos). Igual puedes manejar un endpoint nuevo /api/reports/profit-loss que devuelva ambos lados.
+Cada gasto registrado se suma a ese bloque; si además vinculas un InventoryMovement (por ejemplo, una compra urgente de tortillas), el backend puede crear el movimiento PURCHASE en inventario + el gasto financiero en una sola operación.
+Inventario
+
+No necesitas duplicar información: bastaría con que cuando registren un gasto relacionado con inventario, opcionalmente envíen inventoryMovement dentro del mismo POST (ej. type: "PURCHASE", quantity: X). Así se ajusta el stock y queda reflejado el gasto. Para mermas o pérdidas, usar type: "WASTE" y categoría MERMA.
+UI/Flujo sugerido para el front
+
+Nueva sección “Gastos” con una tabla diaria y formulario “Registrar gasto”.
+Campos: concepto, categoría, monto, método de pago, notas, check “ajusta inventario” (si lo activan, aparece el selector de barcode/producto y cantidad para crear el movimiento).
+Reporte: vista tipo “Ganancias vs Gastos” mostrando ingresos (payments) y egresos (expenses) filtrados por fecha.
+Si estás de acuerdo con este diseño, implemento los modelos/endpoint/reportes. Confírmame si quieres esta implementación completa o prefieres empezar solo con los endpoints CRUD para gastos sin tocar reportes todavía.
+
+cambios;
+Cambios principales:
+
+Modelo y permisos: agregué ExpenseCategory y el modelo Expense al schema; los movimientos de inventario ahora pueden enlazarse a un gasto. La semilla crea la categoría Inventario y nuevos permisos expenses.read / expenses.manage.
+Backend de gastos: nuevo repositorio Prisma, DTOs y casos de uso (Create/List/Get/Update/Delete/GetSummary). Exposé el controlador ExpensesController con rutas GET/POST/PATCH/DELETE /api/expenses y GET /api/expenses/summary, incluyendo la capacidad de registrar un movimiento de inventario dentro del mismo POST (opcional por barcode/productId).
+Reportes: añadí el use case GetProfitLossReport y el endpoint GET /api/reports/profit-loss, que combina ingresos (payments report) con el resumen de gastos para obtener el neto.
+Integraciones: contenedor e index registran los nuevos repos, usecases y rutas. docs/inventory_endpoints.json ahora incluye ejemplos para los endpoints de gastos; el documento del módulo menciona la nueva sección de pérdidas.
+Build/tests: npm run test:inventory y npm run build pasan correctamente.
+Con esto el front puede registrar gastos diarios (con o sin movimiento de inventario), listarlos/filtrarlos y verlos reflejados en el reporte de ganancias vs pérdidas.
+
+10 files changed
++161
+-10
+
+Undo
+
+View all changes
+inventory_endpoints.json
++52
+-0
+
+inventory_module_proposal.txt
++1
+-0
+
+schema.prisma
++29
+-0
+
+seed.ts
++4
+-2
+
+index.ts
++28
+-1
+
+index.ts
++2
+-0
+
+PrismaExpenseRepository.ts
++4
+-3
+
+ReportsController.ts
++32
+-1
+
+expenses.dto.ts
++3
+-3
+
+reports.routes.ts
++6
+-0

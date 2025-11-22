@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Imdeliceapp.Pages.InventoryLocationsPage"
+             Title="Ubicaciones"
+              Shell.NavBarIsVisible="True"
+             BackgroundColor="{AppThemeBinding Light=White, Dark=Black}">
+
+  <ContentPage.ToolbarItems>
+    <ToolbarItem Text="Agregar"
+                 Order="Primary"
+                 Priority="0"
+                 Clicked="AddLocation_Clicked"/>
+  </ContentPage.ToolbarItems>
+
+  <RefreshView x:Name="RefreshView"
+               Refreshing="RefreshView_Refreshing"
+               IsRefreshing="{Binding IsRefreshing}">
+    <CollectionView ItemsSource="{Binding Locations}"
+                    Margin="20"
+                    SelectionMode="None">
+      <CollectionView.EmptyView>
+        <Label Text="{Binding EmptyMessage}"
+               HorizontalTextAlignment="Center"
+               TextColor="{AppThemeBinding Light=#777, Dark=#AAA}"/>
+      </CollectionView.EmptyView>
+      <CollectionView.ItemTemplate>
+        <DataTemplate>
+          <SwipeView>
+            <SwipeView.RightItems>
+              <SwipeItems Mode="Reveal">
+                <SwipeItem Text="Editar"
+                           BackgroundColor="#4CAF50"
+                           Invoked="EditSwipe_Invoked"
+                           CommandParameter="{Binding .}"/>
+                <SwipeItem Text="Eliminar"
+                           BackgroundColor="#E53935"
+                           Invoked="DeleteSwipe_Invoked"
+                           CommandParameter="{Binding .}"/>
+              </SwipeItems>
+            </SwipeView.RightItems>
+
+            <Border StrokeThickness="1"
+                    Margin="0,6"
+                    Padding="12"
+                    Stroke="{AppThemeBinding Light=#E0E0E0, Dark=#333333}"
+                    BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1C1C1C}"
+                    StrokeShape="{RoundRectangle CornerRadius=12}">
+              <Border.GestureRecognizers>
+                <TapGestureRecognizer Tapped="Location_Tapped"
+                                      CommandParameter="{Binding .}"/>
+              </Border.GestureRecognizers>
+              <Grid ColumnDefinitions="*,Auto"
+                    RowDefinitions="Auto,Auto">
+                <Label Text="{Binding name}"
+                       FontSize="18"
+                       FontAttributes="Bold"
+                       TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+                <Label Grid.Column="1"
+                       Text="{Binding type}"
+                       FontSize="12"
+                       TextColor="{AppThemeBinding Light=#757575, Dark=#BBBBBB}"
+                       HorizontalTextAlignment="End"/>
+                <StackLayout Grid.Row="1"
+                             Orientation="Horizontal"
+                             Spacing="10">
+                  <Label Text="{Binding code, StringFormat='Código: {0}'}"
+                         FontSize="12"
+                         TextColor="{AppThemeBinding Light=#616161, Dark=#B3B3B3}"/>
+                  <Label Text="Predeterminada"
+                         FontSize="12"
+                         TextColor="#2E7D32"
+                         IsVisible="{Binding isDefault}"/>
+                </StackLayout>
+              </Grid>
+            </Border>
+          </SwipeView>
+        </DataTemplate>
+      </CollectionView.ItemTemplate>
+    </CollectionView>
+  </RefreshView>
+</ContentPage>

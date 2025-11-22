@@ -19,6 +19,11 @@
 
       <SearchBar x:Name="SearchBox"
                  Placeholder="Buscar productos o combos..."
+                 BackgroundColor="{AppThemeBinding Light=#F2F2F2, Dark=#2B2B2B}"
+                 TextColor="{AppThemeBinding Light=#222, Dark=#F5F5F5}"
+                 PlaceholderColor="{AppThemeBinding Light=#8A8A8A, Dark=#BEBEBE}"
+                 CancelButtonColor="{AppThemeBinding Light=#80358C, Dark=#F07DD2}"
+                 HeightRequest="44"
                  TextChanged="SearchBox_TextChanged"/>
     </VerticalStackLayout>
 
@@ -90,7 +95,7 @@
                     ColumnDefinitions="*"
                     Padding="12">
                 <VerticalStackLayout Spacing="6">
-                  <Frame HeightRequest="120"
+                  <Frame HeightRequest="{OnIdiom Phone=120, Tablet=260, Desktop=260}"
                          CornerRadius="14"
                          HasShadow="False"
                          BackgroundColor="{AppThemeBinding Light=#f8f8f8, Dark=#1b1b1b}">

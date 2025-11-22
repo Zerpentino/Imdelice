@@ -6,7 +6,7 @@ const modifiers_dto_1 = require("../dtos/modifiers.dto");
 const apiResponse_1 = require("../utils/apiResponse");
 const products_combo_dto_1 = require("../dtos/products.combo.dto");
 class ProductsController {
-    constructor(createSimpleUC, createVariantedUC, getDetailUC, listUC, attachModUC, updateUC, replaceVariantsUC, deleteUC, convertToVariantedUC, convertToSimpleUC, 
+    constructor(createSimpleUC, createVariantedUC, getDetailUC, getByBarcodeUC, listUC, attachModUC, updateUC, replaceVariantsUC, deleteUC, convertToVariantedUC, convertToSimpleUC, 
     // COMBOS
     createComboUC, addComboItemsUC, updateComboItemUC, removeComboItemUC, 
     // cambios de grupo de modificadores 
@@ -16,6 +16,7 @@ class ProductsController {
         this.createSimpleUC = createSimpleUC;
         this.createVariantedUC = createVariantedUC;
         this.getDetailUC = getDetailUC;
+        this.getByBarcodeUC = getByBarcodeUC;
         this.listUC = listUC;
         this.attachModUC = attachModUC;
         this.updateUC = updateUC;
@@ -38,7 +39,11 @@ class ProductsController {
             try {
                 const dto = products_dto_1.CreateProductSimpleDto.parse(req.body);
                 const image = this.getImagePayload(req, false);
-                const prod = await this.createSimpleUC.exec({ ...dto, image });
+                const prod = await this.createSimpleUC.exec({
+                    ...dto,
+                    barcode: dto.barcode?.trim() ?? null,
+                    image
+                });
                 return (0, apiResponse_1.success)(res, prod, "Created", 201);
             }
             catch (err) {
@@ -49,7 +54,15 @@ class ProductsController {
             try {
                 const dto = products_dto_1.CreateProductVariantedDto.parse(req.body);
                 const image = this.getImagePayload(req, false);
-                const prod = await this.createVariantedUC.exec({ ...dto, image });
+                const prod = await this.createVariantedUC.exec({
+                    ...dto,
+                    barcode: dto.barcode?.trim() ?? null,
+                    variants: dto.variants.map(variant => ({
+                        ...variant,
+                        barcode: variant.barcode?.trim() ?? null
+                    })),
+                    image
+                });
                 return (0, apiResponse_1.success)(res, prod, "Created", 201);
             }
             catch (err) {
@@ -62,10 +75,24 @@ class ProductsController {
                 const prod = await this.getDetailUC.exec(id);
                 if (!prod)
                     return (0, apiResponse_1.fail)(res, "Not found", 404);
-                return (0, apiResponse_1.success)(res, prod);
+                return (0, apiResponse_1.success)(res, this.mapProductForResponse(prod));
             }
             catch (err) {
                 return (0, apiResponse_1.fail)(res, err?.message || "Error getting product", 400, err);
+            }
+        };
+        this.getByBarcode = async (req, res) => {
+            try {
+                const barcode = req.params.barcode?.trim();
+                if (!barcode)
+                    return (0, apiResponse_1.fail)(res, "Barcode requerido", 400);
+                const prod = await this.getByBarcodeUC.exec(barcode);
+                if (!prod)
+                    return (0, apiResponse_1.fail)(res, "Producto no encontrado", 404);
+                return (0, apiResponse_1.success)(res, this.mapProductForResponse(prod));
+            }
+            catch (err) {
+                return (0, apiResponse_1.fail)(res, err?.message || "Error buscando producto", 400, err);
             }
         };
         this.list = async (req, res) => {
@@ -137,7 +164,15 @@ class ProductsController {
                 const id = Number(req.params.id);
                 const dto = products_dto_1.UpdateProductDto.parse(req.body);
                 const image = this.getImagePayload(req, true);
-                const prod = await this.updateUC.exec(id, { ...dto, image });
+                const prod = await this.updateUC.exec(id, {
+                    ...dto,
+                    barcode: dto.barcode === undefined
+                        ? undefined
+                        : dto.barcode === null
+                            ? null
+                            : dto.barcode.trim(),
+                    image
+                });
                 return (0, apiResponse_1.success)(res, prod, "Updated");
             }
             catch (err) {
@@ -149,7 +184,10 @@ class ProductsController {
                 const id = Number(req.params.id);
                 const dto = products_dto_1.ReplaceVariantsDto.parse(req.body);
                 await this.replaceVariantsUC.exec(id, dto.variants.map(v => ({
-                    name: v.name, priceCents: v.priceCents, sku: v.sku
+                    name: v.name,
+                    priceCents: v.priceCents,
+                    sku: v.sku,
+                    barcode: v.barcode?.trim() ?? null
                 })));
                 return (0, apiResponse_1.success)(res, null, "Variants replaced", 204);
             }
@@ -186,7 +224,10 @@ class ProductsController {
             try {
                 const id = Number(req.params.id);
                 const dto = products_dto_1.ConvertToVariantedDto.parse(req.body);
-                await this.convertToVariantedUC.exec(id, dto.variants);
+                await this.convertToVariantedUC.exec(id, dto.variants.map(v => ({
+                    ...v,
+                    barcode: v.barcode?.trim() ?? null
+                })));
                 return (0, apiResponse_1.success)(res, null, "Converted to VARIANTED");
             }
             catch (err) {
@@ -295,6 +336,20 @@ class ProductsController {
             return null;
         }
         return undefined;
+    }
+    mapProductForResponse(prod) {
+        if (!prod)
+            return prod;
+        const { image, ...rest } = prod;
+        const updatedAt = prod.updatedAt instanceof Date ? prod.updatedAt : new Date(prod.updatedAt);
+        const imageUrl = prod.imageMimeType
+            ? `/products/${prod.id}/image?v=${updatedAt.getTime()}`
+            : null;
+        return {
+            ...rest,
+            imageUrl,
+            hasImage: Boolean(prod.imageMimeType),
+        };
     }
 }
 exports.ProductsController = ProductsController;

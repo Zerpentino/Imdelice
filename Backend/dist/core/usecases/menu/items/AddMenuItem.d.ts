@@ -19,8 +19,8 @@ export declare class AddMenuItem {
         updatedAt: Date;
         position: number;
         isActive: boolean;
-        sectionId: number;
         refType: import(".prisma/client").$Enums.MenuItemRefType;
+        sectionId: number;
         refId: number;
         displayName: string | null;
         displayPriceCents: number | null;

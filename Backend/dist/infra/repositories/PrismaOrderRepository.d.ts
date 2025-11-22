@@ -62,6 +62,7 @@ export declare class PrismaOrderRepository implements IOrderRepository {
                 isActive: boolean;
                 priceCents: number;
                 sku: string | null;
+                barcode: string | null;
                 isAvailable: boolean;
                 productId: number;
             } | null;
@@ -81,6 +82,7 @@ export declare class PrismaOrderRepository implements IOrderRepository {
                     isActive: boolean;
                     priceCents: number;
                     sku: string | null;
+                    barcode: string | null;
                     isAvailable: boolean;
                     productId: number;
                 } | null;
@@ -141,9 +143,9 @@ export declare class PrismaOrderRepository implements IOrderRepository {
         payments: {
             id: number;
             orderId: number;
+            amountCents: number;
             note: string | null;
             method: import(".prisma/client").$Enums.PaymentMethod;
-            amountCents: number;
             tipCents: number;
             receivedAmountCents: number | null;
             changeCents: number | null;

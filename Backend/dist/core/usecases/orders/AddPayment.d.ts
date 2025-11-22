@@ -5,9 +5,9 @@ export declare class AddPayment {
     exec(orderId: number, data: Parameters<IOrderRepository["addPayment"]>[1]): Promise<{
         id: number;
         orderId: number;
+        amountCents: number;
         note: string | null;
         method: import(".prisma/client").$Enums.PaymentMethod;
-        amountCents: number;
         tipCents: number;
         receivedAmountCents: number | null;
         changeCents: number | null;

@@ -8,6 +8,7 @@ const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const users_routes_1 = __importDefault(require("./routes/users.routes"));
 const errorHandler_1 = require("./presentation/middlewares/errorHandler");
+const requestLogger_1 = require("./presentation/middlewares/requestLogger");
 //roles
 const roles_routes_1 = __importDefault(require("./routes/roles.routes"));
 const auth_routes_1 = __importDefault(require("./routes/auth.routes"));
@@ -17,8 +18,10 @@ const products_routes_1 = __importDefault(require("./routes/products.routes"));
 const modifiers_routes_1 = __importDefault(require("./routes/modifiers.routes"));
 const channelConfig_routes_1 = __importDefault(require("./routes/channelConfig.routes"));
 const reports_routes_1 = __importDefault(require("./routes/reports.routes"));
+const inventory_routes_1 = __importDefault(require("./routes/inventory.routes"));
 //Menu
 const menu_routes_1 = __importDefault(require("./routes/menu.routes"));
+const expenses_routes_1 = __importDefault(require("./routes/expenses.routes"));
 //pedido
 const orders_routes_1 = __importDefault(require("./routes/orders.routes"));
 //mesas
@@ -26,6 +29,7 @@ const tables_routes_1 = __importDefault(require("./routes/tables.routes"));
 const app = (0, express_1.default)();
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());
+app.use(requestLogger_1.requestLogger);
 app.get('/', (_req, res) => {
     res.send('API OK mandando respuesta');
 });
@@ -35,6 +39,8 @@ app.use('/api/auth', auth_routes_1.default);
 app.use('/api/categories', categories_routes_1.default);
 app.use('/api/products', products_routes_1.default);
 app.use('/api/modifiers', modifiers_routes_1.default);
+app.use('/api/inventory', inventory_routes_1.default);
+app.use('/api/expenses', expenses_routes_1.default);
 app.use('/api/tables', tables_routes_1.default);
 //MENU
 app.use('/api/menus', menu_routes_1.default);

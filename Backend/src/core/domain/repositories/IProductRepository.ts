@@ -53,33 +53,38 @@ export type ProductWithDetails = Product & {
 
 export interface IProductRepository {
   createSimple(data: {
-    name: string; categoryId: number; priceCents: number;
-    description?: string; sku?: string;     image?: { buffer: Buffer; mimeType: string; size: number };
-
-  }): Promise<Product>;
-
- createVarianted(data: {
     name: string;
     categoryId: number;
-    variants: { name: string; priceCents: number; sku?: string }[];
+    priceCents: number;
     description?: string;
     sku?: string;
+    barcode?: string | null;
+    image?: { buffer: Buffer; mimeType: string; size: number };
+  }): Promise<Product>;
+
+  createVarianted(data: {
+    name: string;
+    categoryId: number;
+    variants: { name: string; priceCents: number; sku?: string; barcode?: string | null }[];
+    description?: string;
+    sku?: string;
+    barcode?: string | null;
     image?: { buffer: Buffer; mimeType: string; size: number };
   }): Promise<Product>;
 
 
   update(id: number, data: Partial<Pick<Product,
-    'name'|'categoryId'|'priceCents'|'description'|'sku'|'isActive'
+    'name'|'categoryId'|'priceCents'|'description'|'sku'|'isActive'|'barcode'
   >> & {
     image?: { buffer: Buffer; mimeType: string; size: number } | null; // null para eliminar imagen
   }): Promise<Product>;
 
   // NUEVO: conversión
-  convertToVarianted(productId: number, variants: { name: string; priceCents: number; sku?: string }[]): Promise<void>;
+  convertToVarianted(productId: number, variants: { name: string; priceCents: number; sku?: string; barcode?: string | null }[]): Promise<void>;
   convertToSimple(productId: number, priceCents: number): Promise<void>;
 
   // estrategia “reemplazar todas las variantes”
-  replaceVariants(productId: number, variants: { name: string; priceCents: number; sku?: string }[]): Promise<void>;
+  replaceVariants(productId: number, variants: { name: string; priceCents: number; sku?: string; barcode?: string | null }[]): Promise<void>;
 
   getById(id: number): Promise<ProductWithDetails | null>;
   list(filter?: { categorySlug?: string; type?: 'SIMPLE'|'VARIANTED'|'COMBO'; isActive?: boolean }): Promise<ProductListItem[]>;
@@ -144,4 +149,5 @@ reorderModifierGroups(
   items: Array<{ linkId: number; position: number }>
 ): Promise<void>;
 
+  findByBarcode(barcode: string): Promise<ProductWithDetails | null>;
 }

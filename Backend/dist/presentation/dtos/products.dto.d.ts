@@ -5,12 +5,14 @@ export declare const CreateProductSimpleDto: z.ZodObject<{
     priceCents: z.ZodNumber;
     description: z.ZodOptional<z.ZodString>;
     sku: z.ZodOptional<z.ZodString>;
+    barcode: z.ZodOptional<z.ZodString>;
 }, z.core.$strip>;
 export declare const VariantInputDto: z.ZodObject<{
     id: z.ZodOptional<z.ZodNumber>;
     name: z.ZodString;
     priceCents: z.ZodNumber;
     sku: z.ZodOptional<z.ZodString>;
+    barcode: z.ZodOptional<z.ZodString>;
 }, z.core.$strip>;
 export declare const CreateProductVariantedDto: z.ZodObject<{
     name: z.ZodString;
@@ -19,9 +21,11 @@ export declare const CreateProductVariantedDto: z.ZodObject<{
         name: z.ZodString;
         priceCents: z.ZodNumber;
         sku: z.ZodOptional<z.ZodString>;
+        barcode: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>;
     description: z.ZodOptional<z.ZodString>;
     sku: z.ZodOptional<z.ZodString>;
+    barcode: z.ZodOptional<z.ZodString>;
 }, z.core.$strip>;
 export declare const UpdateProductDto: z.ZodObject<{
     name: z.ZodOptional<z.ZodString>;
@@ -29,6 +33,7 @@ export declare const UpdateProductDto: z.ZodObject<{
     priceCents: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
     description: z.ZodOptional<z.ZodString>;
     sku: z.ZodOptional<z.ZodString>;
+    barcode: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     isActive: z.ZodOptional<z.ZodBoolean>;
 }, z.core.$strip>;
 export declare const ConvertToVariantedDto: z.ZodObject<{
@@ -36,6 +41,7 @@ export declare const ConvertToVariantedDto: z.ZodObject<{
         name: z.ZodString;
         priceCents: z.ZodNumber;
         sku: z.ZodOptional<z.ZodString>;
+        barcode: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>;
 }, z.core.$strip>;
 export declare const ConvertToSimpleDto: z.ZodObject<{
@@ -49,6 +55,7 @@ export declare const ReplaceVariantsDto: z.ZodObject<{
         name: z.ZodString;
         priceCents: z.ZodNumber;
         sku: z.ZodOptional<z.ZodString>;
+        barcode: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>;
 }, z.core.$strip>;
 export declare const ListProductsQueryDto: z.ZodObject<{

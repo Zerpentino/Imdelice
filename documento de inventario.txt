@@ -1,0 +1,101 @@
+En el módulo de inventario, el campo type siempre hace referencia al tipo de movimiento que estás registrando. Es un enum llamado InventoryMovementType definido en Prisma y tiene estos valores:
+	•	PURCHASE – entradas por compra/recepción de mercancía
+	•	SALE – salidas por venta (se descuenta existencias)<
+
+	•	ADJUSTMENT – ajustes manuales (conteo físico, correcciones)
+	•	WASTE – mermas o producto desechado
+	•	TRANSFER – traslado entre ubicaciones
+	•	SALE_RETURN – devoluciones/reintegros de stock (excel de un SALE)
+Cuando haces 
+POST /api/inventory/movements o /movements/by-barcode,
+ el type indica cuál de esos casos aplica y el backend ajusta el inventario en consecuencia (sumando para entradas, restando para salidas). 
+En las respuestas (GET /api/inventory/items/:id/movements) también verás el mismo campo para cada movimiento registrado.
+
+
+
+InventoryLocation es la tabla que define cada almacén/área donde guardas productos. Sus campos son:
+	•	id – PK autoincremental.
+	•	name – nombre visible (“General”, “Cocina”, “Bar”).
+	•	code – código interno opcional (puede ser usado en integraciones).
+	•	type – enum InventoryLocationType (GENERAL, KITCHEN, BAR, STORAGE).
+	•	isDefault – si es true, los movimientos sin locationId usan esta ubicación automáticamente.
+	•	isActive – para activar/desactivar ubicaciones sin borrarlas.
+	•	createdAt / updatedAt – timestamps.
+Además, hay relaciones:
+	•	items: InventoryItem[] – existencias vinculadas a esa ubicación.
+	•	movements: InventoryMovement[] – movimientos registrados ahí.
+Con el CRUD que añadimos (GET/POST/PATCH/DELETE /api/inventory/locations), puedes crear, editar o eliminar 
+(mientras no sea isDefault ni tenga items asociados) estas ubicaciones y controlar dónde se registran los movimientos.
+
+
+
+Typo en inventariolocation
+type es un enumerado (enum InventoryLocationType) que etiqueta la naturaleza de la ubicación. Tiene cuatro valores:
+	•	GENERAL: almacén genérico o bodega principal.
+	•	KITCHEN: inventario controlado dentro de la cocina.
+	•	BAR: área del bar/bebidas.
+	•	STORAGE: bodegas secundarias, cuartos fríos, etc.
+No cambia el comportamiento del inventario (sigue sumando/restando igual), pero sirve para clasificar y filtrar ubicaciones, 
+o para mostrar secciones distintas en el frontend. Puedes ampliarlo si necesitas más categorías agregando nuevos valores al enum en schema.prisma.
+
+
+
+Pasos:
+Flujo completo desde cero
+	1	Crear categoría de inventario
+	•	La semilla ya crea Inventario (slug inventario). Al correr npx prisma db seed, queda disponible en /api/categories. El front puede usarla para listar productos técnicos o filtrar.
+	2	Dar de alta productos de venta (los tradicionales)
+	•	Al crear un producto normal (POST /api/products/simple|varianted|combo) incluye, si lo tienes, su barcode.
+	•	Estos productos quedan en la categoría que les asignes (p. ej. “Bebidas”). No hace falta moverlos a “Inventario” si van a aparecer en el POS.
+	•	Cuando se cierre una orden con esos productos, el backend descuenta inventario automáticamente (SALE). Si la orden se cancela o reembolsa, se genera SALE_RETURN.
+	3	Crear productos técnicos / insumos
+	•	Para lo que sólo vive en bodega (harina, bolsas de alitas, etc.), crea un producto en la categoría Inventario.httpPOST /api/products/simple
+	•	{
+	•	  "name": "Bolsa de alitas 2kg",
+	•	  "categoryId": <idInventario>,
+	•	  "priceCents": 0,
+	•	  "sku": "INS-ALITAS-2KG",
+	•	  "barcode": "1234567890123",
+	•	  "isActive": false
+	•	}
+	•	
+	•	No necesitas mostrarlos en los menús. Sólo se usan para registrar entradas/salidas manuales.
+	4	Registrar stock inicial (entradas)
+	•	Usa POST /api/inventory/movements o POST /api/inventory/movements/by-barcode.
+	•	Ejemplo por código:httpPOST /api/inventory/movements/by-barcode
+	•	{
+	•	  "barcode": "1234567890123",
+	•	  "locationId": 1,        // o colócalo vacío para usar la ubicación default
+	•	  "type": "PURCHASE",
+	•	  "quantity": 20,
+	•	  "reason": "Recepción bodega"
+	•	}
+	•	
+	•	Esto crea/actualiza el InventoryItem asociado (producto + ubicación) y ya aparece en GET /api/inventory/items.
+	5	Movimientos manuales
+	•	Cada vez que alguien toma algo de la bodega, escanea el código y manda type: "SALE" (o WASTE, ADJUSTMENT) con la cantidad.
+	•	Si llega más mercancía, type: "PURCHASE".
+	•	Siempre puedes revisar el historial con GET /api/inventory/items/:id/movements.
+	6	Consulta del inventario
+	•	GET /api/inventory/items lista todos los productos con stock y devuelve el producto “sanitizado” (sin binario, con imageUrl).
+	•	GET /api/inventory/items/:id trae el detalle de una fila (producto, ubicación).
+	•	GET /api/products/by-barcode/:code también respeta esa forma de retorno.
+Resumen para el front
+	•	Paso 1 (opcional): ejecutar la semilla para asegurarse que la categoría Inventario exista.
+	•	Paso 2: crear productos normales con barcode → inventario se descuenta solo a través de órdenes.
+	•	Paso 3: para insumos, crear productos en la categoría Inventario con su barcode; no se deben mostrar en el menú.
+	•	Paso 4: usar POST /api/inventory/movements(by-barcode) para entradas/salidas manuales.
+	•	Paso 5: consumir GET /api/inventory/items para mostrar la lista (ya viene con imageUrl/hasImage en lugar de binario).
+	•	Paso 6: si necesitan administrar ubicaciones (bodega, cocina), usar el CRUD GET/POST/PATCH/DELETE /api/inventory/locations.
+Así el front puede habilitar una sección “Inventario” donde se listan productos técnicos (categoría Inventario) y registrar movimientos con la pistola sin tocar el resto del POS.
+
+
+Pasos para que un producto “normal” reste inventario cuando se vende:
+	1	Crear el producto en el catálogo – Usa los endpoints existentes (POST /api/products/simple, POST /api/products/varianted, etc.) y captura su barcode (o sku). No hace falta que esté en la categoría de inventario, ya que sí se va a vender en el POS.
+	2	Carga de stock inicial – Antes de vender, registra una entrada manual con POST /api/inventory/movements (o /by-barcode) usando type: "PURCHASE" o type: "ADJUSTMENT". Así se crea el InventoryItem para ese SKU.
+	3	Venta en el POS – Cuando una orden se cierra (status: CLOSED), el backend crea movimientos SALE para todos los ítems (desglose por combos e hijos). Ese movimiento descuenta automáticamente currentQuantity.
+	4	Cancelaciones/refunds – Si cancelas o reembolsas la orden después de cerrarla, se genera un SALE_RETURN que repone el stock.
+	5	Ajustes extra – Cualquier corrección manual (mermas, compras fuera de orden, ajustes de conteo) se hace igual que en el paso 2 con POST /api/inventory/movements especificando type según el caso.
+Con ese flujo, cada venta real “baja” inventario sin intervención adicional del front; solo deben asegurarse de registrar el barcode al crear el producto y cargar su stock inicial.
+
+

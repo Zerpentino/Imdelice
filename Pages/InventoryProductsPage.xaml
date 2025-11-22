@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Imdeliceapp.Pages.InventoryProductsPage"
+             Title="Inventario"
+              Shell.NavBarIsVisible="True"
+             BackgroundColor="{AppThemeBinding Light=White, Dark=Black}">
+
+  <ContentPage.ToolbarItems>
+    <ToolbarItem x:Name="MovementsToolbar"
+                 Text="Movimientos"
+                 Order="Primary"
+                 Priority="0"
+                 Clicked="MovementsToolbar_Clicked"/>
+  </ContentPage.ToolbarItems>
+
+  <Grid RowDefinitions="Auto,*">
+    <VerticalStackLayout Padding="20,6" Spacing="8">
+
+      <VerticalStackLayout Spacing="4"
+                           Margin="0,2,0,0">
+        <HorizontalStackLayout Spacing="8"
+                               VerticalOptions="Center"
+                               Padding="0,0">
+          <Label Text="Ubicación"
+                 VerticalTextAlignment="Center"
+                 FontSize="13"
+                 TextColor="{AppThemeBinding Light=#696969, Dark=#BEBEBE}"/>
+          <Picker x:Name="LocationPicker"
+                  WidthRequest="190"
+                  Margin="6,0,0,0"
+                  ItemsSource="{Binding Locations}"
+                  ItemDisplayBinding="{Binding name}"
+                  SelectedIndexChanged="LocationPicker_SelectedIndexChanged"/>
+        </HorizontalStackLayout>
+        <HorizontalStackLayout Spacing="8"
+                               VerticalOptions="Center"
+                               Padding="0,0">
+          <Label Text="Ver"
+                 VerticalTextAlignment="Center"
+                 FontSize="13"
+                 TextColor="{AppThemeBinding Light=#696969, Dark=#BEBEBE}"/>
+          <Picker x:Name="FilterPicker"
+                  WidthRequest="190"
+                  Margin="6,0,0,0"
+                  Title="Selecciona qué mostrar"
+                  SelectedIndexChanged="FilterPicker_SelectedIndexChanged">
+            <Picker.Items>
+              <x:String>Todos</x:String>
+              <x:String>Insumos</x:String>
+              <x:String>Productos con movimientos</x:String>
+            </Picker.Items>
+          </Picker>
+        </HorizontalStackLayout>
+      </VerticalStackLayout>
+
+      <SearchBar Placeholder="Buscar insumo"
+                 x:Name="SearchBar"
+                 TextChanged="SearchBar_TextChanged"/>
+    </VerticalStackLayout>
+
+    <RefreshView Grid.Row="1"
+                 x:Name="RefreshView"
+                 IsRefreshing="{Binding IsRefreshing}"
+                 Refreshing="RefreshView_Refreshing">
+      <CollectionView ItemsSource="{Binding Products}"
+                      SelectionMode="None"
+                      Margin="20,0">
+        <CollectionView.EmptyView>
+          <Label Text="{Binding EmptyMessage}"
+                 Margin="20"
+                 HorizontalTextAlignment="Center"
+                 TextColor="{AppThemeBinding Light=#777, Dark=#AAA}"/>
+        </CollectionView.EmptyView>
+        <CollectionView.ItemTemplate>
+          <DataTemplate>
+            <SwipeView>
+              <SwipeView.RightItems>
+                <SwipeItems Mode="Reveal">
+                  <SwipeItem Text="Editar"
+                             BackgroundColor="#4CAF50"
+                             Invoked="EditSwipe_Invoked"/>
+                  <SwipeItem Text="Movimientos"
+                             BackgroundColor="#1E88E5"
+                             Invoked="MovementsSwipe_Invoked"/>
+                </SwipeItems>
+              </SwipeView.RightItems>
+
+              <Grid Padding="14"
+                    ColumnDefinitions="Auto,*"
+                    RowDefinitions="Auto,Auto"
+                    BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E1E1E}"
+                    Margin="0,6"
+                    ColumnSpacing="14">
+                <Border WidthRequest="60"
+                        HeightRequest="60"
+                        StrokeThickness="0"
+                        BackgroundColor="{AppThemeBinding Light=#F5F5F5, Dark=#2B2B2B}"
+                        StrokeShape="{RoundRectangle CornerRadius=12}">
+                  <Image Source="{Binding Image}"
+                         Aspect="AspectFill"/>
+                </Border>
+
+                <Label Grid.Column="1"
+                       Text="{Binding Name}"
+                       FontAttributes="Bold"
+                       FontSize="16"
+                       TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+
+                <VerticalStackLayout Grid.Column="1"
+                                     Grid.Row="1"
+                                     Spacing="4">
+                  <HorizontalStackLayout Spacing="8">
+                    <Label Text="{Binding Type}"
+                           FontSize="12"
+                           TextColor="{AppThemeBinding Light=#6E6E6E, Dark=#B5B5B5}"/>
+                    <Label Text="{Binding SkuDisplay}"
+                           FontSize="12"
+                           TextColor="{AppThemeBinding Light=#6E6E6E, Dark=#B5B5B5}"/>
+                    <Label Text="{Binding Status}"
+                           FontSize="12"
+                           TextColor="{Binding StatusColor}"/>
+                  </HorizontalStackLayout>
+                  <Label Text="{Binding QuantityDisplay}"
+                         FontSize="13"
+                         FontAttributes="Bold"
+                         TextColor="{Binding QuantityColor}"/>
+                </VerticalStackLayout>
+              </Grid>
+            </SwipeView>
+          </DataTemplate>
+        </CollectionView.ItemTemplate>
+      </CollectionView>
+    </RefreshView>
+    <Button x:Name="FabButton"
+            Grid.Row="1"
+            Text="+"
+            WidthRequest="56"
+            HeightRequest="56"
+            CornerRadius="28"
+            BackgroundColor="{StaticResource BrandPrimary}"
+            TextColor="{StaticResource BrandOnPrimary}"
+            HorizontalOptions="End"
+            VerticalOptions="End"
+            Margin="0,0,24,24"
+            Clicked="FabButton_Clicked"/>
+  </Grid>
+</ContentPage>

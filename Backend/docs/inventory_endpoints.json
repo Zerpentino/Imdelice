@@ -1,0 +1,268 @@
+{
+  "info": {
+    "_postman_id": "9c7a6c40-b8ea-4d6d-845a-93f5e0a18e9b",
+    "name": "Im-Delice Inventario",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Login por PIN (obtener token)",
+      "description": "Autentica a un usuario usando email+PIN o usuario+PIN y devuelve el JWT para usar en Authorization.",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"mama@gmail.com\",\n  \"pin\": \"1234\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/pin",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "pin"]
+        }
+      }
+    },
+    {
+      "name": "Listar inventario",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{authToken}}", "type": "text" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/inventory/items",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "inventory", "items"]
+        }
+      }
+    },
+    {
+      "name": "Detalles de inventario por ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{authToken}}", "type": "text" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/inventory/items/1",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "inventory", "items", "1"]
+        }
+      }
+    },
+    {
+      "name": "Movimientos de un item",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{authToken}}", "type": "text" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/inventory/items/1/movements?limit=50",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "inventory", "items", "1", "movements"],
+          "query": [{ "key": "limit", "value": "50" }]
+        }
+      }
+    },
+    {
+      "name": "Registrar movimiento (productId)",
+      "description": "Crea un movimiento apuntando a un productId/variantId. Úsalo cuando tengas el ID interno.",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{authToken}}", "type": "text" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"productId\": 12,              // ID interno del producto\n  \"variantId\": null,           // Variante (opcional)\n  \"locationId\": 1,             // Almacén/área (opcional)\n  \"type\": \"PURCHASE\",         // Tipo: PURCHASE, SALE, ADJUSTMENT, WASTE, TRANSFER, SALE_RETURN\n  \"quantity\": 25,              // Cantidad positiva (el backend aplica el signo según el tipo)\n  \"reason\": \"Compra semanal proveedor X\" // Nota descriptiva\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/inventory/movements",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "inventory", "movements"]
+        }
+      }
+    },
+    {
+      "name": "Registrar movimiento (barcode)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{authToken}}", "type": "text" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"barcode\": \"7501234567890\", // Código escaneado; puede ser del producto o variante\n  \"locationId\": 1,              // Ubicación (opcional)\n  \"type\": \"SALE\",             // Tipo de movimiento\n  \"quantity\": 2,                // Para SALE y WASTE se descuenta; para PURCHASE se suma\n  \"reason\": \"Descuento manual\" // Nota visible en el historial\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/inventory/movements/by-barcode",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "inventory", "movements", "by-barcode"]
+        }
+      }
+    },
+    {
+      "name": "Buscar producto por código de barras",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{authToken}}", "type": "text" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/products/by-barcode/7501234567890",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "products", "by-barcode", "7501234567890"]
+        }
+      }
+    }
+    ,
+    {
+      "name": "Listar ubicaciones",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{authToken}}", "type": "text" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/inventory/locations",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "inventory", "locations"]
+        }
+      }
+    },
+    {
+      "name": "Crear ubicación",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{authToken}}", "type": "text" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Cocina\",\n  \"code\": \"KIT\",\n  \"type\": \"KITCHEN\",\n  \"isDefault\": false\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/inventory/locations",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "inventory", "locations"]
+        }
+      }
+    },
+    {
+      "name": "Actualizar ubicación",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{authToken}}", "type": "text" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Cocina Principal\",\n  \"isDefault\": true\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/inventory/locations/2",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "inventory", "locations", "2"]
+        }
+      }
+    },
+    {
+      "name": "Eliminar ubicación",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{authToken}}", "type": "text" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/inventory/locations/3",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "inventory", "locations", "3"]
+        }
+      }
+    },
+    {
+      "name": "Listar gastos",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{authToken}}", "type": "text" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/expenses?from=2025-11-14",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "expenses"],
+          "query": [{ "key": "from", "value": "2025-11-14" }]
+        }
+      }
+    },
+    {
+      "name": "Registrar gasto",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{authToken}}", "type": "text" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"concept\": \"Compra urgente de tortillas\",\n  \"category\": \"SUPPLIES\",\n  \"amountCents\": 1200,\n  \"paymentMethod\": \"CASH\",\n  \"inventoryMovement\": {\n    \"barcode\": \"1234567890123\",\n    \"locationId\": 1,\n    \"type\": \"PURCHASE\",\n    \"quantity\": 3,\n    \"reason\": \"Compra de emergencia\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/expenses",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "expenses"]
+        }
+      }
+    },
+    {
+      "name": "Resumen de gastos",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{authToken}}", "type": "text" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/expenses/summary?from=2025-11-01&to=2025-11-14",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "expenses", "summary"],
+          "query": [
+            { "key": "from", "value": "2025-11-01" },
+            { "key": "to", "value": "2025-11-14" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Reporte Ganancias vs Gastos",
+      "description": "Combina ingresos (pagos) y gastos en el rango solicitado. Usa tzOffsetMinutes igual que el reporte de pagos.",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{authToken}}", "type": "text" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/reports/profit-loss?from=2025-11-01&to=2025-11-14&tzOffsetMinutes=-360",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "reports", "profit-loss"],
+          "query": [
+            { "key": "from", "value": "2025-11-01" },
+            { "key": "to", "value": "2025-11-14" },
+            { "key": "tzOffsetMinutes", "value": "-360" },
+            { "key": "includeOrders", "value": "true" }
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "authToken", "value": "" }
+  ]
+}

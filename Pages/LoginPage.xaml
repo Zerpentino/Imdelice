@@ -133,16 +133,17 @@
 
 
 
-
+<!-- 
 <Label 
               Text="¿Olvidaste tu contraseña?"
                      FontSize="14"
+                     
                      HorizontalOptions="Center"
                      TextColor="{AppThemeBinding Light=#521739, Dark=#D5B2C2}">
               <Label.GestureRecognizers>
                      <TapGestureRecognizer Tapped="OlvidasteContrasena_Tapped" />
               </Label.GestureRecognizers>
-              </Label>
+              </Label> -->
            
 
 
@@ -151,7 +152,7 @@
          <!-- Texto de contraseña olvidada -->
             
        <!-- Texto de ¿Tienes problemas para iniciar sesión? -->
-                <Label 
+                <!-- <Label 
                   Grid.Row="1"
                   Text="¿Tienes problemas para iniciar sesión? Presiona aqui."
                   HorizontalTextAlignment="Center"
@@ -164,7 +165,7 @@
                   <Label.GestureRecognizers>
                       <TapGestureRecognizer Tapped="ProblemasIniciarSesion_Tapped" />
                   </Label.GestureRecognizers>
-                  </Label>
+                  </Label> -->
                    <Label
       x:Name="LabelVersion"
       Grid.Row="2"

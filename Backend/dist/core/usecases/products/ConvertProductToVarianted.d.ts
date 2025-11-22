@@ -6,6 +6,7 @@ export declare class ConvertProductToVarianted {
         name: string;
         priceCents: number;
         sku?: string;
+        barcode?: string | null;
     }[]): Promise<void>;
 }
 //# sourceMappingURL=ConvertProductToVarianted.d.ts.map

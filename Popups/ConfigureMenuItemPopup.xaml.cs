@@ -12,6 +12,7 @@ using Imdeliceapp;
 using Imdeliceapp.Models;
 using Imdeliceapp.Pages;
 using Imdeliceapp.Services;
+using Microsoft.Maui;
 using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Controls;
 using Microsoft.Maui.Graphics;
@@ -57,6 +58,7 @@ public partial class ConfigureMenuItemPopup : Popup
             comboChildConfigurations,
             showBackButton);
         BindingContext = _viewModel;
+        Closed += (_, __) => _viewModel.Dispose();
     }
 
     void CloseButton_Clicked(object sender, EventArgs e) => Close();
@@ -135,6 +137,9 @@ class ConfigureMenuItemViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(HasModifiers));
         OnPropertyChanged(nameof(HasComboChildren));
         OnPropertyChanged(nameof(ConfirmButtonText));
+
+        if (Application.Current != null)
+            Application.Current.RequestedThemeChanged += Application_RequestedThemeChanged;
     }
 
     public TakeOrderPage.MenuItemVm BaseItem { get; }
@@ -228,6 +233,30 @@ class ConfigureMenuItemViewModel : INotifyPropertyChanged
 
     public ICommand ConfirmCommand { get; }
     public ICommand CancelCommand { get; }
+
+    void Application_RequestedThemeChanged(object? sender, AppThemeChangedEventArgs e)
+        => MainThread.BeginInvokeOnMainThread(RefreshTheme);
+
+    void RefreshTheme()
+    {
+        foreach (var variant in Variants)
+            variant.RefreshTheme();
+
+        foreach (var child in ComboChildren)
+            child.RefreshTheme();
+
+        foreach (var group in ModifierGroups)
+            group.RefreshTheme();
+    }
+
+    bool _disposed;
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        if (Application.Current != null)
+            Application.Current.RequestedThemeChanged -= Application_RequestedThemeChanged;
+    }
 
     async Task ApplyVariantRulesAsync(int? variantId)
     {
@@ -422,9 +451,6 @@ class ConfigureMenuItemViewModel : INotifyPropertyChanged
 
 class VariantChoiceVm : INotifyPropertyChanged
 {
-    readonly Color _selectedBackground = Color.FromArgb("#f0d8e6");
-    readonly Color _defaultBackground = Color.FromArgb("#ffffff");
-
     public VariantChoiceVm(TakeOrderPage.MenuItemVm item, bool isSelected)
     {
         Item = item;
@@ -467,10 +493,22 @@ class VariantChoiceVm : INotifyPropertyChanged
         }
     }
 
+    Color GetSelectedBackground()
+        => Application.Current?.RequestedTheme == AppTheme.Dark
+            ? Color.FromArgb("#523049")
+            : Color.FromArgb("#f0d8e6");
+
+    Color GetDefaultBackground()
+        => Application.Current?.RequestedTheme == AppTheme.Dark
+            ? Color.FromArgb("#2B262C")
+            : Colors.White;
+
     void UpdateBackground()
     {
-        BackgroundColor = IsSelected ? _selectedBackground : _defaultBackground;
+        BackgroundColor = IsSelected ? GetSelectedBackground() : GetDefaultBackground();
     }
+
+    public void RefreshTheme() => UpdateBackground();
 
     public event PropertyChangedEventHandler? PropertyChanged;
     void OnPropertyChanged([CallerMemberName] string? name = null)
@@ -515,6 +553,15 @@ class ComboChildVm : INotifyPropertyChanged
 
         if (initialVariant == null)
             _ = ApplyVariantRulesAsync(component.VariantId);
+    }
+
+    public void RefreshTheme()
+    {
+        foreach (var variant in Variants)
+            variant.RefreshTheme();
+
+        foreach (var group in ModifierGroups)
+            group.RefreshTheme();
     }
 
     public ObservableCollection<VariantChoiceVm> Variants { get; }
@@ -879,6 +926,12 @@ class ModifierGroupVm : INotifyPropertyChanged
             opt.NotifyLimitChanged();
     }
 
+    public void RefreshTheme()
+    {
+        foreach (var option in Options)
+            option.RefreshTheme();
+    }
+
     public void ApplyRules(int min, int? max, bool isRequired)
     {
         _min = Math.Max(0, min);
@@ -965,9 +1018,6 @@ class ModifierOptionVm : INotifyPropertyChanged
     readonly ModifierGroupVm _parent;
     readonly ModifierOptionDTO _source;
 
-    readonly Color _selectedBackground = Color.FromArgb("#f0d8e6");
-    readonly Color _defaultBackground = Color.FromArgb("#ffffff");
-
     int _quantity;
     Color _background;
 
@@ -976,7 +1026,7 @@ class ModifierOptionVm : INotifyPropertyChanged
         _parent = parent;
         _source = source;
         _quantity = Math.Max(0, initialQuantity);
-        _background = _quantity > 0 ? _selectedBackground : _defaultBackground;
+        _background = _quantity > 0 ? GetSelectedBackground() : GetDefaultBackground();
 
         Name = source.name;
         Description = source.isDefault ? "Incluido por defecto" : null;
@@ -1028,7 +1078,7 @@ class ModifierOptionVm : INotifyPropertyChanged
 
     void UpdateState()
     {
-        Background = IsSelected ? _selectedBackground : _defaultBackground;
+        UpdateBackground();
         OnPropertyChanged(nameof(Quantity));
         OnPropertyChanged(nameof(QuantityDisplay));
         OnPropertyChanged(nameof(IsSelected));
@@ -1037,6 +1087,23 @@ class ModifierOptionVm : INotifyPropertyChanged
         IncrementCommand.ChangeCanExecute();
         DecrementCommand.ChangeCanExecute();
     }
+
+    void UpdateBackground()
+    {
+        Background = IsSelected ? GetSelectedBackground() : GetDefaultBackground();
+    }
+
+    Color GetSelectedBackground()
+        => Application.Current?.RequestedTheme == AppTheme.Dark
+            ? Color.FromArgb("#5B2E4C")
+            : Color.FromArgb("#f0d8e6");
+
+    Color GetDefaultBackground()
+        => Application.Current?.RequestedTheme == AppTheme.Dark
+            ? Color.FromArgb("#2B262C")
+            : Colors.White;
+
+    public void RefreshTheme() => UpdateBackground();
 
     public void NotifyLimitChanged()
     {

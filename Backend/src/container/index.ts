@@ -31,7 +31,9 @@ import { JwtService } from '../infra/security/JwtService';
 // ----- Catalogo (Categories/Products/Modifiers) -----
 import { PrismaCategoryRepository } from '../infra/repositories/PrismaCategoryRepository';
 import { PrismaProductRepository }  from '../infra/repositories/PrismaProductRepository';
+import { PrismaInventoryRepository } from '../infra/repositories/PrismaInventoryRepository';
 import { PrismaModifierRepository } from '../infra/repositories/PrismaModifierRepository';
+import { PrismaExpenseRepository } from '../infra/repositories/PrismaExpenseRepository';
 
 import { CreateCategory } from '../core/usecases/categories/CreateCategory';
 import { ListCategories } from '../core/usecases/categories/ListCategories';
@@ -39,6 +41,7 @@ import { ListCategories } from '../core/usecases/categories/ListCategories';
 import { CreateProductSimple }    from '../core/usecases/products/CreateProductSimple';
 import { CreateProductVarianted } from '../core/usecases/products/CreateProductVarianted';
 import { GetProductDetail }       from '../core/usecases/products/GetProductDetail';
+import { GetProductByBarcode }    from '../core/usecases/products/GetProductByBarcode';
 import { ListProducts }           from '../core/usecases/products/ListProducts';
 import { AttachModifierGroupToProduct } from '../core/usecases/products/AttachModifierGroupToProduct';
 
@@ -71,6 +74,22 @@ import { AttachModifierGroupToVariant } from '../core/usecases/products/AttachMo
 import { UpdateVariantModifierGroup } from '../core/usecases/products/UpdateVariantModifierGroup';
 import { DetachModifierGroupFromVariant } from '../core/usecases/products/DetachModifierGroupFromVariant';
 import { ListVariantModifierGroups } from '../core/usecases/products/ListVariantModifierGroups';
+import { ListInventoryItems } from '../core/usecases/inventory/ListInventoryItems';
+import { GetInventoryItem } from '../core/usecases/inventory/GetInventoryItem';
+import { ListInventoryMovements } from '../core/usecases/inventory/ListInventoryMovements';
+import { CreateInventoryMovement } from '../core/usecases/inventory/CreateInventoryMovement';
+import { CreateInventoryMovementByBarcode } from '../core/usecases/inventory/CreateInventoryMovementByBarcode';
+import { RegisterOrderInventoryMovements } from '../core/usecases/inventory/RegisterOrderInventoryMovements';
+import { ListInventoryLocations } from '../core/usecases/inventory/ListInventoryLocations';
+import { CreateInventoryLocation } from '../core/usecases/inventory/CreateInventoryLocation';
+import { UpdateInventoryLocation } from '../core/usecases/inventory/UpdateInventoryLocation';
+import { DeleteInventoryLocation } from '../core/usecases/inventory/DeleteInventoryLocation';
+import { CreateExpense } from '../core/usecases/expenses/CreateExpense';
+import { ListExpenses } from '../core/usecases/expenses/ListExpenses';
+import { GetExpense } from '../core/usecases/expenses/GetExpense';
+import { UpdateExpense } from '../core/usecases/expenses/UpdateExpense';
+import { DeleteExpense } from '../core/usecases/expenses/DeleteExpense';
+import { GetExpensesSummary } from '../core/usecases/expenses/GetExpensesSummary';
 
 
 //IMPORTS COMBOSSSS
@@ -122,6 +141,7 @@ import { ListOrders } from "../core/usecases/orders/ListOrders";
 import { RefundOrder } from "../core/usecases/orders/RefundOrder";
 import { AdminAuthService } from "../infra/services/AdminAuthService";
 import { GetPaymentsReport } from "../core/usecases/reports/GetPaymentsReport";
+import { GetProfitLossReport } from "../core/usecases/reports/GetProfitLossReport";
 import { ReportsController } from "../presentation/controllers/ReportsController";
 import { PrismaChannelConfigRepository } from "../infra/repositories/PrismaChannelConfigRepository";
 import { ListChannelConfigs } from "../core/usecases/channelConfig/ListChannelConfigs";
@@ -136,6 +156,8 @@ import { GetTable } from '../core/usecases/tables/GetTable';
 import { UpdateTable } from '../core/usecases/tables/UpdateTable';
 import { DeleteTable } from '../core/usecases/tables/DeleteTable';
 import { TablesController } from '../presentation/controllers/TablesController';
+import { InventoryController } from '../presentation/controllers/InventoryController';
+import { ExpensesController } from '../presentation/controllers/ExpensesController';
 
 
 const permRepo = new PrismaPermissionRepository()
@@ -148,7 +170,9 @@ const roleRepo = new PrismaRoleRepository();
 // repos de productos
 const categoryRepo = new PrismaCategoryRepository();
 const productRepo  = new PrismaProductRepository();
+const inventoryRepo = new PrismaInventoryRepository();
 const modifierRepo = new PrismaModifierRepository();
+const expenseRepo = new PrismaExpenseRepository();
 
 //REPOS DE MENU
 const menuRepo = new PrismaMenuRepository();
@@ -200,6 +224,7 @@ const reorderModGroupsUC = new ReorderModifierGroups(productRepo); // opcional
 const createProductSimpleUC    = new CreateProductSimple(productRepo);
 const createProductVariantedUC = new CreateProductVarianted(productRepo);
 const getProductDetailUC       = new GetProductDetail(productRepo);
+const getProductByBarcodeUC    = new GetProductByBarcode(productRepo);
 const listProductsUC           = new ListProducts(productRepo);
 const updateProductUC = new UpdateProduct(productRepo);
 const replaceVariantsUC = new ReplaceProductVariants(productRepo);
@@ -209,6 +234,22 @@ const attachVariantModUC       = new AttachModifierGroupToVariant(productRepo);
 const updateVariantModUC       = new UpdateVariantModifierGroup(productRepo);
 const detachVariantModUC       = new DetachModifierGroupFromVariant(productRepo);
 const listVariantModUC         = new ListVariantModifierGroups(productRepo);
+const listInventoryItemsUC     = new ListInventoryItems(inventoryRepo);
+const getInventoryItemUC       = new GetInventoryItem(inventoryRepo);
+const listInventoryMovementsUC = new ListInventoryMovements(inventoryRepo);
+const createInventoryMovementUC = new CreateInventoryMovement(inventoryRepo);
+const createInventoryMovementByBarcodeUC = new CreateInventoryMovementByBarcode(inventoryRepo, productRepo);
+const registerOrderInventoryMovementsUC = new RegisterOrderInventoryMovements(inventoryRepo);
+const listInventoryLocationsUC = new ListInventoryLocations(inventoryRepo);
+const createInventoryLocationUC = new CreateInventoryLocation(inventoryRepo);
+const updateInventoryLocationUC = new UpdateInventoryLocation(inventoryRepo);
+const deleteInventoryLocationUC = new DeleteInventoryLocation(inventoryRepo);
+const listExpensesUC = new ListExpenses(expenseRepo);
+const getExpenseUC = new GetExpense(expenseRepo);
+const createExpenseUC = new CreateExpense(expenseRepo);
+const updateExpenseUC = new UpdateExpense(expenseRepo);
+const deleteExpenseUC = new DeleteExpense(expenseRepo);
+const expensesSummaryUC = new GetExpensesSummary(expenseRepo);
 
 // NUEVOS
 const convertToVariantedUC     = new ConvertProductToVarianted(productRepo);
@@ -283,6 +324,7 @@ const updateOrderMetaUC = new UpdateOrderMeta(orderRepo);
 const updateOrderStatusUC = new UpdateOrderStatus(orderRepo);
 const listOrdersUC = new ListOrders(orderRepo);
 const getPaymentsReportUC = new GetPaymentsReport(orderRepo);
+const getProfitLossReportUC = new GetProfitLossReport(orderRepo, expenseRepo);
 const refundOrderUC = new RefundOrder(orderRepo);
 const adminAuthService = new AdminAuthService();
 const listChannelConfigsUC = new ListChannelConfigs(channelConfigRepo);
@@ -298,6 +340,7 @@ export const productsController = new ProductsController(
   createProductSimpleUC,
   createProductVariantedUC,
   getProductDetailUC,
+  getProductByBarcodeUC,
   listProductsUC,
   attachModifierUC,         // o attachModUC, iguala el nombre con tu var real
   updateProductUC,
@@ -351,11 +394,33 @@ export const ordersController = new OrdersController(
   createOrderUC, addOrderItemUC, updateOrderItemStatusUC, addPaymentUC, getOrderDetailUC, listKDSUC,
   updateOrderItemUC, removeOrderItemUC, splitOrderByItemsUC, updateOrderMetaUC, updateOrderStatusUC, listOrdersUC,
   refundOrderUC,
+  registerOrderInventoryMovementsUC,
   adminAuthService
 );
 export const channelConfigController = new ChannelConfigController(
   listChannelConfigsUC,
   setChannelConfigUC
 );
-export const reportsController = new ReportsController(getPaymentsReportUC);
+export const reportsController = new ReportsController(getPaymentsReportUC, getProfitLossReportUC);
+export const inventoryController = new InventoryController(
+  listInventoryItemsUC,
+  getInventoryItemUC,
+  listInventoryMovementsUC,
+  createInventoryMovementUC,
+  createInventoryMovementByBarcodeUC,
+  listInventoryLocationsUC,
+  createInventoryLocationUC,
+  updateInventoryLocationUC,
+  deleteInventoryLocationUC
+);
+export const expensesController = new ExpensesController(
+  listExpensesUC,
+  getExpenseUC,
+  createExpenseUC,
+  updateExpenseUC,
+  deleteExpenseUC,
+  expensesSummaryUC,
+  createInventoryMovementUC,
+  createInventoryMovementByBarcodeUC
+);
 export { usersController, rolesController, authController };

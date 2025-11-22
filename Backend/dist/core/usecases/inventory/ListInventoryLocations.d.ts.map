@@ -1,0 +1,1 @@
+{"version":3,"file":"ListInventoryLocations.d.ts","sourceRoot":"","sources":["../../../../src/core/usecases/inventory/ListInventoryLocations.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,oBAAoB,EAAE,MAAM,gDAAgD,CAAC;AAE3F,qBAAa,sBAAsB;IACrB,OAAO,CAAC,IAAI;gBAAJ,IAAI,EAAE,oBAAoB;IAE9C,IAAI;;;;;;;;;;CAGL"}

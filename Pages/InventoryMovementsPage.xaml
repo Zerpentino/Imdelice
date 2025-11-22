@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:Imdeliceapp.Pages"
+             x:Class="Imdeliceapp.Pages.InventoryMovementsPage"
+             Title="Movimientos"
+              Shell.NavBarIsVisible="True"
+             BackgroundColor="{AppThemeBinding Light=White, Dark=Black}">
+  <Grid>
+    <RefreshView x:Name="MovementsRefresh"
+                 Refreshing="MovementsRefresh_Refreshing"
+                 RefreshColor="{StaticResource BrandPrimary}">
+      <ScrollView>
+      <VerticalStackLayout Padding="24" Spacing="20">
+        <Label Text="Movimientos de inventario"
+               FontSize="22"
+               FontAttributes="Bold"
+               TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+        <Label Text="Selecciona un producto para revisar su historial."
+               FontSize="13"
+               TextColor="{AppThemeBinding Light=#6F6F6F, Dark=#BFBFBF}"/>
+
+        <Button Text="Seleccionar producto"
+                Clicked="PickProductButton_Clicked"/>
+
+        <Border StrokeThickness="1"
+                Stroke="{AppThemeBinding Light=#E0E0E0, Dark=#333333}"
+                BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1F1F1F}"
+                StrokeShape="{RoundRectangle CornerRadius=18}"
+                Padding="16">
+          <VerticalStackLayout Spacing="6">
+            <Label x:Name="SelectedProductLabel"
+                   Text="Sin producto"
+                   FontAttributes="Bold"
+                   FontSize="18"
+                   TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+            <Label x:Name="SelectedProductMetaLabel"
+                   FontSize="13"
+                   TextColor="{AppThemeBinding Light=#6F6F6F, Dark=#BFBFBF}"/>
+          </VerticalStackLayout>
+        </Border>
+
+        <Border StrokeThickness="1"
+                Stroke="{AppThemeBinding Light=#E0E0E0, Dark=#333333}"
+                BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1F1F1F}"
+                StrokeShape="{RoundRectangle CornerRadius=18}"
+                Padding="16">
+          <CollectionView x:Name="MovementsView"
+                          ItemsSource="{Binding MovementHistory}"
+                          SelectionMode="None">
+            <CollectionView.EmptyView>
+              <Label Text="Aún no hay movimientos para mostrar."
+                     HorizontalOptions="Center"
+                     VerticalOptions="Center"
+                     TextColor="{AppThemeBinding Light=#777, Dark=#AAA}"/>
+            </CollectionView.EmptyView>
+            <CollectionView.ItemTemplate>
+              <DataTemplate>
+                <Border Margin="0,4"
+                        Padding="12"
+                        StrokeThickness="0"
+                        BackgroundColor="{AppThemeBinding Light=#F7F4FF, Dark=#2B2440}"
+                        StrokeShape="{RoundRectangle CornerRadius=14}">
+                  <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                    <Border BackgroundColor="{AppThemeBinding Light=#6C63FF, Dark=#7C83FF}"
+                            Padding="8,2"
+                            VerticalOptions="Start"
+                            StrokeThickness="0"
+                            StrokeShape="{RoundRectangle CornerRadius=8}">
+                      <Label Text="{Binding Badge}"
+                             FontSize="11"
+                             FontAttributes="Bold"
+                             TextColor="White"/>
+                    </Border>
+                    <VerticalStackLayout Grid.Column="1" Spacing="4">
+                      <Label Text="{Binding Title}"
+                             FontAttributes="Bold"
+                             FontSize="15"
+                             TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+                      <Label Text="{Binding Subtitle}"
+                             FontSize="13"
+                             TextColor="{AppThemeBinding Light=#5F5F5F, Dark=#C1C1C1}"/>
+                      <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                        <Label Text="{Binding QuantityLabel}"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light=#51336D, Dark=#E6DAFF}"/>
+                        <Label Grid.Column="1"
+                               Text="{Binding Meta}"
+                               FontSize="12"
+                               TextColor="{AppThemeBinding Light=#8F8F8F, Dark=#BEBEBE}"/>
+                      </Grid>
+                    </VerticalStackLayout>
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </CollectionView.ItemTemplate>
+          </CollectionView>
+        </Border>
+      </VerticalStackLayout>
+      </ScrollView>
+    </RefreshView>
+
+    <Button Text="+"
+            WidthRequest="56"
+            HeightRequest="56"
+            CornerRadius="28"
+            BackgroundColor="{StaticResource BrandPrimary}"
+            TextColor="{StaticResource BrandOnPrimary}"
+            HorizontalOptions="End"
+            VerticalOptions="End"
+            Margin="0,0,24,24"
+            Clicked="FabButton_Clicked"/>
+  </Grid>
+</ContentPage>

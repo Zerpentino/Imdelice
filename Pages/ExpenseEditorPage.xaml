@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Imdeliceapp.Pages.ExpenseEditorPage"
+             Title="Registrar gasto"
+              Shell.NavBarIsVisible="True"
+             BackgroundColor="{AppThemeBinding Light=White, Dark=Black}">
+  <ScrollView>
+    <VerticalStackLayout Padding="24" Spacing="18">
+      
+
+      <Entry x:Name="ConceptEntry"
+             Placeholder="Concepto"
+             Keyboard="Text"/>
+
+      <Picker x:Name="CategoryPicker"
+              Title="Selecciona una categoría"
+              ItemDisplayBinding="{Binding Label}"/>
+
+      <Entry x:Name="AmountEntry"
+             Placeholder="Monto (MXN)"
+             Keyboard="Numeric"/>
+
+      <Picker x:Name="PaymentPicker"
+              Title="Método de pago (opcional)"
+              ItemDisplayBinding="{Binding Label}"/>
+
+      <Editor x:Name="NotesEditor"
+              Placeholder="Notas opcionales"/>
+
+      <Border Padding="14"
+              Stroke="{AppThemeBinding Light=#E0E0E0, Dark=#333333}"
+              StrokeThickness="1"
+              StrokeShape="{RoundRectangle CornerRadius=16}">
+        <VerticalStackLayout Spacing="12">
+          <HorizontalStackLayout Spacing="12">
+            <Label Text="Ajustar inventario"
+                   VerticalOptions="Center"
+                   TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+            <Switch x:Name="MovementSwitch"
+                    Toggled="MovementSwitch_Toggled"/>
+          </HorizontalStackLayout>
+
+          <VerticalStackLayout x:Name="MovementFields"
+                               Spacing="10"
+                               IsVisible="False">
+            <Entry x:Name="BarcodeEntry"
+                   Placeholder="Código de barras (opcional)"/>
+            <Button Text="Elegir producto"
+                    Clicked="PickProductButton_Clicked"/>
+            <Label x:Name="ProductLabel"
+                   Text="Sin producto seleccionado"
+                   FontSize="12"
+                   TextColor="{AppThemeBinding Light=#6F6F6F, Dark=#C0C0C0}"/>
+            <Picker x:Name="MovementTypePicker"
+                    Title="Tipo de movimiento"
+                    ItemDisplayBinding="{Binding Label}"/>
+            <Entry x:Name="MovementQuantityEntry"
+                   Placeholder="Cantidad"
+                   Keyboard="Numeric"/>
+            <Entry x:Name="MovementReasonEntry"
+                   Placeholder="Motivo (opcional)"/>
+          </VerticalStackLayout>
+        </VerticalStackLayout>
+      </Border>
+
+      <Button x:Name="SaveButton"
+              Text="Registrar gasto"
+              Clicked="SaveButton_Clicked"
+              Style="{StaticResource PrimaryButtonStyle}"/>
+    </VerticalStackLayout>
+  </ScrollView>
+</ContentPage>

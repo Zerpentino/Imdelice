@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<toolkit:Popup xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+               xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+               xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+               x:Class="Imdeliceapp.Popups.InventoryMovementPopup"
+               Size="420,420"
+               CanBeDismissedByTappingOutsideOfPopup="False">
+  <Border Stroke="{AppThemeBinding Light=#E0E0E0, Dark=#333333}"
+          StrokeShape="{RoundRectangle CornerRadius=24}"
+          BackgroundColor="{AppThemeBinding Light=#FAFAFA, Dark=#121212}"
+          Padding="20">
+    <VerticalStackLayout Spacing="16">
+      <Label Text="Registrar movimiento"
+             FontAttributes="Bold"
+             FontSize="20"/>
+
+      <Picker Title="Tipo"
+              ItemsSource="{Binding MovementTypes}"
+              ItemDisplayBinding="{Binding Label}"
+              SelectedItem="{Binding SelectedType}"/>
+
+      <Entry Placeholder="Cantidad (usa - para restar)"
+             Keyboard="Numeric"
+             Text="{Binding QuantityText}"
+             HorizontalTextAlignment="Center"/>
+
+      <Editor Placeholder="Razón (opcional)"
+              AutoSize="TextChanges"
+              HeightRequest="80"
+              Text="{Binding Reason}"/>
+
+      <Label Text="{Binding ValidationMessage}"
+             TextColor="#C62828"
+             FontSize="12"
+             LineBreakMode="WordWrap"
+             IsVisible="{Binding HasValidationMessage}"/>
+
+      <HorizontalStackLayout Spacing="12">
+        <Button Text="Cancelar"
+                Style="{StaticResource SecondaryPillButtonStyle}"
+                HorizontalOptions="FillAndExpand"
+                Clicked="Cancel_Clicked"/>
+        <Button Text="Guardar"
+                Style="{StaticResource PrimaryPillButtonStyle}"
+                HorizontalOptions="FillAndExpand"
+                Clicked="Save_Clicked"/>
+      </HorizontalStackLayout>
+    </VerticalStackLayout>
+  </Border>
+</toolkit:Popup>

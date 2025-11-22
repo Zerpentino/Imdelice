@@ -547,7 +547,8 @@ public partial class OrderDetailPage : ContentPage
 
         var hasPayments = (dto.payments?.Count ?? 0) > 0 || dto.paymentsTotalCents != 0 || dto.paymentsTipCents != 0;
         var canRefundStatus = string.Equals(dto.status, "CLOSED", StringComparison.OrdinalIgnoreCase);
-        CanRefund = CanUpdate && canRefundStatus && hasPayments;
+        var hasRefundPerms = Perms.OrdersUpdate && Perms.OrdersRefund;
+        CanRefund = hasRefundPerms && canRefundStatus && hasPayments;
         if (string.Equals(dto.status, "REFUNDED", StringComparison.OrdinalIgnoreCase))
             CanRefund = false;
 

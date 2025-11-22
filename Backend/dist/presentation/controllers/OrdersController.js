@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OrdersController = void 0;
+const client_1 = require("@prisma/client");
 const apiResponse_1 = require("../utils/apiResponse");
 const orders_dto_1 = require("../dtos/orders.dto");
 const refund_dto_1 = require("../dtos/refund.dto");
@@ -59,7 +60,7 @@ function parseDateParam(value, endOfDay = false, tzOffsetMinutes = 0) {
     return parsed;
 }
 class OrdersController {
-    constructor(createOrderUC, addItemUC, updateItemStatusUC, addPaymentUC, getOrderDetailUC, listKDSUC, updateOrderItemUC, removeOrderItemUC, splitOrderByItemsUC, updateOrderMetaUC, updateOrderStatusUC, listOrdersUC, refundOrderUC, adminAuthService) {
+    constructor(createOrderUC, addItemUC, updateItemStatusUC, addPaymentUC, getOrderDetailUC, listKDSUC, updateOrderItemUC, removeOrderItemUC, splitOrderByItemsUC, updateOrderMetaUC, updateOrderStatusUC, listOrdersUC, refundOrderUC, registerInventoryMovementsUC, adminAuthService) {
         this.createOrderUC = createOrderUC;
         this.addItemUC = addItemUC;
         this.updateItemStatusUC = updateItemStatusUC;
@@ -73,6 +74,7 @@ class OrdersController {
         this.updateOrderStatusUC = updateOrderStatusUC;
         this.listOrdersUC = listOrdersUC;
         this.refundOrderUC = refundOrderUC;
+        this.registerInventoryMovementsUC = registerInventoryMovementsUC;
         this.adminAuthService = adminAuthService;
         this.list = async (req, res) => {
             try {
@@ -168,6 +170,10 @@ class OrdersController {
                 if (!receivedByUserId)
                     return (0, apiResponse_1.fail)(res, "Unauthorized", 401);
                 const payment = await this.addPaymentUC.exec(id, { ...dto, receivedByUserId });
+                const order = await this.getOrderDetailUC.exec(id);
+                if (order?.status === "CLOSED") {
+                    await this.syncOrderInventory(id, client_1.InventoryMovementType.SALE, receivedByUserId);
+                }
                 return (0, apiResponse_1.success)(res, payment, "Paid", 201);
             }
             catch (e) {
@@ -263,10 +269,18 @@ class OrdersController {
                 const servedByUserId = req.auth?.userId;
                 if (!servedByUserId)
                     return (0, apiResponse_1.fail)(res, "Unauthorized", 401);
+                const orderBeforeSplit = await this.getOrderDetailUC.exec(orderId);
                 const result = await this.splitOrderByItemsUC.exec(orderId, {
                     ...dto,
                     servedByUserId,
                 });
+                if (orderBeforeSplit?.status === "CLOSED") {
+                    await this.syncOrderInventory(orderId, client_1.InventoryMovementType.SALE_RETURN, servedByUserId, { requireSaleToExist: true });
+                    await this.syncOrderInventory(orderId, client_1.InventoryMovementType.SALE, servedByUserId, { force: true });
+                }
+                if (result?.newOrderId) {
+                    await this.syncOrderInventory(result.newOrderId, client_1.InventoryMovementType.SALE, servedByUserId, { force: true });
+                }
                 return (0, apiResponse_1.success)(res, result, "Order split", 201);
             }
             catch (e) {
@@ -291,6 +305,13 @@ class OrdersController {
                 const orderId = ensureNumericId(req.params.id);
                 const dto = orders_dto_1.UpdateOrderStatusDto.parse(req.body);
                 await this.updateOrderStatusUC.exec(orderId, dto.status);
+                if (dto.status === "CLOSED" || dto.status === "REFUNDED" || dto.status === "CANCELED") {
+                    await this.syncOrderInventory(orderId, dto.status === "CLOSED"
+                        ? client_1.InventoryMovementType.SALE
+                        : client_1.InventoryMovementType.SALE_RETURN, req.auth?.userId ?? null, dto.status === "CANCELED"
+                        ? { requireSaleToExist: true }
+                        : undefined);
+                }
                 return (0, apiResponse_1.success)(res, null, "Updated");
             }
             catch (e) {
@@ -316,12 +337,37 @@ class OrdersController {
                     adminUserId: admin.id,
                     reason: dto.reason ?? null,
                 });
+                await this.syncOrderInventory(orderId, client_1.InventoryMovementType.SALE_RETURN, admin.id);
                 return (0, apiResponse_1.success)(res, result, "Refunded");
             }
             catch (e) {
                 const status = e?.status || (e?.message?.toLowerCase?.().includes("pedido") ? 400 : 500);
                 return (0, apiResponse_1.fail)(res, e?.message || "Error refunding order", status, e);
             }
+        };
+        this.syncOrderInventory = async (orderId, movementType, userId, options) => {
+            const order = await this.getOrderDetailUC.exec(orderId);
+            if (!order)
+                return;
+            if (movementType === client_1.InventoryMovementType.SALE &&
+                order.status !== "CLOSED" &&
+                !options?.force) {
+                return;
+            }
+            if (movementType === client_1.InventoryMovementType.SALE_RETURN &&
+                order.status !== "REFUNDED" &&
+                order.status !== "CANCELED") {
+                // allow SALE_RETURN when forcefully reconciling (e.g., split on closed order) by honoring force flag
+                if (!options?.force && !options?.requireSaleToExist) {
+                    return;
+                }
+            }
+            await this.registerInventoryMovementsUC.exec({
+                order: order,
+                movementType,
+                userId,
+                options,
+            });
         };
     }
 }

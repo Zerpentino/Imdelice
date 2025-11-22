@@ -129,6 +129,12 @@
                    Style="{StaticResource CompactEntry}"
                    Placeholder="SKU (opcional)"/>
           </Border>
+          <Border Style="{StaticResource InputBorderStyle}">
+            <Entry x:Name="TxtBarcode"
+                   Style="{StaticResource CompactEntry}"
+                   Placeholder="Código de barras (opcional)"
+                   Keyboard="Text"/>
+          </Border>
 
           <VerticalStackLayout Spacing="6">
             <Border StrokeThickness="0"

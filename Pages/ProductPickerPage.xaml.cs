@@ -23,6 +23,7 @@ public partial class ProductPickerPage : ContentPage
         public int? priceCents { get; set; }
         public bool isActive { get; set; }
         public int categoryId { get; set; }
+        public string? barcode { get; set; }
     }
 
     class ApiEnvelope<T>

@@ -1,0 +1,1 @@
+{"version":3,"file":"DeleteInventoryLocation.d.ts","sourceRoot":"","sources":["../../../../src/core/usecases/inventory/DeleteInventoryLocation.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,oBAAoB,EAAE,MAAM,gDAAgD,CAAC;AAE3F,qBAAa,uBAAuB;IACtB,OAAO,CAAC,IAAI;gBAAJ,IAAI,EAAE,oBAAoB;IAE9C,IAAI,CAAC,EAAE,EAAE,MAAM;CAGhB"}

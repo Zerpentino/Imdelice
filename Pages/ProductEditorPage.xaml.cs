@@ -18,6 +18,7 @@ namespace Imdeliceapp.Pages;
 [QueryProperty(nameof(Mode), "mode")]
 [QueryProperty(nameof(ProductId), "id")]
 [QueryProperty(nameof(PreselectedCategoryId), "categoryId")]
+[QueryProperty(nameof(InitialBarcode), "initialBarcode")]
 
 
 public partial class ProductEditorPage : ContentPage
@@ -30,6 +31,7 @@ public partial class ProductEditorPage : ContentPage
     public int PreselectedCategoryId { get; set; }
     public string? Mode { get; set; }   // create | edit
     public int ProductId { get; set; }
+    public string? InitialBarcode { get; set; }
 
     class CategoryDTO
     {
@@ -40,7 +42,7 @@ public partial class ProductEditorPage : ContentPage
         public bool isComboOnly { get; set; }   // <-- NUEVO
 
     }
-   class ProductDetailDTO
+    class ProductDetailDTO
 {
     public int id { get; set; }
     public string? type { get; set; }
@@ -49,6 +51,7 @@ public partial class ProductEditorPage : ContentPage
     public int? priceCents { get; set; }
     public string? description { get; set; }
     public string? sku { get; set; }
+    public string? barcode { get; set; }
     public string? imageUrl { get; set; }
     public bool isActive { get; set; }
     public List<VariantDTO> variants { get; set; } = new();
@@ -148,7 +151,7 @@ record ComboItemInput(
     }
 
     // originales para comparar (PATCH)
-    string? _origName, _origSku, _origImage, _origDesc, _origType;
+    string? _origName, _origSku, _origBarcode, _origImage, _origDesc, _origType;
     int _origCategoryId;
     int? _origPriceCents;
     List<VariantDTO> _origVariants = new();
@@ -225,6 +228,12 @@ record ComboItemInput(
     // ⬇️ importante: que sea application/json (no text/plain)
     static StringContent Num(int v) => new(v.ToString(), Encoding.UTF8, "application/json");
     static StringContent JsonText(string json) => new(json, Encoding.UTF8, "application/json");
+    static string? NormalizeBarcode(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    static JsonSerializerOptions JsonWriteAllowNulls() => new()
+    {
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.Never,
+        PropertyNameCaseInsensitive = true
+    };
 
     async Task<List<ProductOption>> LoadProductsForCategoryAsync(CategoryDTO cat)
     {
@@ -309,23 +318,27 @@ record ComboItemInput(
     public ProductEditorPage() => InitializeComponent();
 
     protected override async void OnAppearing()
-{
-    base.OnAppearing();
-
-    // provisional mientras carga
-    UpdateTitleForType(null, IsEdit);
-
-    await CargarCategoriasAsync();
-
-    if (!IsEdit)
     {
-        if (PkType.SelectedIndex < 0) PkType.SelectedIndex = 0;
-        TogglePanels();
-    }
+        base.OnAppearing();
 
-    if (IsEdit && ProductId > 0)
-        await CargarProductoAsync(ProductId);
-}
+        // provisional mientras carga
+        UpdateTitleForType(null, IsEdit);
+
+        await CargarCategoriasAsync();
+
+        if (!IsEdit)
+        {
+            if (PkType.SelectedIndex < 0) PkType.SelectedIndex = 0;
+            TogglePanels();
+        }
+
+        if (IsEdit && ProductId > 0)
+            await CargarProductoAsync(ProductId);
+
+        // precargar código de barras cuando venga de escáner
+        if (!string.IsNullOrWhiteSpace(InitialBarcode) && string.IsNullOrWhiteSpace(TxtBarcode.Text))
+            TxtBarcode.Text = InitialBarcode;
+    }
 
 
 
@@ -416,6 +429,7 @@ record ComboItemInput(
 
             _origName = p.name ?? "";
             _origSku = p.sku ?? "";
+            _origBarcode = NormalizeBarcode(p.barcode);
             _origImage = p.imageUrl ?? "";
             _origDesc = p.description ?? "";
             _origCategoryId = p.categoryId;
@@ -437,6 +451,7 @@ record ComboItemInput(
             PkCategory.SelectedItem = _cats.FirstOrDefault(c => c.id == _origCategoryId);
             TxtName.Text = _origName;
             TxtSku.Text = _origSku;
+            TxtBarcode.Text = _origBarcode ?? string.Empty;
             TxtDesc.Text = _origDesc;
 
             TogglePanels();
@@ -815,6 +830,8 @@ record ComboItemInput(
         var cat = PkCategory.SelectedItem as CategoryDTO;
         var name = TxtName.Text?.Trim();
         var sku = TxtSku.Text?.Trim();
+        var barcode = NormalizeBarcode(TxtBarcode.Text);
+        var barcodeChanged = !string.Equals(barcode ?? string.Empty, _origBarcode ?? string.Empty, StringComparison.Ordinal);
         var desc = TxtDesc.Text?.Trim();
 
         if (cat is null) { await DisplayAlert("Categoría", "Selecciona la categoría.", "OK"); return; }
@@ -898,7 +915,8 @@ record ComboItemInput(
                         categoryId = cat.id,                                // <- number
                         priceCents = (int)Math.Round(priceMxn!.Value * 100),// <- number
                         description = string.IsNullOrWhiteSpace(desc) ? null : desc,
-                        sku = string.IsNullOrWhiteSpace(sku) ? null : sku
+                        sku = string.IsNullOrWhiteSpace(sku) ? null : sku,
+                        barcode = barcode
                     };
                     var json = JsonSerializer.Serialize(dto, _jsonWrite);
                     respCreate = await http.PostAsync("/api/products/simple",
@@ -913,6 +931,7 @@ record ComboItemInput(
                         categoryId = cat.id, // <- number
                         description = string.IsNullOrWhiteSpace(desc) ? null : desc,
                         sku = string.IsNullOrWhiteSpace(sku) ? null : sku,
+                        barcode = barcode,
                         variants = variantsInput.Select(v => new { name = v.name, priceCents = v.cents }).ToList()
                     };
                     var json = JsonSerializer.Serialize(dto, _jsonWrite);
@@ -950,6 +969,7 @@ record ComboItemInput(
                         priceCents = (int)Math.Round(priceMxn!.Value * 100),
                         description = string.IsNullOrWhiteSpace(desc) ? null : desc,
                         sku = string.IsNullOrWhiteSpace(sku) ? null : sku,
+                        barcode = barcode,
                         items = comboInputs.Select(i => new
                         {
                             componentProductId = i.ComponentProductId,
@@ -1298,10 +1318,20 @@ record ComboItemInput(
                             new StringContent(jsonVar, Encoding.UTF8, "application/json"));
                         body = await resp.Content.ReadAsStringAsync();
                     }
+
+                    if (barcodeChanged)
+                    {
+                        var payload = JsonSerializer.Serialize(new { barcode }, JsonWriteAllowNulls());
+                        resp = await http.PatchAsync($"/api/products/{ProductId}",
+                            new StringContent(payload, Encoding.UTF8, "application/json"));
+                        body = await resp.Content.ReadAsStringAsync();
+                        if (!resp.IsSuccessStatusCode) goto handle_error;
+                    }
                 }
                 else
                 {
                     var patch = new Dictionary<string, object?>();
+                    var patchIncludesNull = false;
 
                     if (!string.IsNullOrWhiteSpace(name) && name != _origName) patch["name"] = name;
                     if (cat.id != _origCategoryId) patch["categoryId"] = cat.id;
@@ -1314,10 +1344,16 @@ record ComboItemInput(
                     }
                     if (!string.IsNullOrWhiteSpace(desc) && desc != _origDesc) patch["description"] = desc;
                     if (!string.IsNullOrWhiteSpace(sku) && sku != _origSku) patch["sku"] = sku;
+                    if (barcodeChanged)
+                    {
+                        patch["barcode"] = barcode;
+                        if (barcode == null) patchIncludesNull = true;
+                    }
 
                     if (patch.Count > 0)
                     {
-                        var json = JsonSerializer.Serialize(patch, _jsonWrite);
+                        var options = patchIncludesNull ? JsonWriteAllowNulls() : _jsonWrite;
+                        var json = JsonSerializer.Serialize(patch, options);
                         resp = await http.PatchAsync($"/api/products/{ProductId}",
                             new StringContent(json, Encoding.UTF8, "application/json"));
                         body = await resp.Content.ReadAsStringAsync();

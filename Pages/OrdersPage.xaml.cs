@@ -8,6 +8,7 @@ using Imdeliceapp.Models;
 using CommunityToolkit.Maui.Views;
 using Imdeliceapp.Popups;
 using Imdeliceapp.Services;
+using Microsoft.Maui;
 using Microsoft.Maui.Controls;
 using Microsoft.Maui.Graphics;
 using Microsoft.Maui.Networking;
@@ -19,6 +20,7 @@ public partial class OrdersPage : ContentPage
     readonly OrdersApi _ordersApi = new();
     readonly ObservableCollection<OrderListItem> _orders = new();
     readonly List<OrderListItem> _all = new();
+    readonly List<OrderSummaryDTO> _rawOrders = new();
     List<TableDTO> _tablesCache = new();
 
     bool _initialized;
@@ -126,6 +128,10 @@ public partial class OrdersPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+
+        if (Application.Current != null)
+            Application.Current.RequestedThemeChanged += AppThemeChanged;
+
         BtnOpenKds.IsVisible = Perms.OrdersRead;
 
         if (!Perms.OrdersRead)
@@ -139,6 +145,14 @@ public partial class OrdersPage : ContentPage
 
         await LoadOrdersAsync(!_initialized);
         _initialized = true;
+    }
+
+    protected override void OnDisappearing()
+    {
+        if (Application.Current != null)
+            Application.Current.RequestedThemeChanged -= AppThemeChanged;
+
+        base.OnDisappearing();
     }
 
     void ConfigureToolbar()
@@ -267,11 +281,10 @@ public partial class OrdersPage : ContentPage
 
             var list = await _ordersApi.ListAsync(query);
 
-            _all.Clear();
-            foreach (var dto in list)
-                _all.Add(OrderListItem.From(dto));
+            _rawOrders.Clear();
+            _rawOrders.AddRange(list);
 
-            ApplySearchFilter();
+            RebuildOrderListItems();
             EmptyMessage = _orders.Count == 0 ? "No se encontraron órdenes con esos filtros." : EmptyMessage;
         }
         catch (HttpRequestException ex)
@@ -304,6 +317,15 @@ public partial class OrdersPage : ContentPage
         EmptyMessage = _orders.Count == 0 ? "No se encontraron órdenes con esos filtros." : "No hay órdenes";
     }
 
+    void RebuildOrderListItems()
+    {
+        _all.Clear();
+        foreach (var dto in _rawOrders)
+            _all.Add(OrderListItem.From(dto));
+
+        ApplySearchFilter();
+    }
+
     void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
     {
         _searchText = e.NewTextValue ?? string.Empty;
@@ -314,6 +336,21 @@ public partial class OrdersPage : ContentPage
     {
         _searchText = SearchBox.Text ?? string.Empty;
         ApplySearchFilter();
+    }
+
+    void AppThemeChanged(object? sender, AppThemeChangedEventArgs e)
+    {
+        if (_rawOrders.Count == 0)
+            return;
+
+        if (Dispatcher.IsDispatchRequired)
+        {
+            Dispatcher.Dispatch(RebuildOrderListItems);
+        }
+        else
+        {
+            RebuildOrderListItems();
+        }
     }
 
     void UpdateFiltersSummary()

@@ -1,0 +1,196 @@
+Descripción general
+- Productos, variantes y combos ya cubren catálogo (Product/ProductVariant/ComboItem). Mesas y órdenes (`Order`, `OrderItem`, `Payment`) gestionan ventas. No existe módulo de inventario actual.
+- Repositorios y controladores siguen patrón casos de uso + Prisma, por lo que la nueva capa debe respetar esa estructura.
+
+Modelo de datos propuesto
+- Agregar `barcode String? @unique` en `Product` y `ProductVariant`.
+- Crear `InventoryLocation` (id, name, type, isDefault, timestamps) para separar cocina/almacén si se requiere.
+- Crear `InventoryItem` con `productId`, `variantId?`, `locationId`, `currentQuantity Decimal`, umbrales y `lastMovementAt`. Índice único `(productId, variantId, locationId)`.
+- Crear `InventoryMovement` con `productId`, `variantId?`, `locationId`, `type` (`PURCHASE`, `SALE`, `ADJUSTMENT`, `WASTE`, `TRANSFER`, `SALE_RETURN`), `quantity Decimal`, `reason`, `relatedOrderId`, `performedByUserId`, `metadata Json`.
+- Mantener esquema mixto “existencias + movimientos”: lectura rápida desde `InventoryItem` y posibilidad de reconstruir a partir de `InventoryMovement`.
+
+Integración con flujos existentes
+- Restar inventario al confirmar/agregar items (`OrdersController.addItem`, `UpdateOrderStatus`). Desglosar combos usando `ComboItem` para descontar componentes reales.
+- Sumar inventario vía movimientos `PURCHASE` hasta tener módulo de compras formal. Ajustes/mermas usan `ADJUSTMENT`/`WASTE`.
+- Revertir stock en cancelaciones/refunds (`RefundOrder`) con `SALE_RETURN`.
+- Reportes podrán incluir nuevo endpoint que combine movimientos filtrados por tipo/fecha.
+
+Endpoints sugeridos
+- `GET /api/inventory/items` (filtros por categoría/ubicación) y `GET /api/inventory/items/:id/movements`.
+- `POST /api/inventory/movements` crea entradas/salidas/ajustes; versión rápida `POST /api/inventory/movements/by-barcode`.
+- CRUD de ubicaciones: `GET/POST/PATCH/DELETE /api/inventory/locations` para administrar almacenes/áreas (nombre, código, tipo, default).
+- Extender productos: `GET /api/products/by-barcode/:barcode`, `POST /api/products/simple|varianted` aceptan `barcode`. 
+
+Flujo con lector de código de barras
+1. El usuario enfoca input y escanea; la pistolita envía el código + Enter.
+2. Frontend llama `GET /api/products/by-barcode/:code`.
+3. Si existe, muestra datos y stock actual (`InventoryItem`) y expone acciones de sumar/restar que disparan `POST /api/inventory/movements/by-barcode` (`{ barcode, delta, reason, locationId }`).
+4. Si no existe, abre formulario rápido para crear producto con nombre, categoría, precio y `barcode`; tras crear, registra un movimiento `ADJUSTMENT` inicial.
+
+Relación con modelos existentes
+- Reutilizar `Product`/`ProductVariant` como llaves foráneas evita catálogos duplicados y mantiene integridad (especialmente importante para combos y variantes). Los nuevos modelos `Inventory*` solo dependen de estos IDs.
+
+Cambios concretos
+- Prisma: nuevos modelos/enum, campos `barcode`, migración con índices y claves foráneas.
+- Repositorios: `IInventoryRepository` (métodos `findByBarcode`, `createMovement`, `listItems`) + implementación Prisma.
+- Casos de uso: `CreateInventoryMovement`, `AdjustInventoryForOrderItem`, `GetInventoryItem`, etc.
+- Controladores/Rutas: nuevo `inventory.routes.ts` con permisos `inventory.read|adjust`; extender `ProductsController` y DTOs para soportar `barcode` y buscar por código.
+- Documentación/Postman: agregar colección `inventory.postman_collection.json` y doc `docs/inventory_endpoints.txt`.
+- Gastos: modelo `Expense`, endpoint `/api/expenses` (CRUD y resumen) con permisos `expenses.read|manage`. El reporte de pagos ahora tiene una variante `GET /api/reports/profit-loss` que combina ingresos vs gastos para mostrar utilidades.
+
+Snippets
+1. Crear movimiento:
+```
+const delta = input.type === 'SALE' || input.type === 'WASTE'
+  ? -Math.abs(input.quantity)
+  :  Math.abs(input.quantity);
+
+await prisma.inventoryMovement.create({ data: { ...input, quantity: delta } });
+await prisma.inventoryItem.upsert({
+  where: { productId_variantId_locationId: { ... } },
+  update: { currentQuantity: { increment: delta }, lastMovementAt: new Date() },
+  create: { ...input, currentQuantity: delta },
+});
+```
+2. Buscar producto por código:
+```
+return prisma.product.findFirst({
+  where: { OR: [{ barcode: code }, { variants: { some: { barcode: code } } }] },
+  include: { variants: true, category: true },
+});
+```
+3. Registrar producto con barcode:
+```
+const prod = await this.createSimpleUC.exec({ ...dto, barcode: dto.barcode?.trim() ?? null });
+if (dto.initialQuantity) {
+  await this.inventoryService.createMovement({
+    productId: prod.id,
+    type: 'ADJUSTMENT',
+    quantity: dto.initialQuantity,
+    reason: 'Carga inicial',
+    userId: req.auth?.userId,
+  });
+}
+```
+
+Implementación actual (enero 2025)
+- Prisma ya cuenta con `barcode` en `Product` y `ProductVariant`, además de los modelos `InventoryLocation`, `InventoryItem` e `InventoryMovement` con enums `InventoryMovementType`, `InventoryLocationType` y `UnitOfMeasure`. Falta generar/aplicar la migración real (`npx prisma migrate dev --name inventory_module`) para reflejarlo en tu base.
+- Se creó `IInventoryRepository` y su versión Prisma con casos de uso `ListInventoryItems`, `GetInventoryItem`, `ListInventoryMovements`, `CreateInventoryMovement`, `CreateInventoryMovementByBarcode` y `RegisterOrderInventoryMovements`.
+- Nuevo `InventoryController` + rutas `/api/inventory/**` (protegidas con permisos `inventory.read` / `inventory.adjust`) permiten listar existencias, consultar movimientos y registrar entradas/salidas tanto manuales como por código de barras.
+- `ProductsController`/DTOs aceptan `barcode`, y `GET /api/products/by-barcode/:barcode` busca productos/variantes con lectura directa desde Prisma.
+- `OrdersController` registra movimientos `SALE` al cerrar pedidos y `SALE_RETURN` en reembolsos y cancelaciones. Al dividir un pedido ya cerrado se hace rollback/replay para el pedido original y se reserva inventario para el pedido nuevo con un `SALE` forzado, de modo que los artículos transferidos continúan descontados hasta que el nuevo pedido se liquide o se cancele.
+- Próximos pasos: ejecutar la migración definitiva, ajustar seeds/permisos para los nuevos scopes, actualizar Postman/front, y añadir pruebas sobre los casos de uso de inventario y la integración con órdenes.
+
+
+Prisma ahora soporta inventario y códigos de barras: añadí barcode tanto a Product como a ProductVariant y declaré los nuevos enums/modelos InventoryLocation, InventoryItem e InventoryMovement, con relaciones a órdenes y usuarios para auditar movimientos (prisma/schema.prisma (lines 90-210), prisma/schema.prisma (lines 337-613)). Recuerda ejecutar prisma migrate dev --name inventory_module en tu entorno para materializar estos cambios y regenerar el cliente tras aplicar la migración real.
+
+Definí el contrato de inventario (src/core/domain/repositories/IInventoryRepository.ts (lines 1-51)) e implementé PrismaInventoryRepository, incluyendo resolución automática de la ubicación por defecto y sincronización de InventoryItem al registrar movimientos (src/infra/repositories/PrismaInventoryRepository.ts (lines 1-186)). Sobre esto construí los casos de uso CRUD y el registrador para órdenes (carpeta src/core/usecases/inventory/*, en especial RegisterOrderInventoryMovements.ts).
+
+Expuse un módulo HTTP completo: DTOs (src/presentation/dtos/inventory.dto.ts (lines 1-35)), controller (src/presentation/controllers/InventoryController.ts (lines 1-91)), rutas autenticadas/Autorizadas (src/routes/inventory.routes.ts (lines 1-40)) y el wiring en el contenedor/index (src/container/index.ts (lines 76-382), src/index.ts (lines 11-46)). Los endpoints cubren listado de existencias, movimientos por ítem y ajustes manuales o por código de barras.
+
+Productos entienden códigos de barra nativos: los DTOs aceptan el campo, los casos de uso/repositorio guardan el valor y puedes consultar un producto directamente via GET /api/products/by-barcode/:barcode (src/presentation/dtos/products.dto.ts (lines 3-52), src/core/domain/repositories/IProductRepository.ts (lines 1-55), src/infra/repositories/PrismaProductRepository.ts (lines 1-210), src/presentation/controllers/ProductsController.ts (lines 51-210), src/routes/products.routes.ts (lines 11-35)). También añadí el use case GetProductByBarcode y su wiring en el contenedor.
+
+Integré inventario al flujo de pedidos: al cerrar o reembolsar una orden ahora se generan movimientos SALE / SALE_RETURN, evitando duplicados por orden (src/presentation/controllers/OrdersController.ts (lines 335-399)). El nuevo caso de uso aplanará los ítems hijos de combos para descontar sólo los componentes consumidos.
+
+Documentación adicional: se creó docs/inventory_module_proposal.txt con el plan funcional para referencia.
+
+Prueba ejecutada: npm run build (TypeScript) para asegurar que toda la nueva superficie compila correctamente.
+
+
+
+Ampliaste el seed con los permisos de inventario: añadí inventory.read/inventory.adjust al catálogo y asigné inventory.read al rol MESERO para que pueda consultar existencias sin ajustar stock (prisma/seed.ts (lines 4-28)). Al volver a sembrar (npm run migrate && npx prisma db seed) se crearán automáticamente los nuevos scopes y el ADMIN seguirá heredando todos los permisos.
+
+Documenté los endpoints recientes (incluyendo el flujo por código de barras) en docs/inventory_endpoints.json, con método, ruta, permiso requerido y ejemplos de payloads para los ajustes manuales y por escaneo.
+
+Paso 3 (pruebas): agregué un test ligero para RegisterOrderInventoryMovements que valida el descuento sólo de componentes hoja y evita duplicados (tests/inventory/registerOrderInventoryMovements.test.ts (lines 1-111)). Lo ejecuto mediante el nuevo script npm run test:inventory definido en package.json (lines 7-12), el cual usa ts-node --transpile-only.
+
+Verificación: npm run test:inventory.
+
+Siguientes acciones sugeridas:
+
+Re‑sembrar la base para inyectar los permisos/roles nuevos.
+Importar docs/inventory_endpoints.json en Postman o el front para alinear la integración de escaneo.
+4 files changed
++193
+-4
+
+Undo
+
+View all changes
+inventory_endpoints.json
++75
+-0
+
+package.json
++2
+-2
+
+seed.ts
++12
+-2
+
+registerOrderInventoryMovements.test.ts
++104
+-0
+
+
+Inventario ahora se sincroniza también cuando divides pedidos cerrados y cuando un pedido pasa a CANCELED. El controlador reejecuta la lógica de movimientos para el pedido original (rollback + replay) y usa la nueva verificación requireSaleToExist para no reponer stock si nunca se había descontado (src/presentation/controllers/OrdersController.ts (lines 306-410)).
+
+RegisterOrderInventoryMovements acepta flags force y requireSaleToExist, lo que permite recalcular salidas después de un split y evita generar devoluciones si el pedido jamás descontó inventario (src/core/usecases/inventory/RegisterOrderInventoryMovements.ts (lines 18-103)).
+
+Añadí pruebas unitarias que cubren hojas de combos, duplicados, devoluciones sin venta previa y el modo forzado para re-postear ventas; se ejecutan con npm run test:inventory (tests/inventory/registerOrderInventoryMovements.test.ts (lines 1-139)).
+
+Documentación actualizada para reflejar que las cancelaciones y splits cerrados ya forman parte del flujo de inventario (docs/inventory_module_proposal.txt (lines 75-82)).
+
+Pruebas ejecutadas:
+
+npm run test:inventory
+npm run build
+Siguiente paso lógico: si necesitas que el nuevo pedido creado por un split también lleve una reserva inmediata, podemos analizar aplicar un movimiento provisional al newOrderId.
+
+4 files changed
++100
+-9
+
+Undo
+
+View all changes
+inventory_module_proposal.txt
++1
+-2
+
+RegisterOrderInventoryMovements.ts
++25
+-6
+
+OrdersController.ts
++36
+-1
+
+registerOrderInventoryMovements.test.ts
++38
+-0
+
+
+El split ahora reserva inventario para el pedido nuevo y permite recalcular reservas aun cuando el pedido no esté cerrado. Tras dividir, el OrdersController registra un SALE forzado para el newOrderId, y el guard que bloqueaba ajustes en pedidos abiertos ahora respeta options.force, así los movimientos provisionales quedan soportados (src/presentation/controllers/OrdersController.ts (lines 306-332), src/presentation/controllers/OrdersController.ts (lines 405-420)).
+Documentación actualizada para reflejar que al dividir pedidos cerrados se hace rollback del original y se reserva stock para el pedido recién creado mediante un SALE forzado (docs/inventory_module_proposal.txt (lines 75-82)).
+Pruebas ejecutadas:
+
+npm run test:inventory
+npm run build
+Con esto, cada split mantiene el stock reservado tanto para el pedido original como para el nuevo sin esperar a la etapa de cierre.
+
+2 files changed
++14
+-3
+
+Undo
+
+View all changes
+inventory_module_proposal.txt
++1
+-2
+
+OrdersController.ts
++13
+-1

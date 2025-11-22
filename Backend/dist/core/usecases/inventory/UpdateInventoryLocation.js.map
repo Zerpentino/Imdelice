@@ -1,0 +1,1 @@
+{"version":3,"file":"UpdateInventoryLocation.js","sourceRoot":"","sources":["../../../../src/core/usecases/inventory/UpdateInventoryLocation.ts"],"names":[],"mappings":";;;AAGA,MAAa,uBAAuB;IAClC,YAAoB,IAA0B;QAA1B,SAAI,GAAJ,IAAI,CAAsB;IAAG,CAAC;IAElD,IAAI,CACF,EAAU,EACV,KAMC;QAED,OAAO,IAAI,CAAC,IAAI,CAAC,cAAc,CAAC,EAAE,EAAE,KAAK,CAAC,CAAC;IAC7C,CAAC;CACF;AAfD,0DAeC"}

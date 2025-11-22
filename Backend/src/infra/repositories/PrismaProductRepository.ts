@@ -4,9 +4,13 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
 
 export class PrismaProductRepository implements IProductRepository {
-    createSimple(data: {
-    name: string; categoryId: number; priceCents: number;
-    description?: string; sku?: string;
+  createSimple(data: {
+    name: string;
+    categoryId: number;
+    priceCents: number;
+    description?: string;
+    sku?: string;
+    barcode?: string | null;
     image?: { buffer: Buffer; mimeType: string; size: number };
   }): Promise<Product> {
     return prisma.product.create({
@@ -17,6 +21,7 @@ export class PrismaProductRepository implements IProductRepository {
         priceCents: data.priceCents,
         description: data.description,
         sku: data.sku,
+        barcode: data.barcode?.trim() ?? null,
         image: data.image?.buffer,
         imageMimeType: data.image?.mimeType,
         imageSize: data.image?.size,
@@ -24,10 +29,13 @@ export class PrismaProductRepository implements IProductRepository {
     });
   }
 
- createVarianted(data: {
-    name: string; categoryId: number;
-    variants: { name: string; priceCents: number; sku?: string }[];
-    description?: string; sku?: string;
+  createVarianted(data: {
+    name: string;
+    categoryId: number;
+    variants: { name: string; priceCents: number; sku?: string; barcode?: string | null }[];
+    description?: string;
+    sku?: string;
+    barcode?: string | null;
     image?: { buffer: Buffer; mimeType: string; size: number };
   }): Promise<Product> {
     return prisma.product.create({
@@ -37,12 +45,16 @@ export class PrismaProductRepository implements IProductRepository {
         type: 'VARIANTED',
         description: data.description,
         sku: data.sku,
+        barcode: data.barcode?.trim() ?? null,
         image: data.image?.buffer,
         imageMimeType: data.image?.mimeType,
         imageSize: data.image?.size,
         variants: {
           create: data.variants.map(v => ({
-            name: v.name, priceCents: v.priceCents, sku: v.sku
+            name: v.name,
+            priceCents: v.priceCents,
+            sku: v.sku,
+            barcode: v.barcode?.trim() ?? null
           }))
         }
       }
@@ -50,7 +62,7 @@ export class PrismaProductRepository implements IProductRepository {
   }
 update(
   id: number,
-  data: Partial<Pick<Product, 'name'|'categoryId'|'priceCents'|'description'|'sku'|'isActive'>> & {
+  data: Partial<Pick<Product, 'name'|'categoryId'|'priceCents'|'description'|'sku'|'isActive'|'barcode'>> & {
     image?: { buffer: Buffer; mimeType: string; size: number } | null;
   }
 ): Promise<Product> {
@@ -87,23 +99,96 @@ update(
 
 
   
-  async replaceVariants(productId: number, variants: { name: string; priceCents: number; sku?: string }[]): Promise<void> {
-    await prisma.$transaction([
-      prisma.productVariant.deleteMany({ where: { productId } }),
-      prisma.product.update({
+  async replaceVariants(
+    productId: number,
+    variants: { id?: number; name: string; priceCents: number; sku?: string; barcode?: string | null }[],
+  ): Promise<void> {
+    await prisma.$transaction(async (tx) => {
+      const product = await tx.product.findUnique({
         where: { id: productId },
-        data: { variants: { create: variants.map(v => ({ name: v.name, priceCents: v.priceCents, sku: v.sku })) } }
-      })
-    ]);
+        select: { id: true, type: true }
+      });
+      if (!product) throw new Error('Product not found');
+      if (product.type !== 'VARIANTED') throw new Error('Only varianted products have variants');
+
+      const existingVariants = await tx.productVariant.findMany({
+        where: { productId },
+        select: { id: true },
+        orderBy: { position: 'asc' }
+      });
+      const existingIds = new Set(existingVariants.map(v => v.id));
+      const orderedAvailableIds = existingVariants.map(v => v.id);
+      const seenIds = new Set<number>();
+
+      for (let index = 0; index < variants.length; index++) {
+        const variant = variants[index];
+        const data = {
+          name: variant.name,
+          priceCents: variant.priceCents,
+          sku: variant.sku ?? null,
+          barcode: variant.barcode?.trim() ?? null,
+          position: index
+        };
+
+        let targetId = variant.id;
+        if (!targetId && orderedAvailableIds.length) {
+          targetId = orderedAvailableIds.shift();
+        }
+
+        if (targetId) {
+          if (!existingIds.has(targetId)) throw new Error('Variant does not belong to product');
+          if (seenIds.has(targetId)) throw new Error('Duplicate variant id in payload');
+          seenIds.add(targetId);
+          await tx.productVariant.update({
+            where: { id: targetId },
+            data
+          });
+        } else {
+          const created = await tx.productVariant.create({
+            data: {
+              ...data,
+              productId
+            },
+            select: { id: true }
+          });
+          seenIds.add(created.id);
+        }
+      }
+
+      const idsToDelete = [...existingIds].filter(id => !seenIds.has(id));
+      if (idsToDelete.length) {
+        await tx.menuItem.deleteMany({
+          where: {
+            refType: 'VARIANT',
+            refId: { in: idsToDelete }
+          }
+        });
+        await tx.productVariant.deleteMany({
+          where: { productId, id: { in: idsToDelete } }
+        });
+      }
+    });
   }
    // NUEVO: conversiones
-  async convertToVarianted(productId: number, variants: { name: string; priceCents: number; sku?: string }[]): Promise<void> {
+  async convertToVarianted(
+    productId: number,
+    variants: { name: string; priceCents: number; sku?: string; barcode?: string | null }[],
+  ): Promise<void> {
     await prisma.$transaction([
       prisma.product.update({ where: { id: productId }, data: { type: 'VARIANTED', priceCents: null } }),
       prisma.productVariant.deleteMany({ where: { productId } }),
       prisma.product.update({
         where: { id: productId },
-        data: { variants: { create: variants.map(v => ({ name: v.name, priceCents: v.priceCents, sku: v.sku })) } }
+        data: {
+          variants: {
+            create: variants.map(v => ({
+              name: v.name,
+              priceCents: v.priceCents,
+              sku: v.sku,
+              barcode: v.barcode?.trim() ?? null
+            }))
+          }
+        }
       })
     ]);
   }
@@ -161,6 +246,7 @@ update(
         priceCents: true,
         isActive: true,
         sku: true,
+        barcode: true,
         imageMimeType: true,
         imageSize: true,
         isAvailable: true,
@@ -277,6 +363,24 @@ update(
       await tx.productVariant.deleteMany({ where: { productId: id } });
       await tx.product.delete({ where: { id } });
     });
+  }
+
+  async findByBarcode(barcode: string): Promise<ProductWithDetails | null> {
+    const normalized = barcode.trim();
+    if (!normalized) return null;
+
+    const product = await prisma.product.findFirst({
+      where: {
+        OR: [
+          { barcode: normalized },
+          { variants: { some: { barcode: normalized } } }
+        ]
+      },
+      select: { id: true }
+    });
+
+    if (!product) return null;
+    return this.getById(product.id);
   }
 
 //   -------------combos ---------------------

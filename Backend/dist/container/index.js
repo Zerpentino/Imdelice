@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.authController = exports.rolesController = exports.usersController = exports.reportsController = exports.channelConfigController = exports.ordersController = exports.menuController = exports.tablesController = exports.modifiersController = exports.productsController = exports.categoriesController = void 0;
+exports.authController = exports.rolesController = exports.usersController = exports.expensesController = exports.inventoryController = exports.reportsController = exports.channelConfigController = exports.ordersController = exports.menuController = exports.tablesController = exports.modifiersController = exports.productsController = exports.categoriesController = void 0;
 const PrismaUserRepository_1 = require("../infra/repositories/PrismaUserRepository");
 const PrismaRoleRepository_1 = require("../infra/repositories/PrismaRoleRepository");
 const PrismaPermissionRepository_1 = require("../infra/repositories/PrismaPermissionRepository");
@@ -29,12 +29,15 @@ const JwtService_1 = require("../infra/security/JwtService");
 // ----- Catalogo (Categories/Products/Modifiers) -----
 const PrismaCategoryRepository_1 = require("../infra/repositories/PrismaCategoryRepository");
 const PrismaProductRepository_1 = require("../infra/repositories/PrismaProductRepository");
+const PrismaInventoryRepository_1 = require("../infra/repositories/PrismaInventoryRepository");
 const PrismaModifierRepository_1 = require("../infra/repositories/PrismaModifierRepository");
+const PrismaExpenseRepository_1 = require("../infra/repositories/PrismaExpenseRepository");
 const CreateCategory_1 = require("../core/usecases/categories/CreateCategory");
 const ListCategories_1 = require("../core/usecases/categories/ListCategories");
 const CreateProductSimple_1 = require("../core/usecases/products/CreateProductSimple");
 const CreateProductVarianted_1 = require("../core/usecases/products/CreateProductVarianted");
 const GetProductDetail_1 = require("../core/usecases/products/GetProductDetail");
+const GetProductByBarcode_1 = require("../core/usecases/products/GetProductByBarcode");
 const ListProducts_1 = require("../core/usecases/products/ListProducts");
 const AttachModifierGroupToProduct_1 = require("../core/usecases/products/AttachModifierGroupToProduct");
 const CreateModifierGroupWithOptions_1 = require("../core/usecases/modifiers/CreateModifierGroupWithOptions");
@@ -63,6 +66,22 @@ const AttachModifierGroupToVariant_1 = require("../core/usecases/products/Attach
 const UpdateVariantModifierGroup_1 = require("../core/usecases/products/UpdateVariantModifierGroup");
 const DetachModifierGroupFromVariant_1 = require("../core/usecases/products/DetachModifierGroupFromVariant");
 const ListVariantModifierGroups_1 = require("../core/usecases/products/ListVariantModifierGroups");
+const ListInventoryItems_1 = require("../core/usecases/inventory/ListInventoryItems");
+const GetInventoryItem_1 = require("../core/usecases/inventory/GetInventoryItem");
+const ListInventoryMovements_1 = require("../core/usecases/inventory/ListInventoryMovements");
+const CreateInventoryMovement_1 = require("../core/usecases/inventory/CreateInventoryMovement");
+const CreateInventoryMovementByBarcode_1 = require("../core/usecases/inventory/CreateInventoryMovementByBarcode");
+const RegisterOrderInventoryMovements_1 = require("../core/usecases/inventory/RegisterOrderInventoryMovements");
+const ListInventoryLocations_1 = require("../core/usecases/inventory/ListInventoryLocations");
+const CreateInventoryLocation_1 = require("../core/usecases/inventory/CreateInventoryLocation");
+const UpdateInventoryLocation_1 = require("../core/usecases/inventory/UpdateInventoryLocation");
+const DeleteInventoryLocation_1 = require("../core/usecases/inventory/DeleteInventoryLocation");
+const CreateExpense_1 = require("../core/usecases/expenses/CreateExpense");
+const ListExpenses_1 = require("../core/usecases/expenses/ListExpenses");
+const GetExpense_1 = require("../core/usecases/expenses/GetExpense");
+const UpdateExpense_1 = require("../core/usecases/expenses/UpdateExpense");
+const DeleteExpense_1 = require("../core/usecases/expenses/DeleteExpense");
+const GetExpensesSummary_1 = require("../core/usecases/expenses/GetExpensesSummary");
 //IMPORTS COMBOSSSS
 const CreateProductCombo_1 = require("../core/usecases/products/CreateProductCombo");
 const AddComboItems_1 = require("../core/usecases/products/AddComboItems");
@@ -110,6 +129,7 @@ const ListOrders_1 = require("../core/usecases/orders/ListOrders");
 const RefundOrder_1 = require("../core/usecases/orders/RefundOrder");
 const AdminAuthService_1 = require("../infra/services/AdminAuthService");
 const GetPaymentsReport_1 = require("../core/usecases/reports/GetPaymentsReport");
+const GetProfitLossReport_1 = require("../core/usecases/reports/GetProfitLossReport");
 const ReportsController_1 = require("../presentation/controllers/ReportsController");
 const PrismaChannelConfigRepository_1 = require("../infra/repositories/PrismaChannelConfigRepository");
 const ListChannelConfigs_1 = require("../core/usecases/channelConfig/ListChannelConfigs");
@@ -123,6 +143,8 @@ const GetTable_1 = require("../core/usecases/tables/GetTable");
 const UpdateTable_1 = require("../core/usecases/tables/UpdateTable");
 const DeleteTable_1 = require("../core/usecases/tables/DeleteTable");
 const TablesController_1 = require("../presentation/controllers/TablesController");
+const InventoryController_1 = require("../presentation/controllers/InventoryController");
+const ExpensesController_1 = require("../presentation/controllers/ExpensesController");
 const permRepo = new PrismaPermissionRepository_1.PrismaPermissionRepository();
 const getPermsByRole = new GetPermissionsByRole_1.GetPermissionsByRole(permRepo);
 const setRolePerms = new SetRolePermissions_1.SetRolePermissions(permRepo);
@@ -131,7 +153,9 @@ const roleRepo = new PrismaRoleRepository_1.PrismaRoleRepository();
 // repos de productos
 const categoryRepo = new PrismaCategoryRepository_1.PrismaCategoryRepository();
 const productRepo = new PrismaProductRepository_1.PrismaProductRepository();
+const inventoryRepo = new PrismaInventoryRepository_1.PrismaInventoryRepository();
 const modifierRepo = new PrismaModifierRepository_1.PrismaModifierRepository();
+const expenseRepo = new PrismaExpenseRepository_1.PrismaExpenseRepository();
 //REPOS DE MENU
 const menuRepo = new PrismaMenuRepository_1.PrismaMenuRepository();
 // Mesas
@@ -161,6 +185,7 @@ const reorderModGroupsUC = new ReorderModifierGroups_1.ReorderModifierGroups(pro
 const createProductSimpleUC = new CreateProductSimple_1.CreateProductSimple(productRepo);
 const createProductVariantedUC = new CreateProductVarianted_1.CreateProductVarianted(productRepo);
 const getProductDetailUC = new GetProductDetail_1.GetProductDetail(productRepo);
+const getProductByBarcodeUC = new GetProductByBarcode_1.GetProductByBarcode(productRepo);
 const listProductsUC = new ListProducts_1.ListProducts(productRepo);
 const updateProductUC = new UpdateProduct_1.UpdateProduct(productRepo);
 const replaceVariantsUC = new ReplaceProductVariants_1.ReplaceProductVariants(productRepo);
@@ -170,6 +195,22 @@ const attachVariantModUC = new AttachModifierGroupToVariant_1.AttachModifierGrou
 const updateVariantModUC = new UpdateVariantModifierGroup_1.UpdateVariantModifierGroup(productRepo);
 const detachVariantModUC = new DetachModifierGroupFromVariant_1.DetachModifierGroupFromVariant(productRepo);
 const listVariantModUC = new ListVariantModifierGroups_1.ListVariantModifierGroups(productRepo);
+const listInventoryItemsUC = new ListInventoryItems_1.ListInventoryItems(inventoryRepo);
+const getInventoryItemUC = new GetInventoryItem_1.GetInventoryItem(inventoryRepo);
+const listInventoryMovementsUC = new ListInventoryMovements_1.ListInventoryMovements(inventoryRepo);
+const createInventoryMovementUC = new CreateInventoryMovement_1.CreateInventoryMovement(inventoryRepo);
+const createInventoryMovementByBarcodeUC = new CreateInventoryMovementByBarcode_1.CreateInventoryMovementByBarcode(inventoryRepo, productRepo);
+const registerOrderInventoryMovementsUC = new RegisterOrderInventoryMovements_1.RegisterOrderInventoryMovements(inventoryRepo);
+const listInventoryLocationsUC = new ListInventoryLocations_1.ListInventoryLocations(inventoryRepo);
+const createInventoryLocationUC = new CreateInventoryLocation_1.CreateInventoryLocation(inventoryRepo);
+const updateInventoryLocationUC = new UpdateInventoryLocation_1.UpdateInventoryLocation(inventoryRepo);
+const deleteInventoryLocationUC = new DeleteInventoryLocation_1.DeleteInventoryLocation(inventoryRepo);
+const listExpensesUC = new ListExpenses_1.ListExpenses(expenseRepo);
+const getExpenseUC = new GetExpense_1.GetExpense(expenseRepo);
+const createExpenseUC = new CreateExpense_1.CreateExpense(expenseRepo);
+const updateExpenseUC = new UpdateExpense_1.UpdateExpense(expenseRepo);
+const deleteExpenseUC = new DeleteExpense_1.DeleteExpense(expenseRepo);
+const expensesSummaryUC = new GetExpensesSummary_1.GetExpensesSummary(expenseRepo);
 // NUEVOS
 const convertToVariantedUC = new ConvertProductToVarianted_1.ConvertProductToVarianted(productRepo);
 const convertToSimpleUC = new ConvertProductToSimple_1.ConvertProductToSimple(productRepo);
@@ -229,6 +270,7 @@ const updateOrderMetaUC = new UpdateOrderMeta_1.UpdateOrderMeta(orderRepo);
 const updateOrderStatusUC = new UpdateOrderStatus_1.UpdateOrderStatus(orderRepo);
 const listOrdersUC = new ListOrders_1.ListOrders(orderRepo);
 const getPaymentsReportUC = new GetPaymentsReport_1.GetPaymentsReport(orderRepo);
+const getProfitLossReportUC = new GetProfitLossReport_1.GetProfitLossReport(orderRepo, expenseRepo);
 const refundOrderUC = new RefundOrder_1.RefundOrder(orderRepo);
 const adminAuthService = new AdminAuthService_1.AdminAuthService();
 const listChannelConfigsUC = new ListChannelConfigs_1.ListChannelConfigs(channelConfigRepo);
@@ -236,7 +278,7 @@ const setChannelConfigUC = new SetChannelConfig_1.SetChannelConfig(channelConfig
 // controllers
 // controllers (reconstruye con deps nuevas)
 exports.categoriesController = new CategoriesController_1.CategoriesController(createCategoryUC, listCategoriesUC, updateCategoryUC, deleteCategoryUC);
-exports.productsController = new ProductsController_1.ProductsController(createProductSimpleUC, createProductVariantedUC, getProductDetailUC, listProductsUC, attachModifierUC, // o attachModUC, iguala el nombre con tu var real
+exports.productsController = new ProductsController_1.ProductsController(createProductSimpleUC, createProductVariantedUC, getProductDetailUC, getProductByBarcodeUC, listProductsUC, attachModifierUC, // o attachModUC, iguala el nombre con tu var real
 updateProductUC, replaceVariantsUC, deleteProductUC, 
 // ⬇️ primero las conversiones
 convertToVariantedUC, convertToSimpleUC, 
@@ -246,7 +288,9 @@ exports.modifiersController = new ModifiersController_1.ModifiersController(crea
 exports.tablesController = new TablesController_1.TablesController(createTableUC, listTablesUC, getTableUC, updateTableUC, deleteTableUC);
 //menu
 exports.menuController = new MenuController_1.MenuController(createMenuUC, listMenusUC, listArchivedMenusUC, updateMenuUC, deleteMenuUC, restoreMenuUC, createSecUC, updateSecUC, deleteSecUC, deleteSecHardUC, restoreSectionUC, listSectionsUC, listArchivedSectionsUC, addItemUC, updateItemUC, removeItemUC, restoreItemUC, deleteItemHardUC, listItemsUC, listArchivedItemsUC, getMenuPublicUC);
-exports.ordersController = new OrdersController_1.OrdersController(createOrderUC, addOrderItemUC, updateOrderItemStatusUC, addPaymentUC, getOrderDetailUC, listKDSUC, updateOrderItemUC, removeOrderItemUC, splitOrderByItemsUC, updateOrderMetaUC, updateOrderStatusUC, listOrdersUC, refundOrderUC, adminAuthService);
+exports.ordersController = new OrdersController_1.OrdersController(createOrderUC, addOrderItemUC, updateOrderItemStatusUC, addPaymentUC, getOrderDetailUC, listKDSUC, updateOrderItemUC, removeOrderItemUC, splitOrderByItemsUC, updateOrderMetaUC, updateOrderStatusUC, listOrdersUC, refundOrderUC, registerOrderInventoryMovementsUC, adminAuthService);
 exports.channelConfigController = new ChannelConfigController_1.ChannelConfigController(listChannelConfigsUC, setChannelConfigUC);
-exports.reportsController = new ReportsController_1.ReportsController(getPaymentsReportUC);
+exports.reportsController = new ReportsController_1.ReportsController(getPaymentsReportUC, getProfitLossReportUC);
+exports.inventoryController = new InventoryController_1.InventoryController(listInventoryItemsUC, getInventoryItemUC, listInventoryMovementsUC, createInventoryMovementUC, createInventoryMovementByBarcodeUC, listInventoryLocationsUC, createInventoryLocationUC, updateInventoryLocationUC, deleteInventoryLocationUC);
+exports.expensesController = new ExpensesController_1.ExpensesController(listExpensesUC, getExpenseUC, createExpenseUC, updateExpenseUC, deleteExpenseUC, expensesSummaryUC, createInventoryMovementUC, createInventoryMovementByBarcodeUC);
 //# sourceMappingURL=index.js.map

@@ -8,6 +8,7 @@ export declare class CreateProductSimple {
         priceCents: number;
         description?: string;
         sku?: string;
+        barcode?: string | null;
         image?: {
             buffer: Buffer;
             mimeType: string;
@@ -24,6 +25,7 @@ export declare class CreateProductSimple {
         categoryId: number;
         priceCents: number | null;
         sku: string | null;
+        barcode: string | null;
         image: Uint8Array | null;
         imageMimeType: string | null;
         imageSize: number | null;

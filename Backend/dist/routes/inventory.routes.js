@@ -1,0 +1,20 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const container_1 = require("../container");
+const asyncHandler_1 = require("../presentation/utils/asyncHandler");
+const authenticate_1 = require("../presentation/middlewares/authenticate");
+const authorize_1 = require("../presentation/middlewares/authorize");
+const router = (0, express_1.Router)();
+router.use(authenticate_1.authenticate);
+router.get("/items", (0, authorize_1.authorize)("inventory.read"), (0, asyncHandler_1.asyncHandler)(container_1.inventoryController.listItems));
+router.get("/items/:id", (0, authorize_1.authorize)("inventory.read"), (0, asyncHandler_1.asyncHandler)(container_1.inventoryController.getItem));
+router.get("/items/:id/movements", (0, authorize_1.authorize)("inventory.read"), (0, asyncHandler_1.asyncHandler)(container_1.inventoryController.listItemMovements));
+router.post("/movements", (0, authorize_1.authorize)("inventory.adjust"), (0, asyncHandler_1.asyncHandler)(container_1.inventoryController.createMovement));
+router.post("/movements/by-barcode", (0, authorize_1.authorize)("inventory.adjust"), (0, asyncHandler_1.asyncHandler)(container_1.inventoryController.createMovementByBarcode));
+router.get("/locations", (0, authorize_1.authorize)("inventory.read"), (0, asyncHandler_1.asyncHandler)(container_1.inventoryController.listLocations));
+router.post("/locations", (0, authorize_1.authorize)("inventory.adjust"), (0, asyncHandler_1.asyncHandler)(container_1.inventoryController.createLocation));
+router.patch("/locations/:id", (0, authorize_1.authorize)("inventory.adjust"), (0, asyncHandler_1.asyncHandler)(container_1.inventoryController.updateLocation));
+router.delete("/locations/:id", (0, authorize_1.authorize)("inventory.adjust"), (0, asyncHandler_1.asyncHandler)(container_1.inventoryController.deleteLocation));
+exports.default = router;
+//# sourceMappingURL=inventory.routes.js.map
