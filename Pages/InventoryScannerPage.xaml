@@ -22,8 +22,10 @@
                Completed="BarcodeEntry_Completed"
                TextChanged="BarcodeEntry_TextChanged"/>
 
-        <CollectionView ItemsSource="{Binding PendingScans}"
-                        SelectionMode="None">
+        <CollectionView x:Name="PendingList"
+                        ItemsSource="{Binding PendingScans}"
+                        SelectionMode="Single"
+                        SelectionChanged="PendingList_SelectionChanged">
           <CollectionView.EmptyView>
             <Label Text="Sin lecturas aún."
                    HorizontalOptions="Center"

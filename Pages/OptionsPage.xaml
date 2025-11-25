@@ -5,83 +5,199 @@
        x:Class="Imdeliceapp.Pages.OptionsPage"
        BackgroundColor="{AppThemeBinding Light=White, Dark=Black}">
 
+       <ContentPage.Resources>
+              <LinearGradientBrush x:Key="HeroGradient" StartPoint="0,0" EndPoint="1,1">
+                     <GradientStop Color="#FFCC29" Offset="0" />
+                     <GradientStop Color="#B36A4E" Offset="1" />
+              </LinearGradientBrush>
+              <LinearGradientBrush x:Key="HeroGradientDark" StartPoint="0,0" EndPoint="1,1">
+                     <GradientStop Color="#A67616" Offset="0" />
+                     <GradientStop Color="#5A2D26" Offset="1" />
+              </LinearGradientBrush>
+
+              <Style x:Key="SectionTitleStyle" TargetType="Label">
+                     <Setter Property="FontAttributes" Value="Bold" />
+                     <Setter Property="FontSize" Value="17" />
+                     <Setter Property="TextColor" Value="{AppThemeBinding Light=#1F120F, Dark=#F5E6D8}" />
+                     <Setter Property="Margin" Value="0,0,0,6" />
+              </Style>
+
+              <Style x:Key="SectionCardStyle" TargetType="Border">
+                     <Setter Property="Stroke" Value="{AppThemeBinding Light=#F0D792, Dark=#3D2A23}" />
+                     <Setter Property="StrokeThickness" Value="1" />
+                     <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#FFFFFF, Dark=#1B1310}" />
+                     <Setter Property="Padding" Value="16" />
+                     <Setter Property="StrokeShape">
+                            <Setter.Value>
+                                   <RoundRectangle CornerRadius="18" />
+                            </Setter.Value>
+                     </Setter>
+                     <Setter Property="Shadow">
+                            <Setter.Value>
+                                   <AppThemeBinding Light="{StaticResource CardShadowLight}"
+                                                    Dark="{StaticResource CardShadowDark}" />
+                            </Setter.Value>
+                     </Setter>
+              </Style>
+
+              <!-- Botones tipo tarjeta, cálidos y centrados en el restaurante -->
+              <Style x:Key="OptionButtonStyle"
+                     TargetType="Button">
+                     <Setter Property="FontSize" Value="14" />
+                     <Setter Property="LineBreakMode" Value="WordWrap" />
+                     <Setter Property="HeightRequest" Value="70" />
+                     <Setter Property="Padding" Value="14,12" />
+                     <Setter Property="TextTransform" Value="None" />
+                     <Setter Property="FontAttributes" Value="Bold" />
+                     <Setter Property="CornerRadius" Value="14" />
+                     <Setter Property="BorderColor" Value="{AppThemeBinding Light=#F0D792, Dark=#4A332B}" />
+                     <Setter Property="BorderWidth" Value="1" />
+                     <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#FFF8ED, Dark=#251711}" />
+                     <Setter Property="TextColor" Value="{AppThemeBinding Light=#2C1A14, Dark=#F6EADF}" />
+                     <Setter Property="ContentLayout" Value="Left,14" />
+              </Style>
+       </ContentPage.Resources>
+
        <ScrollView>
-              <Grid Padding="24">
-                     <VerticalStackLayout Spacing="16"
-                                          HorizontalOptions="Center"
-                                          VerticalOptions="Center">
-                     <Label Text="Opciones"
-                            FontAttributes="Bold"
-                            FontSize="20"
-                            HorizontalTextAlignment="Center"
-                            TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+              <VerticalStackLayout Padding="20,16" Spacing="16">
+                     <Border Background="{AppThemeBinding Light={StaticResource HeroGradient}, Dark={StaticResource HeroGradientDark}}"
+                             StrokeShape="RoundRectangle 18"
+                             Padding="18"
+                             Shadow="{AppThemeBinding Light={StaticResource CardShadowLight},
+                                                    Dark={StaticResource CardShadowDark}}">
+                            <Grid ColumnDefinitions="2*,Auto" ColumnSpacing="12" VerticalOptions="Center">
+                                   <VerticalStackLayout Grid.Column="0" Spacing="6">
+                                          <Label Text="Centro de operaciones"
+                                                 FontAttributes="Bold"
+                                                 FontSize="20"
+                                                 TextColor="#1B120C"
+                                                 LineBreakMode="WordWrap"/>
+                                          <Label Text="Administra menú, mesas, inventario y reportes de tu restaurante."
+                                                 FontSize="14"
+                                                 TextColor="#2A1A10"
+                                                 LineBreakMode="WordWrap"/>
+                                   </VerticalStackLayout>
+                                   <Image Grid.Column="1"
+                                          Source="imdelice.png"
+                                          Aspect="AspectFit"
+                                          WidthRequest="{OnIdiom Phone=82, Tablet=110}"
+                                          HeightRequest="{OnIdiom Phone=82, Tablet=110}"
+                                          HorizontalOptions="End"
+                                          VerticalOptions="Center"
+                                          Margin="6,0,0,0"/>
+                            </Grid>
+                     </Border>
 
+                     <Border Style="{StaticResource SectionCardStyle}">
+                            <VerticalStackLayout Spacing="8">
+                                   <Label Text="Administración" Style="{StaticResource SectionTitleStyle}" />
+                                   <FlexLayout Wrap="Wrap" Direction="Row" JustifyContent="SpaceBetween" AlignItems="Center">
+                                          <Button x:Name="BtnUsuarios"
+                                                  Text="Usuarios"
+                                                  Clicked="BtnUsuarios_Clicked"
+                                                  Style="{StaticResource OptionButtonStyle}"
+                                                  IsVisible="False"
+                                                  Margin="0,6"
+                                                  WidthRequest="160"/>
+                                          <Button x:Name="BtnRoles"
+                                                  Text="Roles"
+                                                  Clicked="OpenRoles_Clicked"
+                                                  Style="{StaticResource OptionButtonStyle}"
+                                                  IsVisible="False"
+                                                  Margin="0,6"
+                                                  WidthRequest="160"/>
+                                          <Button x:Name="BtnCategorias"
+                                                  Text="Categorías"
+                                                  Clicked="OpeCategorias_Clicked"
+                                                  Style="{StaticResource OptionButtonStyle}"
+                                                  IsVisible="False"
+                                                  Margin="0,6"
+                                                  WidthRequest="160"/>
+                                          <Button x:Name="BtnModifierGroups"
+                                                  Text="Grupos de modificadores"
+                                                  Clicked="OpenModifierGroups_Clicked"
+                                                  Style="{StaticResource OptionButtonStyle}"
+                                                  IsVisible="False"
+                                                  Margin="0,6"
+                                                  WidthRequest="160"/>
+                                          <Button x:Name="BtnTables"
+                                                  Text="Mesas"
+                                                  Clicked="OpenTables_Clicked"
+                                                  Style="{StaticResource OptionButtonStyle}"
+                                                  IsVisible="False"
+                                                  Margin="0,6"
+                                                  WidthRequest="160"/>
+                                          <Button x:Name="BtnChannelConfig"
+                                                  Text="Markup por canal"
+                                                  Clicked="OpenChannelConfig_Clicked"
+                                                  Style="{StaticResource OptionButtonStyle}"
+                                                  IsVisible="False"
+                                                  Margin="0,6"
+                                                  WidthRequest="160"/>
+                                          <Button x:Name="BtnMenu"
+                                                  Text="Editar menú"
+                                                  IsVisible="False"
+                                                  Clicked="EditarMenu_Clicked"
+                                                  Style="{StaticResource OptionButtonStyle}"
+                                                  Margin="0,6"
+                                                  WidthRequest="160"/>
+                                   </FlexLayout>
+                            </VerticalStackLayout>
+                     </Border>
 
-                     <!-- Solo admins -->
-                     <Button x:Name="BtnUsuarios"
-                             Text="Usuarios"
-                             Clicked="BtnUsuarios_Clicked"
-                             Style="{StaticResource PrimaryButtonStyle}"
-                             IsVisible="False"/>
-                     <Button x:Name="BtnRoles"
-                             Text="Roles"
-                             Clicked="OpenRoles_Clicked"
-                             Style="{StaticResource PrimaryButtonStyle}"
-                             IsVisible="False"/>
-                     <Button x:Name="BtnCategorias"
-                             Text="Categorias"
-                             Clicked="OpeCategorias_Clicked"
-                             Style="{StaticResource PrimaryButtonStyle}"
-                             IsVisible="False"/>
-                     <Button x:Name="BtnModifierGroups"
-                             Text="Grupos de modificadores"
-                             Clicked="OpenModifierGroups_Clicked"
-                             Style="{StaticResource PrimaryButtonStyle}"
-                             IsVisible="False"/>
-                     <Button x:Name="BtnTables"
-                             Text="Mesas"
-                             Clicked="OpenTables_Clicked"
-                             Style="{StaticResource PrimaryButtonStyle}"
-                             IsVisible="False"/>
-                     <Button x:Name="BtnChannelConfig"
-                             Text="Markup por canal"
-                             Clicked="OpenChannelConfig_Clicked"
-                             Style="{StaticResource PrimaryButtonStyle}"
-                             IsVisible="False"/>
-                     <Button x:Name="BtnInventory"
-                             Text="Inventario"
-                             Clicked="OpenInventory_Clicked"
-                             Style="{StaticResource PrimaryButtonStyle}"
-                             IsVisible="False"/>
-                     <Button x:Name="BtnExpenses"
-                             Text="Gastos"
-                             Clicked="OpenExpenses_Clicked"
-                             Style="{StaticResource PrimaryButtonStyle}"
-                             IsVisible="False"/>
-                     <Button x:Name="BtnProfitLoss"
-                             Text="Ganancias vs gastos"
-                             Clicked="OpenProfitLoss_Clicked"
-                             Style="{StaticResource PrimaryButtonStyle}"
-                             IsVisible="False"/>
-                     <Button x:Name="BtnPaymentsReport"
-                             Text="Reporte de pagos"
-                             Clicked="OpenPaymentsReport_Clicked"
-                             Style="{StaticResource PrimaryButtonStyle}"
-                             IsVisible="False"
-                             IsEnabled="False"/>
-                     <Button x:Name="BtnMenu"
-                             Text="Editar menú"
-                             IsVisible="False"
-                             Clicked="EditarMenu_Clicked"
-                             Style="{StaticResource PrimaryButtonStyle}"/>
+                     <Border Style="{StaticResource SectionCardStyle}">
+                            <VerticalStackLayout Spacing="8">
+                                   <Label Text="Operación diaria" Style="{StaticResource SectionTitleStyle}" />
+                                   <FlexLayout Wrap="Wrap" Direction="Row" JustifyContent="SpaceBetween" AlignItems="Center">
+                                          <Button x:Name="BtnInventory"
+                                                  Text="Inventario"
+                                                  Clicked="OpenInventory_Clicked"
+                                                  Style="{StaticResource OptionButtonStyle}"
+                                                  IsVisible="False"
+                                                  Margin="0,6"
+                                                  WidthRequest="160"/>
+                                          <Button x:Name="BtnExpenses"
+                                                  Text="Gastos"
+                                                  Clicked="OpenExpenses_Clicked"
+                                                  Style="{StaticResource OptionButtonStyle}"
+                                                  IsVisible="False"
+                                                  Margin="0,6"
+                                                  WidthRequest="160"/>
+                                   </FlexLayout>
+                            </VerticalStackLayout>
+                     </Border>
 
+                     <Border Style="{StaticResource SectionCardStyle}">
+                            <VerticalStackLayout Spacing="8">
+                                   <Label Text="Reportes" Style="{StaticResource SectionTitleStyle}" />
+                                   <FlexLayout Wrap="Wrap" Direction="Row" JustifyContent="SpaceBetween" AlignItems="Center">
+                                          <Button x:Name="BtnProfitLoss"
+                                                  Text="Ganancias vs gastos"
+                                                  Clicked="OpenProfitLoss_Clicked"
+                                                  Style="{StaticResource OptionButtonStyle}"
+                                                  IsVisible="False"
+                                                  Margin="0,6"
+                                                  WidthRequest="160"/>
+                                          <Button x:Name="BtnPaymentsReport"
+                                                  Text="Reporte de pagos"
+                                                  Clicked="OpenPaymentsReport_Clicked"
+                                                  Style="{StaticResource OptionButtonStyle}"
+                                                  IsVisible="False"
+                                                  IsEnabled="False"
+                                                  Margin="0,6"
+                                                  WidthRequest="160"/>
+                                   </FlexLayout>
+                            </VerticalStackLayout>
+                     </Border>
 
-                     <!-- Botón Cerrar sesión -->
                      <Button x:Name="BtnLogout"
                              Text="Cerrar sesión"
                              Clicked="BtnLogout_Clicked"
-                             Style="{StaticResource PrimaryButtonStyle}"/>
+                             Style="{StaticResource OptionButtonStyle}"
+                             BackgroundColor="#E53935"
+                             TextColor="White"
+                             BorderColor="#E53935"
+                             Margin="0,8,0,12"/>
               </VerticalStackLayout>
-       </Grid>
        </ScrollView>
 </ContentPage>

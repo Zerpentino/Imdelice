@@ -134,12 +134,29 @@ namespace Imdeliceapp.Pages
             var items = await _inventoryApi.ListItemsAsync(
                 locationId: _selectedLocation?.id);
 
-            _allProducts = items
-                .GroupBy(i => i.productId)
-                .Select(group => InventoryProductVm.From(group.First(), group.Sum(g => g.currentQuantity), group.First().unit))
-                .OrderByDescending(p => p.IsActive)
-                .ThenByDescending(p => p.HasServerImage)
-                .ThenBy(p => p.Name)
+            // Guardar índice original para respetar el orden del backend
+            var indexed = items.Select((itm, idx) => (itm, idx));
+
+            _allProducts = indexed
+                .GroupBy(x => x.itm.productId)
+                .Select(group =>
+                {
+                    var first = group.First().itm;
+                    var totalQty = group.Sum(g => g.itm.currentQuantity);
+                    var lastMove = group
+                        .Select(g => g.itm.lastMovementAt)
+                        .Where(d => d.HasValue)
+                        .OrderBy(d => d)
+                        .FirstOrDefault();
+                    var minIndex = group.Min(g => g.idx);
+
+                    var vm = InventoryProductVm.From(first, totalQty, first.unit);
+                    vm.LastMovementAt = lastMove;
+                    vm.SortIndex = minIndex;
+                    return vm;
+                })
+                // Respeta el orden original del backend (menor a mayor por último movimiento ya viene aplicado)
+                .OrderBy(p => p.SortIndex)
                 .ToList();
 
             ApplyFilter(SearchBar.Text);
@@ -379,6 +396,8 @@ public class InventoryProductVm : INotifyPropertyChanged
     public bool ImageLoaded { get; set; }
     decimal? _quantity;
     string? _unit;
+    public DateTime? LastMovementAt { get; set; }
+    public int SortIndex { get; set; }
 
     ImageSource _image = ImageSource.FromFile("no_disponible.png");
     public ImageSource Image
@@ -454,6 +473,7 @@ public class InventoryProductVm : INotifyPropertyChanged
         var id = prod?.id ?? item.productId;
         var categoryName = prod?.categoryName;
         var categorySlug = prod?.categorySlug;
+        var lastMove = item.lastMovementAt;
 
         var vm = new InventoryProductVm
         {
@@ -468,7 +488,8 @@ public class InventoryProductVm : INotifyPropertyChanged
             Image = ImageSource.FromFile("no_disponible.png"),
             CategoryName = categoryName,
             CategorySlug = categorySlug,
-            ItemId = item.id
+            ItemId = item.id,
+            LastMovementAt = lastMove
         };
 
         vm.ApplyQuantity(totalQty, unit);

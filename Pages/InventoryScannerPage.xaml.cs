@@ -79,7 +79,7 @@ public partial class InventoryScannerPage : ContentPage
         }
         Dispatcher.Dispatch(async () =>
         {
-            BarcodeEntry.Focus();
+            FocusScannerEntry();
 
             if (_defaultMovement == null)
             {
@@ -103,17 +103,25 @@ public partial class InventoryScannerPage : ContentPage
     void BarcodeEntry_TextChanged(object sender, TextChangedEventArgs e)
     {
         // Mantener foco cuando la pistola envía Enter
-        if (!BarcodeEntry.IsFocused)
-            BarcodeEntry.Focus();
+        FocusScannerEntry();
     }
 
     async void BarcodeEntry_Completed(object sender, EventArgs e)
     {
         var code = BarcodeEntry.Text?.Trim();
+        FocusScannerEntry();
         if (string.IsNullOrWhiteSpace(code))
             return;
 
         await TryAddBarcodeAsync(code);
+    }
+
+    void PendingList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        // Evita que el CollectionView capture el foco del escáner
+        if (PendingList.SelectedItem != null)
+            PendingList.SelectedItem = null;
+        FocusScannerEntry();
     }
 
     async void SendButton_Clicked(object sender, EventArgs e)
@@ -159,6 +167,19 @@ public partial class InventoryScannerPage : ContentPage
             await ErrorHandler.MostrarErrorTecnico(ex, "Inventario – Registrar lecturas");
             ShowStatus("No se pudieron registrar las lecturas.");
         }
+    }
+
+    void FocusScannerEntry()
+    {
+        // Forzar el foco al campo de escaneo y limpiar selección de la lista
+        Dispatcher.Dispatch(() =>
+        {
+            if (!BarcodeEntry.IsFocused)
+                BarcodeEntry.Focus();
+            // Asegura que ningún elemento quede seleccionado y reciba foco
+            if (PendingList != null)
+                PendingList.SelectedItem = null;
+        });
     }
 
     void ClearButton_Clicked(object sender, EventArgs e)
