@@ -25,11 +25,14 @@ public partial class InventoryScannerPage : ContentPage
     public List<MovementOption> MovementOptions { get; } = MovementOption.All.ToList();
 
     public Command<PendingScanVm> RemoveCommand { get; }
+    public Command<PendingScanVm> EditQuantityCommand { get; }
 
     string _statusMessage = string.Empty;
     Color _statusColor = Colors.Red;
     MovementOption? _defaultMovement;
     string? _pendingRetryBarcode;
+    bool _handlingScan = false;
+    bool _forcingFocus = false;
 
     public bool HasStatus => !string.IsNullOrWhiteSpace(_statusMessage);
     public string StatusMessage
@@ -63,6 +66,7 @@ public partial class InventoryScannerPage : ContentPage
             if (vm != null && PendingScans.Contains(vm))
                 PendingScans.Remove(vm);
         });
+        EditQuantityCommand = new Command<PendingScanVm>(async vm => await EditQuantityAsync(vm));
     }
 
     protected override void OnAppearing()
@@ -104,6 +108,23 @@ public partial class InventoryScannerPage : ContentPage
     {
         // Mantener foco cuando la pistola envía Enter
         FocusScannerEntry();
+
+        if (_handlingScan) return;
+        var newText = e.NewTextValue ?? string.Empty;
+        if (string.IsNullOrEmpty(newText)) return;
+
+        // Muchos escáneres envían '\r' o '\n' al final; procesa en cuanto aparezca
+        if (newText.Contains('\r') || newText.Contains('\n'))
+        {
+            var cleaned = newText.Replace("\r", "").Replace("\n", "");
+            _handlingScan = true;
+            _ = Dispatcher.DispatchAsync(async () =>
+            {
+                BarcodeEntry.Text = cleaned;
+                await TryAddBarcodeAsync(cleaned);
+                _handlingScan = false;
+            });
+        }
     }
 
     async void BarcodeEntry_Completed(object sender, EventArgs e)
@@ -114,6 +135,17 @@ public partial class InventoryScannerPage : ContentPage
             return;
 
         await TryAddBarcodeAsync(code);
+    }
+
+    void BarcodeEntry_Unfocused(object sender, FocusEventArgs e)
+    {
+        if (_forcingFocus) return;
+        _forcingFocus = true;
+        Dispatcher.Dispatch(() =>
+        {
+            BarcodeEntry.Focus();
+            _forcingFocus = false;
+        });
     }
 
     void PendingList_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -180,6 +212,29 @@ public partial class InventoryScannerPage : ContentPage
             if (PendingList != null)
                 PendingList.SelectedItem = null;
         });
+    }
+
+    async Task EditQuantityAsync(PendingScanVm? vm)
+    {
+        if (vm == null) return;
+        try
+        {
+            var input = await DisplayPromptAsync("Cantidad", $"Editar cantidad para {vm.DisplayName}", initialValue: vm.Quantity.ToString(), keyboard: Keyboard.Numeric);
+            if (string.IsNullOrWhiteSpace(input)) return;
+            if (decimal.TryParse(input.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var q) && q > 0)
+            {
+                vm.Quantity = q;
+                ShowStatus($"Cantidad actualizada: {vm.DisplayName} = {vm.Quantity}", false);
+            }
+            else
+            {
+                await DisplayAlert("Cantidad", "Ingresa un número válido.", "OK");
+            }
+        }
+        finally
+        {
+            FocusScannerEntry();
+        }
     }
 
     void ClearButton_Clicked(object sender, EventArgs e)

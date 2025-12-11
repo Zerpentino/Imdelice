@@ -170,7 +170,7 @@ async Task<LoginData> LoginConApiAsync(string entrada, string password)
 Perms.Set(permsFromJwt);
 Preferences.Default.Set("perms_json", JsonSerializer.Serialize(permsFromJwt));
 
-
+        AuthHelper.ReiniciarWatcherExpiracion();
     
         
     }

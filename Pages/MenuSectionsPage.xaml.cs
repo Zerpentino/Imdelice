@@ -116,18 +116,19 @@ public partial class MenuSectionsPage : ContentPage
 
 	static readonly JsonSerializerOptions _json = new() { PropertyNameCaseInsensitive = true };
 
-	readonly ObservableCollection<SectionVM> _sections = new();
 	readonly List<SectionVM> _all = new();
 	readonly List<SectionVM> _trash = new();
 
 	bool _silenceSwitch;
 	readonly HashSet<int> _toggling = new();
+	bool _isLoading;
+	bool _navigatingItems;
+	CancellationTokenSource? _loadCts;
 
 	public MenuSectionsPage()
 	{
 		InitializeComponent();
 		BindingContext = this;
-		SectionsCV.ItemsSource = _sections;
 	}
 
 	protected override async void OnAppearing()
@@ -141,7 +142,27 @@ public partial class MenuSectionsPage : ContentPage
 			return;
 		}
 
-		await CargarTodoAsync();
+		if (_isLoading) return;
+
+		_isLoading = true;
+		_loadCts?.Cancel();
+		_loadCts = new CancellationTokenSource();
+		_all.Clear();
+		SectionsCV.ItemsSource = null;
+		try
+		{
+			await CargarTodoAsync(_loadCts.Token);
+		}
+		finally
+		{
+			_isLoading = false;
+		}
+	}
+
+	protected override void OnDisappearing()
+	{
+		_loadCts?.Cancel();
+		base.OnDisappearing();
 	}
 
 	#region Helpers comunes
@@ -177,7 +198,6 @@ public partial class MenuSectionsPage : ContentPage
 	{
 		query = (query ?? string.Empty).Trim().ToLowerInvariant();
 
-		_sections.Clear();
 		IEnumerable<SectionVM> src = _all;
 
 		if (!string.IsNullOrEmpty(query))
@@ -187,21 +207,28 @@ public partial class MenuSectionsPage : ContentPage
 				(s.CategoryBadge?.ToLowerInvariant().Contains(query) ?? false));
 		}
 
-		foreach (var s in src.OrderBy(s => s.position).ThenBy(s => s.name, StringComparer.CurrentCultureIgnoreCase))
-			_sections.Add(s);
+		var list = src
+			.OrderBy(s => s.position)
+			.ThenBy(s => s.name, StringComparer.CurrentCultureIgnoreCase)
+			.ToList();
+
+		SectionsCV.ItemsSource = list;
 	}
 	#endregion
 
-	async Task CargarTodoAsync()
+	async Task CargarTodoAsync(CancellationToken ct = default)
 	{
 		try
 		{
+			ct.ThrowIfCancellationRequested();
+
 			if (Connectivity.Current.NetworkAccess != NetworkAccess.Internet)
 			{
 				await ErrorHandler.MostrarErrorUsuario("Sin conexión a Internet.");
 				return;
 			}
 
+			ct.ThrowIfCancellationRequested();
 			var token = await GetTokenAsync();
 			if (string.IsNullOrWhiteSpace(token))
 			{
@@ -211,23 +238,25 @@ public partial class MenuSectionsPage : ContentPage
 
 			var baseUrl = Application.Current.Resources["urlbase"].ToString().TrimEnd('/');
 
-			await CargarSeccionesAsync(token, baseUrl);
-			await CargarPapelerasAsync(token, baseUrl);
+			await CargarSeccionesAsync(token, baseUrl, ct);
+			await CargarPapelerasAsync(token, baseUrl, ct);
 
 			OnPropertyChanged(nameof(ShowTrashFab));
 		}
 		catch (Exception ex)
 		{
+			if (ex is TaskCanceledException) return;
 			await ErrorHandler.MostrarErrorTecnico(ex, "Secciones – Cargar todo");
 		}
 	}
 
-	async Task CargarSeccionesAsync(string token, string baseUrl)
+	async Task CargarSeccionesAsync(string token, string baseUrl, CancellationToken ct = default)
 	{
 		try
 		{
+			ct.ThrowIfCancellationRequested();
 			using var http = NewAuthClient(baseUrl, token);
-			var resp = await http.GetAsync($"/api/menus/{MenuId}/sections");
+			var resp = await http.GetAsync($"/api/menus/{MenuId}/sections", ct);
 			var body = await resp.Content.ReadAsStringAsync();
 
 			if (!resp.IsSuccessStatusCode)
@@ -251,7 +280,7 @@ public partial class MenuSectionsPage : ContentPage
 		}
 		catch (TaskCanceledException)
 		{
-			await ErrorHandler.MostrarErrorUsuario("Tiempo de espera agotado al cargar secciones.");
+			// cancel silencioso para no mostrar alertas al navegar atrás
 		}
 		catch (HttpRequestException)
 		{
@@ -259,12 +288,13 @@ public partial class MenuSectionsPage : ContentPage
 		}
 	}
 
-	async Task CargarPapelerasAsync(string token, string baseUrl)
+	async Task CargarPapelerasAsync(string token, string baseUrl, CancellationToken ct = default)
 	{
 		try
 		{
+			ct.ThrowIfCancellationRequested();
 			using var http = NewAuthClient(baseUrl, token);
-			var resp = await http.GetAsync($"/api/menus/{MenuId}/sections/trash");
+			var resp = await http.GetAsync($"/api/menus/{MenuId}/sections/trash", ct);
 			var body = await resp.Content.ReadAsStringAsync();
 
 			if (!resp.IsSuccessStatusCode)
@@ -297,7 +327,9 @@ public partial class MenuSectionsPage : ContentPage
 	{
 		try
 		{
-			await CargarTodoAsync();
+			_loadCts?.Cancel();
+			_loadCts = new CancellationTokenSource();
+			await CargarTodoAsync(_loadCts.Token);
 		}
 		finally
 		{
@@ -326,7 +358,7 @@ public partial class MenuSectionsPage : ContentPage
 			return;
 		}
 
-		if ((sender as SwipeItem)?.BindingContext is not SectionVM vm) return;
+		if ((sender as BindableObject)?.BindingContext is not SectionVM vm) return;
 
 		var menuName = Uri.EscapeDataString(MenuName ?? string.Empty);
 		var sectionName = Uri.EscapeDataString(vm.name ?? string.Empty);
@@ -337,15 +369,21 @@ public partial class MenuSectionsPage : ContentPage
 
 	async void Items_Clicked(object sender, EventArgs e)
 	{
+		if (_navigatingItems) return;
 		if ((sender as Button)?.CommandParameter is not SectionVM vm)
 			return;
 
-	await Shell.Current.GoToAsync(
-		$"{nameof(SectionItemsPage)}?menuId={MenuId}" +
-		$"&menuName={Uri.EscapeDataString(MenuName ?? string.Empty)}" +
-		$"&sectionId={vm.id}" +
-		$"&sectionName={Uri.EscapeDataString(vm.name)}");
-}
+		_navigatingItems = true;
+		try
+		{
+			await Shell.Current.GoToAsync(
+				$"{nameof(SectionItemsPage)}?menuId={MenuId}" +
+				$"&menuName={Uri.EscapeDataString(MenuName ?? string.Empty)}" +
+				$"&sectionId={vm.id}" +
+				$"&sectionName={Uri.EscapeDataString(vm.name)}");
+		}
+		finally { _navigatingItems = false; }
+	}
 
 	async void Delete_Clicked(object sender, EventArgs e)
 	{
@@ -355,13 +393,37 @@ public partial class MenuSectionsPage : ContentPage
 			return;
 		}
 
-		if ((sender as SwipeItem)?.BindingContext is not SectionVM vm)
+		if ((sender as BindableObject)?.BindingContext is not SectionVM vm)
 			return;
 
 		var confirm = await DisplayAlert("Enviar a papelera", $"¿Enviar “{vm.name}” a la papelera?", "Sí, enviar", "Cancelar");
 		if (!confirm) return;
 
 		await DeleteSectionAsync(vm.id, hard: false);
+	}
+
+	async void More_Clicked(object sender, EventArgs e)
+	{
+		if ((sender as BindableObject)?.BindingContext is not SectionVM vm) return;
+
+		var actions = new List<string>();
+		if (CanUpdate) actions.Add("Editar");
+		if (CanDelete) actions.Add("Eliminar");
+
+		if (actions.Count == 0) return;
+
+		var choice = await DisplayActionSheet(vm.name, "Cancelar", null, actions.ToArray());
+		if (string.IsNullOrWhiteSpace(choice) || choice == "Cancelar") return;
+
+		switch (choice)
+		{
+			case "Editar":
+				Edit_Clicked(sender, EventArgs.Empty);
+				break;
+			case "Eliminar":
+				Delete_Clicked(sender, EventArgs.Empty);
+				break;
+		}
 	}
 
 	async void ToggleActivo_Toggled(object sender, ToggledEventArgs e)

@@ -4,71 +4,165 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="Imdeliceapp.Pages.TakeOrderPage"
-             BackgroundColor="{AppThemeBinding Light=White, Dark=Black}">
+             BackgroundColor="{AppThemeBinding Light=#f9f6fa, Dark=#0f0f11}">
 
   <Grid RowDefinitions="Auto,Auto,*">
-    <VerticalStackLayout Grid.Row="0"
-                         Padding="16,20,16,12"
-                         Spacing="12">
-      <Picker x:Name="MenuPicker"
-              Title="Selecciona un menú"
-              ItemsSource="{Binding MenuOptions}"
-              ItemDisplayBinding="{Binding DisplayName}"
-              SelectedItem="{Binding SelectedMenu}"
-              IsVisible="{Binding HasMenuOptions}" />
-
-      <SearchBar x:Name="SearchBox"
-                 Placeholder="Buscar productos o combos..."
-                 BackgroundColor="{AppThemeBinding Light=#F2F2F2, Dark=#2B2B2B}"
-                 TextColor="{AppThemeBinding Light=#222, Dark=#F5F5F5}"
-                 PlaceholderColor="{AppThemeBinding Light=#8A8A8A, Dark=#BEBEBE}"
-                 CancelButtonColor="{AppThemeBinding Light=#80358C, Dark=#F07DD2}"
-                 HeightRequest="44"
-                 TextChanged="SearchBox_TextChanged"/>
-    </VerticalStackLayout>
-
-    <Border Grid.Row="1"
+    <!-- Header -->
+    <Border Grid.Row="0"
+            Padding="14,16"
             StrokeThickness="0"
-            BackgroundColor="{AppThemeBinding Light=#f5f2f4, Dark=#1e1e1e}"
-            Padding="8,0">
-      <CollectionView x:Name="SectionsView"
-                      ItemsSource="{Binding Sections}"
-                      SelectionMode="Single"
-                      SelectionChanged="SectionsView_SelectionChanged"
-                      HorizontalScrollBarVisibility="Never">
-        <CollectionView.ItemsLayout>
-          <LinearItemsLayout Orientation="Horizontal" ItemSpacing="8"/>
-        </CollectionView.ItemsLayout>
-        <CollectionView.ItemTemplate>
-          <DataTemplate>
-            <Border Padding="12,8"
-                    BackgroundColor="{Binding ChipBackground}"
-                    StrokeThickness="0"
-                    StrokeShape="{RoundRectangle CornerRadius=18}">
-              <HorizontalStackLayout Spacing="6">
-                <Label Text="{Binding Name}"
-                       FontAttributes="Bold"
-                       TextColor="{Binding ChipTextColor}"/>
-                <Label Text="{Binding ItemsCount}"
-                       FontSize="11"
-                       Opacity="0.7"
-                       VerticalOptions="Center"/>
-              </HorizontalStackLayout>
+            BackgroundColor="#6a1b46">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+        <VerticalStackLayout Spacing="6" Grid.Column="0" VerticalOptions="Center">
+          <HorizontalStackLayout Spacing="10" VerticalOptions="Center">
+            <Border StrokeThickness="0"
+                    BackgroundColor="#7c2d59"
+                    Padding="10,6"
+                    StrokeShape="{RoundRectangle CornerRadius=16}">
+              <Picker x:Name="MenuPicker"
+                      Title="Selecciona un menú"
+                      ItemsSource="{Binding MenuOptions}"
+                      ItemDisplayBinding="{Binding DisplayName}"
+                      SelectedItem="{Binding SelectedMenu}"
+                      TextColor="White"
+                      TitleColor="#FFEEDD"/>
             </Border>
-          </DataTemplate>
-        </CollectionView.ItemTemplate>
-      </CollectionView>
+            <Button Text="Cambiar menú"
+                    HeightRequest="36"
+                    Padding="14,6"
+                    CornerRadius="16"
+                    BackgroundColor="#FFE082"
+                    TextColor="#521739"
+                    Clicked="OpenMenuPicker_Clicked"/>
+          </HorizontalStackLayout>
+        </VerticalStackLayout>
+        <Image Grid.Column="1"
+               Source="imdelice.png"
+               Aspect="AspectFit"
+               HeightRequest="56"
+               WidthRequest="56"
+               HorizontalOptions="End"
+               VerticalOptions="Center"/>
+      </Grid>
     </Border>
 
+    <!-- Búsqueda y carrito -->
+    <VerticalStackLayout Grid.Row="1"
+                         Padding="16,14,16,10"
+                         Spacing="10">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+        <Border StrokeThickness="0"
+                BackgroundColor="{AppThemeBinding Light=White, Dark=#1b1b1d}"
+                Padding="10,8"
+                Shadow="{AppThemeBinding Light={StaticResource CardShadowLight}, Dark={StaticResource CardShadowDark}}"
+                StrokeShape="{RoundRectangle CornerRadius=16}"
+                Grid.Column="0"
+                HorizontalOptions="FillAndExpand">
+          <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+           
+            <SearchBar x:Name="SearchBox"
+                       Grid.Column="0"
+                       HorizontalOptions="StartAndExpand"
+                       Placeholder="Buscar productos o combos..."
+                       BackgroundColor="Transparent"
+                       TextColor="{AppThemeBinding Light=#222, Dark=#F5F5F5}"
+                       PlaceholderColor="{AppThemeBinding Light=#8A8A8A, Dark=#BEBEBE}"
+                       CancelButtonColor="{AppThemeBinding Light=#80358C, Dark=#F07DD2}"
+                       HeightRequest="42"
+                       TextChanged="SearchBox_TextChanged"/>
+          </Grid>
+        </Border>
+        <Button x:Name="CartTopButton"
+                Grid.Column="1"
+                Text="Carrito (0)"
+                Padding="14,10"
+                CornerRadius="16"
+                FontAttributes="Bold"
+                BackgroundColor="{AppThemeBinding Light=#521739, Dark=#D5B2C2}"
+                TextColor="{AppThemeBinding Light=White, Dark=#2c1a2a}"
+                Clicked="OpenCart_Clicked"
+                VerticalOptions="Center"
+                HorizontalOptions="End"/>
+      </Grid>
+
+      <Border StrokeThickness="0"
+              BackgroundColor="{AppThemeBinding Light=#f7f1f6, Dark=#161618}"
+              Padding="8,0"
+              StrokeShape="{RoundRectangle CornerRadius=16}">
+        <CollectionView x:Name="SectionsView"
+                        ItemsSource="{Binding Sections}"
+                        SelectionMode="None"
+                        SelectionChanged="SectionsView_SelectionChanged"
+                        HorizontalScrollBarVisibility="Never">
+          <CollectionView.ItemsLayout>
+            <LinearItemsLayout Orientation="Horizontal" ItemSpacing="8"/>
+          </CollectionView.ItemsLayout>
+          <CollectionView.ItemTemplate>
+            <DataTemplate>
+              <Border Padding="14,8"
+                      Margin="4,6"
+                      BackgroundColor="{Binding ChipBackground}"
+                      StrokeThickness="1"
+                      Stroke="{Binding ChipBorderColor}"
+                      StrokeShape="{RoundRectangle CornerRadius=18}"
+                      Shadow="{AppThemeBinding Light={StaticResource CardShadowLight}, Dark={StaticResource CardShadowDark}}">
+                <Border.GestureRecognizers>
+                  <TapGestureRecognizer Tapped="SectionChip_Tapped"
+                                        CommandParameter="{Binding}"/>
+                </Border.GestureRecognizers>
+                <Grid RowDefinitions="Auto,2">
+                  <HorizontalStackLayout Grid.Row="0" Spacing="8" VerticalOptions="Center">
+                    <Label Text="{Binding Name}"
+                           FontAttributes="Bold"
+                           TextColor="{Binding ChipTextColor}"
+                           VerticalOptions="Center"/>
+                    <Border BackgroundColor="{Binding BadgeBackground}"
+                            Padding="6,2"
+                            StrokeThickness="0"
+                            StrokeShape="{RoundRectangle CornerRadius=12}"
+                            VerticalOptions="Center"
+                            Margin="2,0,0,0">
+                      <Label Text="{Binding ItemsCount}"
+                             FontSize="11"
+                             FontAttributes="Bold"
+                             TextColor="{Binding BadgeTextColor}"
+                             VerticalOptions="Center"
+                             HorizontalTextAlignment="Center"/>
+                    </Border>
+                  </HorizontalStackLayout>
+                  <BoxView Grid.Row="1"
+                           HeightRequest="2"
+                           Color="Transparent"
+                           Margin="0,4,0,0">
+                    <BoxView.Triggers>
+                      <DataTrigger TargetType="BoxView"
+                                   Binding="{Binding IsSelected}"
+                                   Value="True">
+                        <Setter Property="Color" Value="#7b2d55"/>
+                      </DataTrigger>
+                    </BoxView.Triggers>
+                  </BoxView>
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </CollectionView.ItemTemplate>
+        </CollectionView>
+      </Border>
+    </VerticalStackLayout>
+
+    <!-- Productos -->
     <Grid Grid.Row="2">
       <CollectionView x:Name="ItemsView"
                       ItemsSource="{Binding VisibleItems}"
                       SelectionMode="None"
                       ItemSizingStrategy="MeasureAllItems"
-                      Margin="16"
+                      Margin="12,0,12,0"
                       VerticalScrollBarVisibility="Never">
         <CollectionView.ItemsLayout>
-          <GridItemsLayout Orientation="Vertical" Span="2"/>
+          <GridItemsLayout Orientation="Vertical"
+                           Span="{OnIdiom Phone=2, Tablet=3, Desktop=4}"
+                           HorizontalItemSpacing="8"
+                           VerticalItemSpacing="12"/>
         </CollectionView.ItemsLayout>
         <CollectionView.EmptyView>
           <VerticalStackLayout Padding="40"
@@ -87,66 +181,114 @@
 
         <CollectionView.ItemTemplate>
           <DataTemplate>
-            <Border Margin="6"
-                    BackgroundColor="{AppThemeBinding Light=White, Dark=#252525}"
-                    Stroke="{AppThemeBinding Light=#E0E0E0, Dark=#3A3A3A}"
-                    StrokeShape="{RoundRectangle CornerRadius=18}">
-              <Grid RowDefinitions="*,Auto"
+            <Border Margin="4"
+                    BackgroundColor="{AppThemeBinding Light=White, Dark=#1b1b1d}"
+                    StrokeThickness="0"
+                    Shadow="{AppThemeBinding Light={StaticResource CardShadowLight}, Dark={StaticResource CardShadowDark}}"
+                    StrokeShape="{RoundRectangle CornerRadius=20}">
+              <Grid RowDefinitions="Auto,* ,Auto"
                     ColumnDefinitions="*"
-                    Padding="12">
-                <VerticalStackLayout Spacing="6">
-                  <Frame HeightRequest="{OnIdiom Phone=120, Tablet=260, Desktop=260}"
-                         CornerRadius="14"
+                    Padding="10">
+                <Grid HeightRequest="{OnIdiom Phone=120, Tablet=220, Desktop=240}">
+                  <Frame CornerRadius="16"
                          HasShadow="False"
-                         BackgroundColor="{AppThemeBinding Light=#f8f8f8, Dark=#1b1b1b}">
+                         Padding="0"
+                         BackgroundColor="{AppThemeBinding Light=#f3f0f4, Dark=#141416}">
                     <Image Source="{Binding ImageSource}"
                            Aspect="AspectFill"/>
                   </Frame>
+                  <HorizontalStackLayout Spacing="6"
+                                         Padding="8"
+                                         HorizontalOptions="Start"
+                                         VerticalOptions="Start">
+                    <Border Padding="8,4"
+                            BackgroundColor="#7b2d55"
+                            StrokeThickness="0"
+                            StrokeShape="{RoundRectangle CornerRadius=12}"
+                            IsVisible="{Binding HasTypeLabel}">
+                      <Label Text="{Binding TypeLabel}"
+                             FontSize="11"
+                             TextColor="White"
+                             FontAttributes="Bold"/>
+                    </Border>
+                    <Border BackgroundColor="#CC000000"
+                            StrokeThickness="0"
+                            Padding="8,4"
+                            StrokeShape="{RoundRectangle CornerRadius=12}"
+                            IsVisible="{Binding IsFeatured}">
+                      <Label Text="Destacado"
+                             FontSize="11"
+                             TextColor="White"
+                             FontAttributes="Bold"/>
+                    </Border>
+                  </HorizontalStackLayout>
+                  <Border BackgroundColor="#CC000000"
+                          StrokeThickness="0"
+                          Padding="6,3"
+                          StrokeShape="{RoundRectangle CornerRadius=12}"
+                          HorizontalOptions="Start"
+                          VerticalOptions="Start"
+                          Margin="6"
+                          IsVisible="{Binding IsFeatured}">
+                    <Label Text="Destacado"
+                           FontSize="11"
+                           TextColor="White"
+                           FontAttributes="Bold"/>
+                  </Border>
+                  <Border BackgroundColor="#E53935"
+                          StrokeThickness="0"
+                          Padding="6,3"
+                          StrokeShape="{RoundRectangle CornerRadius=12}"
+                          HorizontalOptions="End"
+                          VerticalOptions="Start"
+                          Margin="6"
+                          IsVisible="{Binding ShowUnavailable}">
+                    <Label Text="No disp."
+                           FontSize="11"
+                           TextColor="White"
+                           FontAttributes="Bold"/>
+                  </Border>
+                </Grid>
+
+                <VerticalStackLayout Grid.Row="1" Spacing="4">
                   <Label Text="{Binding Title}"
                          FontAttributes="Bold"
-                         LineBreakMode="TailTruncation"
-                         MaxLines="2"/>
+                         FontSize="17"
+                         LineBreakMode="WordWrap"
+                         MaxLines="3"/>
                   <Label Text="{Binding Subtitle}"
                          FontSize="12"
                          TextColor="{AppThemeBinding Light=#6A6A6A, Dark=#B0B0B0}"
                          LineBreakMode="TailTruncation"
                          MaxLines="2"
                          IsVisible="{Binding HasSubtitle}"/>
-                  <Label Text="{Binding ReferenceLabel}"
-                         FontSize="11"
-                         TextColor="{AppThemeBinding Light=#8A8A8A, Dark=#888}"
-                         IsVisible="{Binding HasReferenceLabel}"/>
                 </VerticalStackLayout>
 
-                <HorizontalStackLayout Grid.Row="1"
-                                       Spacing="6"
-                                       VerticalOptions="End"
-                                       HorizontalOptions="Fill">
+                <Grid Grid.Row="2"
+                      ColumnDefinitions="*,Auto"
+                      VerticalOptions="End"
+                      ColumnSpacing="8">
                   <Label Text="{Binding PriceLabel}"
                          FontAttributes="Bold"
-                         FontSize="16"
-                         VerticalOptions="Center"
-                         HorizontalOptions="StartAndExpand"/>
+                         FontSize="18"
+                         VerticalOptions="Center"/>
                   <Button Text="Agregar"
+                          Grid.Column="1"
+                          BackgroundColor="#7b2d55"
+                          TextColor="White"
                           CornerRadius="18"
-                          Padding="14,6"
+                          Padding="12,6"
+                          FontSize="13"
                           Command="{Binding Source={x:Reference Name=PageRoot}, Path=BindingContext.ConfigureItemCommand}"
                           CommandParameter="{Binding}"/>
-                </HorizontalStackLayout>
+                </Grid>
               </Grid>
             </Border>
           </DataTemplate>
         </CollectionView.ItemTemplate>
+        
       </CollectionView>
     </Grid>
-
-    <Button Grid.RowSpan="3"
-            Text="🧾 Carrito (0)" x:Name="FabCart"
-            BackgroundColor="{AppThemeBinding Light=#521739, Dark=#D5B2C2}"
-            TextColor="White" CornerRadius="24" Padding="20,12"
-            Clicked="OpenCart_Clicked"
-            HorizontalOptions="End" VerticalOptions="End"
-            Margin="16,24"/>
 
     <ActivityIndicator Grid.RowSpan="3"
                        x:Name="LoadingIndicator"

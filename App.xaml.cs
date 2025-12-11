@@ -9,6 +9,7 @@ using System.Text;
 using System.Text.Json;
 using System.Net.Http;
 using Imdeliceapp.Services; // ← Perms
+using Imdeliceapp.Helpers;
 
 #if ANDROID            // ⬅️ solo Android
 using Imdeliceapp.Platforms.Android;
@@ -89,6 +90,7 @@ public partial class App : Application
                     // #endif
                     var baseUrl = Application.Current.Resources["urlbase"].ToString().TrimEnd('/');
                     _ = Task.Run(() => SyncPermsFromServerAsync(baseUrl, token));
+                    AuthHelper.IniciarWatcherExpiracion();
                 
                     return new AppShell();
                 }

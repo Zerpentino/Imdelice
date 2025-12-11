@@ -330,8 +330,6 @@ public partial class TakeOrderPage : ContentPage
             }
 
             SelectedSection = Sections.FirstOrDefault();
-            SectionsView.SelectedItem = SelectedSection;
-
             UpdateVisibleItems();
             return true;
         }
@@ -356,7 +354,10 @@ public partial class TakeOrderPage : ContentPage
     {
         var list = items
             .Where(i => i.Raw?.@ref != null)
-            .Where(i => i.Raw.@ref?.product?.imageUrl != null || i.Raw.@ref?.variant?.imageUrl != null)
+            .Where(i =>
+                i.Raw.@ref?.product?.imageUrl != null
+                || i.Raw.@ref?.variant?.imageUrl != null
+                || i.Raw.@ref?.variant?.product?.imageUrl != null)
             .ToList();
         if (list.Count == 0) return;
 
@@ -369,7 +370,9 @@ public partial class TakeOrderPage : ContentPage
         var sem = new SemaphoreSlim(4);
         var tasks = list.Select(async item =>
         {
-            var rawPath = item.Raw.@ref?.variant?.imageUrl ?? item.Raw.@ref?.product?.imageUrl;
+            var rawPath = item.Raw.@ref?.variant?.imageUrl
+                        ?? item.Raw.@ref?.variant?.product?.imageUrl
+                        ?? item.Raw.@ref?.product?.imageUrl;
             if (string.IsNullOrWhiteSpace(rawPath)) return;
 
             var path = rawPath!.StartsWith('/') ? rawPath : "/" + rawPath;
@@ -424,7 +427,7 @@ public partial class TakeOrderPage : ContentPage
             VisibleItems.Add(item);
 
         if (!VisibleItems.Any())
-            SectionsView.SelectedItem = null;
+            return;
     }
 
     void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -433,9 +436,22 @@ public partial class TakeOrderPage : ContentPage
         UpdateVisibleItems();
     }
 
+    void OpenMenuPicker_Clicked(object sender, EventArgs e)
+    {
+        MenuPicker?.Focus();
+    }
+
     void SectionsView_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (e.CurrentSelection?.FirstOrDefault() is MenuSectionVm section)
+        {
+            SelectedSection = section;
+        }
+    }
+
+    void SectionChip_Tapped(object sender, TappedEventArgs e)
+    {
+        if (e.Parameter is MenuSectionVm section)
         {
             SelectedSection = section;
         }
@@ -714,8 +730,8 @@ public partial class TakeOrderPage : ContentPage
                 priceCents = product.priceCents,
                 isActive = product.isActive,
                 isAvailable = product.isAvailable ?? true,
-                imageUrl = null,
-                hasImage = false
+                imageUrl = product.imageUrl,
+                hasImage = product.hasImage ?? false
             };
 
             var list = new List<MenuItemVm>();
@@ -723,6 +739,11 @@ public partial class TakeOrderPage : ContentPage
             {
                 foreach (var variant in product.variants.Where(v => v?.id > 0 && (v.isActive ?? true)))
                 {
+                    // si la variante no tiene imagen, usar la del producto
+                    var variantImage = string.IsNullOrWhiteSpace(variant.imageUrl)
+                        ? product.imageUrl
+                        : variant.imageUrl;
+
                     var variantRef = new MenusApi.MenuPublicVariantReference
                     {
                         id = variant.id,
@@ -731,8 +752,8 @@ public partial class TakeOrderPage : ContentPage
                         isActive = variant.isActive ?? true,
                         isAvailable = variant.isAvailable ?? true,
                         product = productRef,
-                        imageUrl = variant.imageUrl,
-                        hasImage = variant.hasImage ?? false,
+                        imageUrl = variantImage,
+                        hasImage = variant.hasImage ?? product.hasImage ?? false,
                         modifierGroups = variant.modifierGroups ?? new List<VariantModifierGroupLinkDTO>()
                     };
 
@@ -1050,7 +1071,9 @@ public partial class TakeOrderPage : ContentPage
         var count = _cart.Sum(c => c.Quantity);
         var total = _cart.Sum(c => c.LineTotal);
         var amountText = total > 0 ? $" · {total.ToString("$0.00", CultureInfo.CurrentCulture)}" : string.Empty;
-        FabCart.Text = $"🧾 Carrito ({count}){amountText}";
+
+        if (CartTopButton != null)
+            CartTopButton.Text = $"Carrito ({count}){amountText}";
     }
 
     async void OpenCart_Clicked(object sender, EventArgs e)
@@ -1332,9 +1355,18 @@ public partial class TakeOrderPage : ContentPage
         readonly Color _selectedBackground = Color.FromArgb("#894164");
         readonly Color _selectedText = Colors.White;
         readonly Color _unselectedText = Color.FromArgb("#894164");
+        readonly Color _selectedBorder = Color.FromArgb("#6a1b46");
+        readonly Color _unselectedBorder = Color.FromArgb("#e2d6e4");
+        readonly Color _selectedBadgeBg = Color.FromArgb("#fddf8d");
+        readonly Color _selectedBadgeText = Color.FromArgb("#5b1a3f");
+        readonly Color _unselectedBadgeBg = Color.FromArgb("#e9ddee");
+        readonly Color _unselectedBadgeText = Color.FromArgb("#6a1b46");
 
         Color _chipBackground = Colors.Transparent;
         Color _chipTextColor;
+        Color _chipBorderColor;
+        Color _badgeBackground;
+        Color _badgeTextColor;
         bool _isSelected;
 
         public MenuSectionVm(int id, string name, int position)
@@ -1344,6 +1376,9 @@ public partial class TakeOrderPage : ContentPage
             Position = position;
             Items = new ObservableCollection<MenuItemVm>();
             _chipTextColor = _unselectedText;
+            _chipBorderColor = _unselectedBorder;
+            _badgeBackground = _unselectedBadgeBg;
+            _badgeTextColor = _unselectedBadgeText;
         }
 
         public int Id { get; }
@@ -1384,12 +1419,48 @@ public partial class TakeOrderPage : ContentPage
             }
         }
 
+        public Color ChipBorderColor
+        {
+            get => _chipBorderColor;
+            private set
+            {
+                if (_chipBorderColor == value) return;
+                _chipBorderColor = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public Color BadgeBackground
+        {
+            get => _badgeBackground;
+            private set
+            {
+                if (_badgeBackground == value) return;
+                _badgeBackground = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public Color BadgeTextColor
+        {
+            get => _badgeTextColor;
+            private set
+            {
+                if (_badgeTextColor == value) return;
+                _badgeTextColor = value;
+                OnPropertyChanged();
+            }
+        }
+
         public int ItemsCount => Items.Count;
 
         public void RefreshChipColors()
         {
-            ChipBackground = IsSelected ? _selectedBackground : Color.FromArgb("#f0ecf0");
+            ChipBackground = IsSelected ? _selectedBackground : Color.FromArgb("#f4eef6");
             ChipTextColor = IsSelected ? _selectedText : _unselectedText;
+            ChipBorderColor = IsSelected ? _selectedBorder : _unselectedBorder;
+            BadgeBackground = IsSelected ? _selectedBadgeBg : _unselectedBadgeBg;
+            BadgeTextColor = IsSelected ? _selectedBadgeText : _unselectedBadgeText;
         }
 
         public void SetSelected(bool value)
@@ -1438,6 +1509,15 @@ public partial class TakeOrderPage : ContentPage
         public bool IsProduct => string.Equals(Kind, "PRODUCT", StringComparison.OrdinalIgnoreCase);
         public bool IsCombo => string.Equals(Kind, "COMBO", StringComparison.OrdinalIgnoreCase);
         public IReadOnlyList<ComboComponent> ComboComponents { get; init; } = Array.Empty<ComboComponent>();
+        public bool IsFeatured => Raw?.isFeatured ?? false;
+        public bool IsAvailable =>
+            Raw?.@ref?.variant?.isAvailable
+            ?? Raw?.@ref?.product?.isAvailable
+            ?? Raw?.isActive
+            ?? true;
+        public bool ShowUnavailable => !IsAvailable;
+        public string? TypeLabel { get; init; }
+        public bool HasTypeLabel => !string.IsNullOrWhiteSpace(TypeLabel);
 
         public bool Matches(string query)
         {
@@ -1457,6 +1537,7 @@ public partial class TakeOrderPage : ContentPage
             int? variantId = null;
             int? optionId = null;
             ImageSource? image = null;
+            string? typeLabel = null;
 
             var components = reference?.components?
                 .Select(ComboComponent.From)
@@ -1477,11 +1558,12 @@ public partial class TakeOrderPage : ContentPage
                     price = (dto.displayPriceCents ?? product.priceCents)?.ToCurrency();
                     productId = product.id;
                     image = BuildImage(product.imageUrl);
+                    typeLabel = product.type ?? "Producto";
                     break;
                 case "VARIANT":
                     var variant = reference?.variant;
                     if (variant is null) return null;
-                    var parent = variant.product;
+                    var parent = variant.product ?? reference?.product;
                     if (string.IsNullOrWhiteSpace(resolvedTitle))
                         resolvedTitle = variant.name ?? parent?.name ?? $"Variante #{variant.id}";
                     subtitle = parent?.name;
@@ -1489,7 +1571,12 @@ public partial class TakeOrderPage : ContentPage
                     price = (dto.displayPriceCents ?? variant.priceCents ?? parent?.priceCents)?.ToCurrency();
                     variantId = variant.id;
                     productId = parent?.id;
-                    image = BuildImage(variant.imageUrl) ?? BuildImage(parent?.imageUrl);
+                    var parentImage = parent?.imageUrl;
+                    var chosenImage = !string.IsNullOrWhiteSpace(variant.imageUrl)
+                        ? variant.imageUrl
+                        : parentImage;
+                    image = BuildImage(chosenImage);
+                    typeLabel = "Variante";
                     break;
                 case "OPTION":
                     var option = reference?.option;
@@ -1499,6 +1586,7 @@ public partial class TakeOrderPage : ContentPage
                     subtitle = "Opción de modificador";
                     price = (dto.displayPriceCents ?? option.priceExtraCents)?.ToCurrency();
                     optionId = option.id;
+                    typeLabel = "Opción";
                     break;
                 default:
                     return null;
@@ -1513,10 +1601,7 @@ public partial class TakeOrderPage : ContentPage
 
             var referenceLabel = dto.refType switch
             {
-                "VARIANT" => $"Variante #{dto.refId}",
-                "OPTION" => $"Opción #{dto.refId}",
-                "COMBO" => $"Combo #{dto.refId}",
-                _ => $"Producto #{dto.refId}"
+                _ => string.Empty
             };
 
             return new MenuItemVm
@@ -1536,7 +1621,10 @@ public partial class TakeOrderPage : ContentPage
                 UnitPrice = price ?? 0m,
                 ImageSource = image,
                 Raw = dto,
-                ComboComponents = components
+                ComboComponents = components,
+                TypeLabel = string.Equals(dto.refType, "COMBO", StringComparison.OrdinalIgnoreCase)
+                    ? "Combo"
+                    : typeLabel
             };
         }
 

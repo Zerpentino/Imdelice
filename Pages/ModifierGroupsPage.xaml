@@ -122,7 +122,8 @@
   <VerticalStackLayout Grid.Column="1" Spacing="4">
     <Label Text="{Binding name}"
            FontAttributes="Bold"
-           LineBreakMode="TailTruncation"
+           LineBreakMode="WordWrap"
+           MaxLines="3"
            TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
 
     <Label Text="{Binding description}"

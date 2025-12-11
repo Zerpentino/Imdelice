@@ -42,18 +42,19 @@ public partial class SectionItemsPage : ContentPage
     public bool CanDelete => Perms.MenusDelete;
     public bool ShowTrashFab => (CanUpdate || CanDelete) && _trash.Count > 0;
 
-    readonly ObservableCollection<MenuItemVm> _items = new();
     readonly List<MenuItemVm> _all = new();
     readonly List<MenuItemVm> _trash = new();
+    CancellationTokenSource? _filterCts;
 
     bool _silenceSwitch;
     readonly HashSet<int> _busyToggles = new();
+    bool _isLoading;
+    CancellationTokenSource? _loadCts;
 
     public SectionItemsPage()
     {
         InitializeComponent();
         BindingContext = this;
-        ItemsCV.ItemsSource = _items;
     }
 
     protected override async void OnAppearing()
@@ -73,21 +74,41 @@ public partial class SectionItemsPage : ContentPage
             return;
         }
 
-        await CargarTodoAsync();
+        if (_isLoading) return;
+        _isLoading = true;
+        _loadCts?.Cancel();
+        _loadCts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        try
+        {
+            await CargarTodoAsync(_loadCts.Token);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
     }
 
-    async Task CargarTodoAsync()
+    protected override void OnDisappearing()
+    {
+        _loadCts?.Cancel();
+        _filterCts?.Cancel();
+        base.OnDisappearing();
+    }
+
+    async Task CargarTodoAsync(CancellationToken ct = default)
     {
         try
         {
+            ct.ThrowIfCancellationRequested();
+
             if (Connectivity.Current.NetworkAccess != NetworkAccess.Internet)
             {
                 await ErrorHandler.MostrarErrorUsuario("Sin conexión a Internet.");
                 return;
             }
 
-            var activos = await _menusApi.GetSectionItemsAsync(SectionId);
-            var eliminados = await _menusApi.GetSectionItemsTrashAsync(SectionId);
+            var activos = await _menusApi.GetSectionItemsAsync(SectionId, ct);
+            var eliminados = await _menusApi.GetSectionItemsTrashAsync(SectionId, ct);
 
             _all.Clear();
             foreach (var dto in activos)
@@ -104,6 +125,10 @@ public partial class SectionItemsPage : ContentPage
         {
             await ErrorHandler.MostrarErrorUsuario(ex.Message);
         }
+        catch (TaskCanceledException)
+        {
+            // cancel silencioso (navegación o timeout)
+        }
         catch (Exception ex)
         {
             await ErrorHandler.MostrarErrorTecnico(ex, "Ítems – Cargar");
@@ -112,20 +137,39 @@ public partial class SectionItemsPage : ContentPage
 
     void ApplyFilter(string? query)
     {
-        query = (query ?? string.Empty).Trim().ToLowerInvariant();
-        _items.Clear();
+        // Debounce para no recalcular en cada tecla
+        _filterCts?.Cancel();
+        var cts = new CancellationTokenSource();
+        _filterCts = cts;
 
-        IEnumerable<MenuItemVm> src = _all;
-        if (!string.IsNullOrEmpty(query))
+        _ = Task.Run(async () =>
         {
-            src = src.Where(i =>
-                (i.Title ?? string.Empty).ToLowerInvariant().Contains(query) ||
-                i.TypeBadge.ToLowerInvariant().Contains(query) ||
-                i.ReferenceLabel.ToLowerInvariant().Contains(query));
-        }
+            try
+            {
+                await Task.Delay(150, cts.Token);
+                var q = (query ?? string.Empty).Trim().ToLowerInvariant();
 
-        foreach (var item in src.OrderBy(i => i.position).ThenBy(i => i.Title, StringComparer.CurrentCultureIgnoreCase))
-            _items.Add(item);
+                IEnumerable<MenuItemVm> src = _all;
+                if (!string.IsNullOrEmpty(q))
+                {
+                    src = src.Where(i =>
+                        (i.Title ?? string.Empty).ToLowerInvariant().Contains(q) ||
+                        i.TypeBadge.ToLowerInvariant().Contains(q) ||
+                        i.ReferenceLabel.ToLowerInvariant().Contains(q));
+                }
+
+                var result = src
+                    .OrderBy(i => i.position)
+                    .ThenBy(i => i.Title, StringComparer.CurrentCultureIgnoreCase)
+                    .ToList();
+
+                await MainThread.InvokeOnMainThreadAsync(() =>
+                {
+                    ItemsCV.ItemsSource = result;
+                });
+            }
+            catch (TaskCanceledException) { }
+        }, cts.Token);
     }
 
     void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -135,7 +179,9 @@ public partial class SectionItemsPage : ContentPage
     {
         try
         {
-            await CargarTodoAsync();
+            _loadCts?.Cancel();
+            _loadCts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+            await CargarTodoAsync(_loadCts.Token);
         }
         finally
         {
@@ -168,7 +214,7 @@ public partial class SectionItemsPage : ContentPage
             return;
         }
 
-        if ((sender as SwipeItem)?.BindingContext is not MenuItemVm vm) return;
+        if ((sender as BindableObject)?.BindingContext is not MenuItemVm vm) return;
 
         var route = $"{nameof(MenuItemEditorPage)}?mode=edit" +
             $"&itemId={vm.id}" +
@@ -195,7 +241,7 @@ public partial class SectionItemsPage : ContentPage
             return;
         }
 
-        if ((sender as SwipeItem)?.BindingContext is not MenuItemVm vm) return;
+        if ((sender as BindableObject)?.BindingContext is not MenuItemVm vm) return;
 
         var confirm = await DisplayAlert("Enviar a papelera", $"¿Enviar “{vm.Title}” a la papelera?", "Sí", "Cancelar");
         if (!confirm) return;
@@ -319,7 +365,7 @@ public partial class SectionItemsPage : ContentPage
         }
     }
 
-    class MenuItemVm : INotifyPropertyChanged
+    public class MenuItemVm : INotifyPropertyChanged
     {
         public int id { get; set; }
         public int sectionId { get; set; }

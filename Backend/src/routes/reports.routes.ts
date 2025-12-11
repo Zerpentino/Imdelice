@@ -10,13 +10,13 @@ router.use(authenticate);
 
 router.get(
   "/payments",
-  authorize("orders.read"),
+  authorize("expenses.read"),
   asyncHandler(reportsController.payments)
 );
 
 router.get(
   "/profit-loss",
-  authorize("orders.read"),
+  authorize("expenses.read"),
   asyncHandler(reportsController.profitLoss)
 );
 

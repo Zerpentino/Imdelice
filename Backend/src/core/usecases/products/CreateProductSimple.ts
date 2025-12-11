@@ -9,6 +9,7 @@ export class CreateProductSimple {
     description?: string;
     sku?: string;
     barcode?: string | null;
+    trackInventory?: boolean;
     image?: { buffer: Buffer; mimeType: string; size: number }; // 👈 AQUI
   }) {
     return this.repo.createSimple(input);

@@ -54,6 +54,7 @@ public partial class ProductEditorPage : ContentPage
     public string? barcode { get; set; }
     public string? imageUrl { get; set; }
     public bool isActive { get; set; }
+    public bool? trackInventory { get; set; }
     public List<VariantDTO> variants { get; set; } = new();
 
     // NUEVO: viene en GET /api/products/:id cuando es COMBO
@@ -116,6 +117,7 @@ record ComboItemInput(
         public int? comboItemId { get; set; }
         public int? originalComponentProductId { get; set; }
         public int? originalComponentVariantId { get; set; }
+        public bool IsRestoring { get; set; }
         public Picker? PkCategory { get; set; }
         public Picker? PkProduct { get; set; }
         public Picker? PkVariant { get; set; }
@@ -155,6 +157,7 @@ record ComboItemInput(
     int _origCategoryId;
     int? _origPriceCents;
     List<VariantDTO> _origVariants = new();
+    bool _origTrackInventory = true;
 
     List<CategoryDTO> _cats = new();
     // Piezas originales del combo (para diff al guardar)
@@ -227,6 +230,7 @@ record ComboItemInput(
     static StringContent Txt(string? v) => new(v ?? "", Encoding.UTF8, "text/plain");
     // ⬇️ importante: que sea application/json (no text/plain)
     static StringContent Num(int v) => new(v.ToString(), Encoding.UTF8, "application/json");
+    static StringContent BoolContent(bool v) => new(v ? "true" : "false", Encoding.UTF8, "application/json");
     static StringContent JsonText(string json) => new(json, Encoding.UTF8, "application/json");
     static string? NormalizeBarcode(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     static JsonSerializerOptions JsonWriteAllowNulls() => new()
@@ -330,6 +334,7 @@ record ComboItemInput(
         {
             if (PkType.SelectedIndex < 0) PkType.SelectedIndex = 0;
             TogglePanels();
+            SwTrackInventory.IsToggled = true;
         }
 
         if (IsEdit && ProductId > 0)
@@ -435,6 +440,7 @@ record ComboItemInput(
             _origCategoryId = p.categoryId;
             _origPriceCents = p.priceCents;
             _origVariants = p.variants ?? new();
+            _origTrackInventory = p.trackInventory ?? true;
 
             _baseUrlCache = Application.Current.Resources["urlbase"].ToString().TrimEnd('/');
 
@@ -453,6 +459,7 @@ record ComboItemInput(
             TxtSku.Text = _origSku;
             TxtBarcode.Text = _origBarcode ?? string.Empty;
             TxtDesc.Text = _origDesc;
+            SwTrackInventory.IsToggled = _origTrackInventory;
 
             TogglePanels();
             if (_origType == "COMBO")
@@ -499,6 +506,7 @@ record ComboItemInput(
                     // guarda metadatos en la fila
                     if (row.BindingContext is ComboRowContext ctx)
                     {
+                        ctx.IsRestoring = true;
                         ctx.comboItemId = it.id;
                         ctx.originalComponentProductId = it.componentProductId;
                         ctx.originalComponentVariantId = it.componentVariantId;
@@ -525,6 +533,15 @@ record ComboItemInput(
                                 pkProd.SelectedItem = list.FirstOrDefault(p => p.id == it.componentProductId);
                             }
                         }
+
+                        // Con la categoría y producto cargados, seleccionar la variante (si aplica)
+                        rowCtx.PendingVariantId = it.componentVariantId;
+                        rowCtx.IsRestoring = false;
+                        await ConfigureVariantPickerAsync(rowCtx);
+                    }
+                    else if (row.BindingContext is ComboRowContext fallbackCtx)
+                    {
+                        fallbackCtx.IsRestoring = false;
                     }
                 }
 
@@ -626,6 +643,8 @@ record ComboItemInput(
         {
             if (frame.BindingContext is ComboRowContext rowCtx && pkCat.SelectedItem is CategoryDTO c)
             {
+                if (rowCtx.IsRestoring) return;
+
                 rowCtx.PkVariant!.ItemsSource = null;
                 rowCtx.PkVariant.IsVisible = false;
                 rowCtx.PkVariant.IsEnabled = false;
@@ -645,7 +664,10 @@ record ComboItemInput(
         pkProd.SelectedIndexChanged += async (_, __) =>
         {
             if (frame.BindingContext is ComboRowContext rowCtx)
+            {
+                if (rowCtx.IsRestoring) return;
                 await ConfigureVariantPickerAsync(rowCtx);
+            }
         };
 
         var headerGrid = new Grid
@@ -832,6 +854,7 @@ record ComboItemInput(
         var sku = TxtSku.Text?.Trim();
         var barcode = NormalizeBarcode(TxtBarcode.Text);
         var barcodeChanged = !string.Equals(barcode ?? string.Empty, _origBarcode ?? string.Empty, StringComparison.Ordinal);
+        var trackChanged = SwTrackInventory.IsToggled != _origTrackInventory;
         var desc = TxtDesc.Text?.Trim();
 
         if (cat is null) { await DisplayAlert("Categoría", "Selecciona la categoría.", "OK"); return; }
@@ -916,7 +939,8 @@ record ComboItemInput(
                         priceCents = (int)Math.Round(priceMxn!.Value * 100),// <- number
                         description = string.IsNullOrWhiteSpace(desc) ? null : desc,
                         sku = string.IsNullOrWhiteSpace(sku) ? null : sku,
-                        barcode = barcode
+                        barcode = barcode,
+                        trackInventory = SwTrackInventory.IsToggled
                     };
                     var json = JsonSerializer.Serialize(dto, _jsonWrite);
                     respCreate = await http.PostAsync("/api/products/simple",
@@ -932,6 +956,7 @@ record ComboItemInput(
                         description = string.IsNullOrWhiteSpace(desc) ? null : desc,
                         sku = string.IsNullOrWhiteSpace(sku) ? null : sku,
                         barcode = barcode,
+                        trackInventory = SwTrackInventory.IsToggled,
                         variants = variantsInput.Select(v => new { name = v.name, priceCents = v.cents }).ToList()
                     };
                     var json = JsonSerializer.Serialize(dto, _jsonWrite);
@@ -970,6 +995,7 @@ record ComboItemInput(
                         description = string.IsNullOrWhiteSpace(desc) ? null : desc,
                         sku = string.IsNullOrWhiteSpace(sku) ? null : sku,
                         barcode = barcode,
+                        trackInventory = SwTrackInventory.IsToggled,
                         items = comboInputs.Select(i => new
                         {
                             componentProductId = i.ComponentProductId,
@@ -1165,14 +1191,18 @@ record ComboItemInput(
                                         .Select(o => o.id)
                                         .ToList();
 
-                        foreach (var delId in toDelete)
+                        if (toDelete.Count > 0)
                         {
-                            var rDel = await http.DeleteAsync($"/api/products/combo-items/{delId}");
-                            if (!rDel.IsSuccessStatusCode)
+                            using var delContent = new StringContent("[]", Encoding.UTF8, "application/json");
+                            var json = JsonSerializer.Serialize(new { ids = toDelete }, _jsonWrite);
+                            var respDel = await http.PostAsync("/api/products/combo-items/bulk-delete",
+                                new StringContent(json, Encoding.UTF8, "application/json"));
+
+                            if (!respDel.IsSuccessStatusCode)
                             {
-                                var bDel = await rDel.Content.ReadAsStringAsync();
+                                var bDel = await respDel.Content.ReadAsStringAsync();
                                 await DisplayAlert("Aviso",
-                                    $"No se pudo eliminar pieza #{delId}: {ExtractApiError(bDel)}", "OK");
+                                    $"No se pudieron eliminar algunas piezas: {ExtractApiError(bDel)}", "OK");
                             }
                         }
 
@@ -1217,16 +1247,22 @@ record ComboItemInput(
                         }
 
                         // 2b) Borrar las que cambiaron de producto (se recrean abajo)
-                        foreach (var ch in changedProductRows)
+                        if (changedProductRows.Count > 0)
                         {
-                            if (!ch.ComboItemId.HasValue)
-                                continue;
-                            var rDel = await http.DeleteAsync($"/api/products/combo-items/{ch.ComboItemId.Value}");
-                            if (!rDel.IsSuccessStatusCode)
+                            var idsToReplace = changedProductRows
+                                .Where(c => c.ComboItemId.HasValue)
+                                .Select(c => c.ComboItemId!.Value)
+                                .ToList();
+
+                            var json = JsonSerializer.Serialize(new { ids = idsToReplace }, _jsonWrite);
+                            var respDel = await http.PostAsync("/api/products/combo-items/bulk-delete",
+                                new StringContent(json, Encoding.UTF8, "application/json"));
+
+                            if (!respDel.IsSuccessStatusCode)
                             {
-                                var bDel = await rDel.Content.ReadAsStringAsync();
+                                var bDel = await respDel.Content.ReadAsStringAsync();
                                 await DisplayAlert("Aviso",
-                                    $"No se pudo eliminar pieza #{ch.ComboItemId.Value} (para reemplazarla): {ExtractApiError(bDel)}", "OK");
+                                    $"No se pudieron eliminar piezas para reemplazar: {ExtractApiError(bDel)}", "OK");
                             }
                         }
 
@@ -1248,10 +1284,6 @@ record ComboItemInput(
                         {
                             var payload = JsonSerializer.Serialize(new { items = toCreate }, _jsonWrite);
 
-                            // Debug útil para el P2003: ver a qué ID le estás pegando y el JSON que mandas.
-                            // await DisplayAlert("Debug combo-items",
-                            //     $"POST /api/products/{ProductId}/combo-items\n\n{payload}", "OK");
-
                             var rAdd = await http.PostAsync($"/api/products/{ProductId}/combo-items",
                                             new StringContent(payload, Encoding.UTF8, "application/json"));
                             var bAdd = await rAdd.Content.ReadAsStringAsync();
@@ -1260,14 +1292,6 @@ record ComboItemInput(
                             {
                                 await DisplayAlert("Aviso",
                                     $"No se pudieron agregar nuevas piezas: {ExtractApiError(bAdd)}", "OK");
-                            }
-                            else
-                            {
-                                // Verificación visual
-                                var rCheck = await http.GetAsync($"/api/products/{ProductId}");
-                                var bCheck = await rCheck.Content.ReadAsStringAsync();
-                                // await DisplayAlert("Producto (después de guardar)", bCheck, "OK");
-
                             }
                         }
                     }
@@ -1293,6 +1317,7 @@ record ComboItemInput(
 
                     if (!string.IsNullOrWhiteSpace(desc) && desc != _origDesc) form.Add(Txt(desc), "description");
                     if (!string.IsNullOrWhiteSpace(sku) && sku != _origSku) form.Add(Txt(sku), "sku");
+                    if (trackChanged) form.Add(BoolContent(SwTrackInventory.IsToggled), "trackInventory");
 
                     AddImageIfAny(form);
 
@@ -1349,6 +1374,7 @@ record ComboItemInput(
                         patch["barcode"] = barcode;
                         if (barcode == null) patchIncludesNull = true;
                     }
+                    if (trackChanged) patch["trackInventory"] = SwTrackInventory.IsToggled;
 
                     if (patch.Count > 0)
                     {

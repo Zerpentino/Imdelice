@@ -7,6 +7,7 @@ export const CreateProductSimpleDto = z.object({
   description: z.string().optional(),
   sku: z.string().optional(),
   barcode: z.string().trim().min(3).optional(),
+  trackInventory: z.boolean().optional(),
  // imageUrl: z.string().url().optional(),
 });
 
@@ -25,6 +26,7 @@ export const CreateProductVariantedDto = z.object({
   description: z.string().optional(),
   sku: z.string().optional(),
   barcode: z.string().trim().min(3).optional(),
+  trackInventory: z.boolean().optional(),
   //imageUrl: z.string().url().optional(),
 });
 
@@ -36,7 +38,8 @@ export const UpdateProductDto = z.object({
   sku: z.string().optional(),
   barcode: z.string().trim().min(3).nullable().optional(),
   //imageUrl: z.string().url().optional(),
-  isActive: z.boolean().optional()
+  isActive: z.boolean().optional(),
+  trackInventory: z.boolean().optional()
 });
 // NUEVOS DTOs para conversión
 export const ConvertToVariantedDto = z.object({

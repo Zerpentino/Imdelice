@@ -17,6 +17,7 @@ export interface InventoryItemFilter {
 export interface ListInventoryItemsInput extends InventoryItemFilter {
   categoryId?: number;
   search?: string;
+  trackInventory?: boolean;
 }
 
 export interface ListInventoryMovementsInput {
@@ -47,7 +48,7 @@ export interface IInventoryRepository {
   findItem(filter: InventoryItemFilter): Promise<InventoryItem | null>;
   listItems(filter?: ListInventoryItemsInput): Promise<InventoryItem[]>;
   listMovements(filter?: ListInventoryMovementsInput): Promise<InventoryMovement[]>;
-  createMovement(input: CreateInventoryMovementInput): Promise<InventoryMovement>;
+  createMovement(input: CreateInventoryMovementInput): Promise<InventoryMovement | null>;
   hasOrderMovement(orderId: number, type: InventoryMovementType): Promise<boolean>;
   listLocations(): Promise<InventoryLocation[]>;
   createLocation(data: {

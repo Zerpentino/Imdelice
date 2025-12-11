@@ -1,0 +1,2256 @@
+{
+    "error": null,
+    "data": {
+        "id": 1,
+        "name": "I'm delice",
+        "isActive": true,
+        "publishedAt": null,
+        "version": 1,
+        "createdAt": "2025-10-29T03:41:58.958Z",
+        "updatedAt": "2025-12-02T03:13:27.419Z",
+        "deletedAt": null,
+        "sections": [
+            {
+                "id": 1,
+                "menuId": 1,
+                "name": "Saladas",
+                "position": 1,
+                "isActive": true,
+                "createdAt": "2025-10-29T03:42:30.367Z",
+                "updatedAt": "2025-12-02T03:13:26.775Z",
+                "deletedAt": null,
+                "categoryId": 2,
+                "items": [
+                    {
+                        "id": 8,
+                        "sectionId": 1,
+                        "refType": "PRODUCT",
+                        "refId": 3,
+                        "displayName": "WAFFLE Choriqueso",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-10-29T03:45:05.280Z",
+                        "updatedAt": "2025-11-06T16:52:01.360Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "PRODUCT",
+                            "product": {
+                                "id": 3,
+                                "name": "WAFFLE Choriqueso",
+                                "type": "SIMPLE",
+                                "priceCents": 7500,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "imageUrl": null,
+                                "hasImage": false
+                            }
+                        }
+                    },
+                    {
+                        "id": 9,
+                        "sectionId": 1,
+                        "refType": "VARIANT",
+                        "refId": 19,
+                        "displayName": "Waffle 2 ingredientes",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-10-29T03:46:19.030Z",
+                        "updatedAt": "2025-10-29T06:22:08.723Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "VARIANT",
+                            "variant": {
+                                "id": 19,
+                                "name": "2 ingredientes",
+                                "priceCents": 7500,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "product": {
+                                    "id": 30,
+                                    "name": "Waffle Salado",
+                                    "type": "VARIANTED",
+                                    "priceCents": null,
+                                    "isActive": true,
+                                    "isAvailable": true,
+                                    "imageUrl": null,
+                                    "hasImage": false
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "id": 10,
+                        "sectionId": 1,
+                        "refType": "VARIANT",
+                        "refId": 20,
+                        "displayName": "Waffle 3 ingredientes",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-10-29T03:46:34.785Z",
+                        "updatedAt": "2025-10-29T06:21:46.817Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "VARIANT",
+                            "variant": {
+                                "id": 20,
+                                "name": "3 ingredientes",
+                                "priceCents": 7700,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "product": {
+                                    "id": 30,
+                                    "name": "Waffle Salado",
+                                    "type": "VARIANTED",
+                                    "priceCents": null,
+                                    "isActive": true,
+                                    "isAvailable": true,
+                                    "imageUrl": null,
+                                    "hasImage": false
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "id": 11,
+                        "sectionId": 1,
+                        "refType": "VARIANT",
+                        "refId": 17,
+                        "displayName": "Marquesita 2 ingredintes",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-10-29T03:48:07.150Z",
+                        "updatedAt": "2025-11-27T19:27:27.541Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "VARIANT",
+                            "variant": {
+                                "id": 17,
+                                "name": "2 ingredintes",
+                                "priceCents": 7500,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "product": {
+                                    "id": 29,
+                                    "name": "Marquesita Salada",
+                                    "type": "VARIANTED",
+                                    "priceCents": null,
+                                    "isActive": true,
+                                    "isAvailable": true,
+                                    "imageUrl": null,
+                                    "hasImage": false
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "id": 12,
+                        "sectionId": 1,
+                        "refType": "VARIANT",
+                        "refId": 18,
+                        "displayName": "Marquesita 3 ingredientes",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-10-29T03:48:44.937Z",
+                        "updatedAt": "2025-11-15T00:59:45.354Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "VARIANT",
+                            "variant": {
+                                "id": 18,
+                                "name": "3 ingredientes",
+                                "priceCents": 7700,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "product": {
+                                    "id": 29,
+                                    "name": "Marquesita Salada",
+                                    "type": "VARIANTED",
+                                    "priceCents": null,
+                                    "isActive": true,
+                                    "isAvailable": true,
+                                    "imageUrl": null,
+                                    "hasImage": false
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "id": 15,
+                        "sectionId": 1,
+                        "refType": "PRODUCT",
+                        "refId": 2,
+                        "displayName": "MARQUESITA Choriqueso",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-10-29T06:21:03.656Z",
+                        "updatedAt": "2025-11-06T18:20:10.548Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "PRODUCT",
+                            "product": {
+                                "id": 2,
+                                "name": "MARQUESITA Choriqueso",
+                                "type": "SIMPLE",
+                                "priceCents": 7500,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "imageUrl": null,
+                                "hasImage": false
+                            }
+                        }
+                    },
+                    {
+                        "id": 16,
+                        "sectionId": 1,
+                        "refType": "PRODUCT",
+                        "refId": 26,
+                        "displayName": "Marquesita Suprema",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-10-29T06:21:17.509Z",
+                        "updatedAt": "2025-11-27T19:27:24.066Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "PRODUCT",
+                            "product": {
+                                "id": 26,
+                                "name": "Marquesita Suprema",
+                                "type": "SIMPLE",
+                                "priceCents": 8500,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "imageUrl": null,
+                                "hasImage": false
+                            }
+                        }
+                    },
+                    {
+                        "id": 17,
+                        "sectionId": 1,
+                        "refType": "PRODUCT",
+                        "refId": 21,
+                        "displayName": "Marquesita Vegetariana",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-10-29T06:21:29.942Z",
+                        "updatedAt": "2025-10-29T06:22:26.516Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "PRODUCT",
+                            "product": {
+                                "id": 21,
+                                "name": "Marquesita Vegetariana",
+                                "type": "SIMPLE",
+                                "priceCents": 7900,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "imageUrl": null,
+                                "hasImage": false
+                            }
+                        }
+                    },
+                    {
+                        "id": 18,
+                        "sectionId": 1,
+                        "refType": "PRODUCT",
+                        "refId": 18,
+                        "displayName": "Marquesita Champi",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-10-29T06:21:42.084Z",
+                        "updatedAt": "2025-11-06T18:20:10.547Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "PRODUCT",
+                            "product": {
+                                "id": 18,
+                                "name": "Marquesita Champi",
+                                "type": "SIMPLE",
+                                "priceCents": 7700,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "imageUrl": null,
+                                "hasImage": false
+                            }
+                        }
+                    },
+                    {
+                        "id": 19,
+                        "sectionId": 1,
+                        "refType": "PRODUCT",
+                        "refId": 14,
+                        "displayName": "Marquesita Hawaiana",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-10-29T06:22:04.139Z",
+                        "updatedAt": "2025-11-06T18:19:59.585Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "PRODUCT",
+                            "product": {
+                                "id": 14,
+                                "name": "Marquesita Hawaiana",
+                                "type": "SIMPLE",
+                                "priceCents": 7700,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "imageUrl": null,
+                                "hasImage": false
+                            }
+                        }
+                    },
+                    {
+                        "id": 20,
+                        "sectionId": 1,
+                        "refType": "PRODUCT",
+                        "refId": 9,
+                        "displayName": "Marquesita Americana",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-10-29T06:22:21.611Z",
+                        "updatedAt": "2025-11-12T22:50:22.651Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "PRODUCT",
+                            "product": {
+                                "id": 9,
+                                "name": "Marquesita Americana",
+                                "type": "SIMPLE",
+                                "priceCents": 7700,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "imageUrl": null,
+                                "hasImage": false
+                            }
+                        }
+                    },
+                    {
+                        "id": 21,
+                        "sectionId": 1,
+                        "refType": "PRODUCT",
+                        "refId": 6,
+                        "displayName": "MARQUESITA Creperoni",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-10-29T06:22:37.291Z",
+                        "updatedAt": "2025-11-25T06:29:28.353Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "PRODUCT",
+                            "product": {
+                                "id": 6,
+                                "name": "MARQUESITA Creperoni",
+                                "type": "SIMPLE",
+                                "priceCents": 7700,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "imageUrl": null,
+                                "hasImage": false
+                            }
+                        }
+                    },
+                    {
+                        "id": 22,
+                        "sectionId": 1,
+                        "refType": "PRODUCT",
+                        "refId": 22,
+                        "displayName": "Crepa Suprema",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-10-29T06:23:24.288Z",
+                        "updatedAt": "2025-11-27T19:27:27.403Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "PRODUCT",
+                            "product": {
+                                "id": 22,
+                                "name": "Crepa Suprema",
+                                "type": "SIMPLE",
+                                "priceCents": 8500,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "imageUrl": null,
+                                "hasImage": false
+                            }
+                        }
+                    },
+                    {
+                        "id": 23,
+                        "sectionId": 1,
+                        "refType": "PRODUCT",
+                        "refId": 19,
+                        "displayName": "Crepa Vegetariana",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-10-29T06:23:46.939Z",
+                        "updatedAt": "2025-11-27T19:27:27.480Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "PRODUCT",
+                            "product": {
+                                "id": 19,
+                                "name": "Crepa Vegetariana",
+                                "type": "SIMPLE",
+                                "priceCents": 7900,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "imageUrl": "/products/19/image?v=1764644643069",
+                                "hasImage": true
+                            }
+                        }
+                    },
+                    {
+                        "id": 24,
+                        "sectionId": 1,
+                        "refType": "PRODUCT",
+                        "refId": 15,
+                        "displayName": "Crepa Champi",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-10-29T06:24:23.674Z",
+                        "updatedAt": "2025-12-02T01:54:21.186Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "PRODUCT",
+                            "product": {
+                                "id": 15,
+                                "name": "Crepa Champi",
+                                "type": "SIMPLE",
+                                "priceCents": 7700,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "imageUrl": "/products/15/image?v=1764645185242",
+                                "hasImage": true
+                            }
+                        }
+                    },
+                    {
+                        "id": 25,
+                        "sectionId": 1,
+                        "refType": "PRODUCT",
+                        "refId": 12,
+                        "displayName": "Crepa Hawaiana",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-10-29T06:24:57.806Z",
+                        "updatedAt": "2025-11-27T19:27:27.401Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "PRODUCT",
+                            "product": {
+                                "id": 12,
+                                "name": "Crepa Hawaiana",
+                                "type": "SIMPLE",
+                                "priceCents": 7700,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "imageUrl": "/products/12/image?v=1764645185245",
+                                "hasImage": true
+                            }
+                        }
+                    },
+                    {
+                        "id": 26,
+                        "sectionId": 1,
+                        "refType": "PRODUCT",
+                        "refId": 7,
+                        "displayName": "Crepa Americana",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-10-29T06:25:19.074Z",
+                        "updatedAt": "2025-12-02T01:54:21.155Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "PRODUCT",
+                            "product": {
+                                "id": 7,
+                                "name": "Crepa Americana",
+                                "type": "SIMPLE",
+                                "priceCents": 7700,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "imageUrl": null,
+                                "hasImage": false
+                            }
+                        }
+                    },
+                    {
+                        "id": 27,
+                        "sectionId": 1,
+                        "refType": "PRODUCT",
+                        "refId": 4,
+                        "displayName": "Crepa Creperoni",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-10-29T06:26:23.609Z",
+                        "updatedAt": "2025-12-02T01:54:21.832Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "PRODUCT",
+                            "product": {
+                                "id": 4,
+                                "name": "Crepa Creperoni",
+                                "type": "SIMPLE",
+                                "priceCents": 7700,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "imageUrl": "/products/4/image?v=1764645185241",
+                                "hasImage": true
+                            }
+                        }
+                    },
+                    {
+                        "id": 29,
+                        "sectionId": 1,
+                        "refType": "PRODUCT",
+                        "refId": 1,
+                        "displayName": "CREPA Choriqueso",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-10-29T06:27:29.323Z",
+                        "updatedAt": "2025-12-02T01:54:21.793Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "PRODUCT",
+                            "product": {
+                                "id": 1,
+                                "name": "CREPA Choriqueso",
+                                "type": "SIMPLE",
+                                "priceCents": 7500,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "imageUrl": "/products/1/image?v=1764645185242",
+                                "hasImage": true
+                            }
+                        }
+                    },
+                    {
+                        "id": 41,
+                        "sectionId": 1,
+                        "refType": "VARIANT",
+                        "refId": 42,
+                        "displayName": "Crepa 2 ingredientes",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-11T18:22:16.913Z",
+                        "updatedAt": "2025-12-02T01:54:21.154Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "VARIANT",
+                            "variant": {
+                                "id": 42,
+                                "name": "2 ingredientes",
+                                "priceCents": 7500,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "product": {
+                                    "id": 28,
+                                    "name": "Crepas Saladas",
+                                    "type": "VARIANTED",
+                                    "priceCents": null,
+                                    "isActive": true,
+                                    "isAvailable": true,
+                                    "imageUrl": "/products/28/image?v=1764644643335",
+                                    "hasImage": true
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "id": 42,
+                        "sectionId": 1,
+                        "refType": "VARIANT",
+                        "refId": 43,
+                        "displayName": "Crepa 3 ingredientes",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-11T18:22:35.751Z",
+                        "updatedAt": "2025-12-02T01:54:21.154Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "VARIANT",
+                            "variant": {
+                                "id": 43,
+                                "name": "3 ingredientes",
+                                "priceCents": 7700,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "product": {
+                                    "id": 28,
+                                    "name": "Crepas Saladas",
+                                    "type": "VARIANTED",
+                                    "priceCents": null,
+                                    "isActive": true,
+                                    "isAvailable": true,
+                                    "imageUrl": "/products/28/image?v=1764644643335",
+                                    "hasImage": true
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "id": 43,
+                        "sectionId": 1,
+                        "refType": "PRODUCT",
+                        "refId": 8,
+                        "displayName": "Waffle Americana",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-14T16:37:44.555Z",
+                        "updatedAt": "2025-11-14T16:38:28.193Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "PRODUCT",
+                            "product": {
+                                "id": 8,
+                                "name": "Waffle Americana",
+                                "type": "SIMPLE",
+                                "priceCents": 7700,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "imageUrl": null,
+                                "hasImage": false
+                            }
+                        }
+                    },
+                    {
+                        "id": 44,
+                        "sectionId": 1,
+                        "refType": "PRODUCT",
+                        "refId": 16,
+                        "displayName": "Waffle Champi",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-14T16:38:02.866Z",
+                        "updatedAt": "2025-11-14T16:38:02.866Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "PRODUCT",
+                            "product": {
+                                "id": 16,
+                                "name": "Waffle Champi",
+                                "type": "SIMPLE",
+                                "priceCents": 7700,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "imageUrl": "/products/16/image?v=1763137867949",
+                                "hasImage": true
+                            }
+                        }
+                    },
+                    {
+                        "id": 45,
+                        "sectionId": 1,
+                        "refType": "PRODUCT",
+                        "refId": 5,
+                        "displayName": "WAFFLE Creperoni",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-14T16:38:25.399Z",
+                        "updatedAt": "2025-11-14T16:38:25.399Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "PRODUCT",
+                            "product": {
+                                "id": 5,
+                                "name": "WAFFLE Creperoni",
+                                "type": "SIMPLE",
+                                "priceCents": 7700,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "imageUrl": null,
+                                "hasImage": false
+                            }
+                        }
+                    },
+                    {
+                        "id": 46,
+                        "sectionId": 1,
+                        "refType": "PRODUCT",
+                        "refId": 13,
+                        "displayName": "Waffle Hawaiana",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-14T16:38:47.286Z",
+                        "updatedAt": "2025-11-14T16:38:47.286Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "PRODUCT",
+                            "product": {
+                                "id": 13,
+                                "name": "Waffle Hawaiana",
+                                "type": "SIMPLE",
+                                "priceCents": 7700,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "imageUrl": null,
+                                "hasImage": false
+                            }
+                        }
+                    },
+                    {
+                        "id": 47,
+                        "sectionId": 1,
+                        "refType": "PRODUCT",
+                        "refId": 25,
+                        "displayName": "Waffle Suprema",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-14T16:48:26.223Z",
+                        "updatedAt": "2025-11-14T16:48:26.223Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "PRODUCT",
+                            "product": {
+                                "id": 25,
+                                "name": "Waffle Suprema",
+                                "type": "SIMPLE",
+                                "priceCents": 8500,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "imageUrl": "/products/25/image?v=1764640274451",
+                                "hasImage": true
+                            }
+                        }
+                    },
+                    {
+                        "id": 48,
+                        "sectionId": 1,
+                        "refType": "PRODUCT",
+                        "refId": 20,
+                        "displayName": "Waffle Vegetariana",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-14T16:48:42.296Z",
+                        "updatedAt": "2025-11-14T16:48:42.296Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "PRODUCT",
+                            "product": {
+                                "id": 20,
+                                "name": "Waffle Vegetariana",
+                                "type": "SIMPLE",
+                                "priceCents": 7900,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "imageUrl": null,
+                                "hasImage": false
+                            }
+                        }
+                    }
+                ]
+            },
+            {
+                "id": 2,
+                "menuId": 1,
+                "name": "DULCCES",
+                "position": 2,
+                "isActive": true,
+                "createdAt": "2025-11-06T03:29:47.960Z",
+                "updatedAt": "2025-12-02T03:13:26.775Z",
+                "deletedAt": null,
+                "categoryId": 1,
+                "items": [
+                    {
+                        "id": 30,
+                        "sectionId": 2,
+                        "refType": "PRODUCT",
+                        "refId": 47,
+                        "displayName": "MARQUESITA Frutella",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-06T03:30:51.384Z",
+                        "updatedAt": "2025-11-15T01:21:44.850Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "PRODUCT",
+                            "product": {
+                                "id": 47,
+                                "name": "MARQUESITA Frutella",
+                                "type": "SIMPLE",
+                                "priceCents": 7900,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "imageUrl": "/products/47/image?v=1764645225948",
+                                "hasImage": true
+                            }
+                        }
+                    },
+                    {
+                        "id": 32,
+                        "sectionId": 2,
+                        "refType": "PRODUCT",
+                        "refId": 46,
+                        "displayName": "WAFFLE Frutella",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-06T03:32:27.048Z",
+                        "updatedAt": "2025-11-15T00:58:02.903Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "PRODUCT",
+                            "product": {
+                                "id": 46,
+                                "name": "WAFFLE Frutella",
+                                "type": "SIMPLE",
+                                "priceCents": 7900,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "imageUrl": null,
+                                "hasImage": false
+                            }
+                        }
+                    },
+                    {
+                        "id": 33,
+                        "sectionId": 2,
+                        "refType": "PRODUCT",
+                        "refId": 45,
+                        "displayName": "CREPA Frutella",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-06T03:32:43.347Z",
+                        "updatedAt": "2025-12-02T03:13:19.392Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "PRODUCT",
+                            "product": {
+                                "id": 45,
+                                "name": "CREPA Frutella",
+                                "type": "SIMPLE",
+                                "priceCents": 7900,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "imageUrl": "/products/45/image?v=1764645222107",
+                                "hasImage": true
+                            }
+                        }
+                    },
+                    {
+                        "id": 34,
+                        "sectionId": 2,
+                        "refType": "PRODUCT",
+                        "refId": 44,
+                        "displayName": "MARQUESITA Chocofruit",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-06T03:32:52.782Z",
+                        "updatedAt": "2025-11-15T01:22:37.149Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "PRODUCT",
+                            "product": {
+                                "id": 44,
+                                "name": "MARQUESITA Chocofruit",
+                                "type": "SIMPLE",
+                                "priceCents": 7900,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "imageUrl": "/products/44/image?v=1764645224014",
+                                "hasImage": true
+                            }
+                        }
+                    },
+                    {
+                        "id": 35,
+                        "sectionId": 2,
+                        "refType": "PRODUCT",
+                        "refId": 43,
+                        "displayName": "WAFFLE Chocofruit",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-06T03:33:00.047Z",
+                        "updatedAt": "2025-11-15T00:59:53.887Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "PRODUCT",
+                            "product": {
+                                "id": 43,
+                                "name": "WAFFLE Chocofruit",
+                                "type": "SIMPLE",
+                                "priceCents": 7900,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "imageUrl": "/products/43/image?v=1764639924316",
+                                "hasImage": true
+                            }
+                        }
+                    },
+                    {
+                        "id": 36,
+                        "sectionId": 2,
+                        "refType": "PRODUCT",
+                        "refId": 42,
+                        "displayName": "CREPA Chocofruit",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-06T03:33:28.482Z",
+                        "updatedAt": "2025-12-02T03:13:25.626Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "PRODUCT",
+                            "product": {
+                                "id": 42,
+                                "name": "CREPA Chocofruit",
+                                "type": "SIMPLE",
+                                "priceCents": 7900,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "imageUrl": "/products/42/image?v=1764645222107",
+                                "hasImage": true
+                            }
+                        }
+                    },
+                    {
+                        "id": 37,
+                        "sectionId": 2,
+                        "refType": "PRODUCT",
+                        "refId": 41,
+                        "displayName": "MARQUESITA Plátano Macho",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-06T03:33:42.987Z",
+                        "updatedAt": "2025-11-15T01:23:58.959Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "PRODUCT",
+                            "product": {
+                                "id": 41,
+                                "name": "MARQUESITA Plátano Macho",
+                                "type": "SIMPLE",
+                                "priceCents": 7900,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "imageUrl": null,
+                                "hasImage": false
+                            }
+                        }
+                    },
+                    {
+                        "id": 38,
+                        "sectionId": 2,
+                        "refType": "PRODUCT",
+                        "refId": 40,
+                        "displayName": "WAFFLE Plátano Macho",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-06T03:33:52.531Z",
+                        "updatedAt": "2025-11-15T01:12:50.233Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "PRODUCT",
+                            "product": {
+                                "id": 40,
+                                "name": "WAFFLE Plátano Macho",
+                                "type": "SIMPLE",
+                                "priceCents": 7900,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "imageUrl": "/products/40/image?v=1764271442162",
+                                "hasImage": true
+                            }
+                        }
+                    },
+                    {
+                        "id": 39,
+                        "sectionId": 2,
+                        "refType": "PRODUCT",
+                        "refId": 39,
+                        "displayName": "CREPA Plátano Macho",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-06T03:34:02.949Z",
+                        "updatedAt": "2025-12-02T03:13:19.392Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "PRODUCT",
+                            "product": {
+                                "id": 39,
+                                "name": "CREPA Plátano Macho",
+                                "type": "SIMPLE",
+                                "priceCents": 7900,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "imageUrl": "/products/39/image?v=1764645222249",
+                                "hasImage": true
+                            }
+                        }
+                    },
+                    {
+                        "id": 60,
+                        "sectionId": 2,
+                        "refType": "PRODUCT",
+                        "refId": 31,
+                        "displayName": "CREPA Coronado",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-15T00:57:32.430Z",
+                        "updatedAt": "2025-12-02T03:13:25.666Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "PRODUCT",
+                            "product": {
+                                "id": 31,
+                                "name": "CREPA Coronado",
+                                "type": "SIMPLE",
+                                "priceCents": 7900,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "imageUrl": "/products/31/image?v=1764645222107",
+                                "hasImage": true
+                            }
+                        }
+                    },
+                    {
+                        "id": 61,
+                        "sectionId": 2,
+                        "refType": "PRODUCT",
+                        "refId": 23,
+                        "displayName": "CREPA Delice",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-15T00:57:45.576Z",
+                        "updatedAt": "2025-12-02T03:13:25.688Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "PRODUCT",
+                            "product": {
+                                "id": 23,
+                                "name": "CREPA Delice",
+                                "type": "SIMPLE",
+                                "priceCents": 7900,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "imageUrl": "/products/23/image?v=1764645222107",
+                                "hasImage": true
+                            }
+                        }
+                    },
+                    {
+                        "id": 62,
+                        "sectionId": 2,
+                        "refType": "PRODUCT",
+                        "refId": 33,
+                        "displayName": "MARQUESITA Coronado",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-15T00:57:59.759Z",
+                        "updatedAt": "2025-11-15T01:24:26.384Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "PRODUCT",
+                            "product": {
+                                "id": 33,
+                                "name": "MARQUESITA Coronado",
+                                "type": "SIMPLE",
+                                "priceCents": 7900,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "imageUrl": "/products/33/image?v=1764645224328",
+                                "hasImage": true
+                            }
+                        }
+                    },
+                    {
+                        "id": 63,
+                        "sectionId": 2,
+                        "refType": "PRODUCT",
+                        "refId": 27,
+                        "displayName": "MARQUESITA Delice",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-15T00:58:11.008Z",
+                        "updatedAt": "2025-12-02T03:13:20.085Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "PRODUCT",
+                            "product": {
+                                "id": 27,
+                                "name": "MARQUESITA Delice",
+                                "type": "SIMPLE",
+                                "priceCents": 7900,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "imageUrl": null,
+                                "hasImage": false
+                            }
+                        }
+                    },
+                    {
+                        "id": 64,
+                        "sectionId": 2,
+                        "refType": "PRODUCT",
+                        "refId": 32,
+                        "displayName": "WAFFLE Coronado",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-15T00:58:26.523Z",
+                        "updatedAt": "2025-11-15T00:58:26.523Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "PRODUCT",
+                            "product": {
+                                "id": 32,
+                                "name": "WAFFLE Coronado",
+                                "type": "SIMPLE",
+                                "priceCents": 7900,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "imageUrl": null,
+                                "hasImage": false
+                            }
+                        }
+                    },
+                    {
+                        "id": 65,
+                        "sectionId": 2,
+                        "refType": "PRODUCT",
+                        "refId": 24,
+                        "displayName": "WAFFLE Delice",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-15T00:58:42.554Z",
+                        "updatedAt": "2025-11-15T00:58:42.554Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "PRODUCT",
+                            "product": {
+                                "id": 24,
+                                "name": "WAFFLE Delice",
+                                "type": "SIMPLE",
+                                "priceCents": 7900,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "imageUrl": "/products/24/image?v=1764271427181",
+                                "hasImage": true
+                            }
+                        }
+                    },
+                    {
+                        "id": 66,
+                        "sectionId": 2,
+                        "refType": "VARIANT",
+                        "refId": 31,
+                        "displayName": "CREPA  1 ingrediente",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-15T01:01:05.956Z",
+                        "updatedAt": "2025-12-02T03:13:25.623Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "VARIANT",
+                            "variant": {
+                                "id": 31,
+                                "name": "CREPA 1 ingrediente",
+                                "priceCents": 5500,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "product": {
+                                    "id": 10,
+                                    "name": "CREPAS DULCES",
+                                    "type": "VARIANTED",
+                                    "priceCents": null,
+                                    "isActive": true,
+                                    "isAvailable": true,
+                                    "imageUrl": "/products/10/image?v=1764645222279",
+                                    "hasImage": true
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "id": 67,
+                        "sectionId": 2,
+                        "refType": "VARIANT",
+                        "refId": 32,
+                        "displayName": "CREPA 2 ingrediente",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-15T01:01:32.324Z",
+                        "updatedAt": "2025-12-02T03:13:25.625Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "VARIANT",
+                            "variant": {
+                                "id": 32,
+                                "name": "CREPA 2 ingrediente",
+                                "priceCents": 5900,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "product": {
+                                    "id": 10,
+                                    "name": "CREPAS DULCES",
+                                    "type": "VARIANTED",
+                                    "priceCents": null,
+                                    "isActive": true,
+                                    "isAvailable": true,
+                                    "imageUrl": "/products/10/image?v=1764645222279",
+                                    "hasImage": true
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "id": 68,
+                        "sectionId": 2,
+                        "refType": "VARIANT",
+                        "refId": 33,
+                        "displayName": "CREPA 3 ingrediente",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-15T01:01:53.580Z",
+                        "updatedAt": "2025-12-02T03:13:25.627Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "VARIANT",
+                            "variant": {
+                                "id": 33,
+                                "name": "CREPA 3 ingrediente",
+                                "priceCents": 6400,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "product": {
+                                    "id": 10,
+                                    "name": "CREPAS DULCES",
+                                    "type": "VARIANTED",
+                                    "priceCents": null,
+                                    "isActive": true,
+                                    "isAvailable": true,
+                                    "imageUrl": "/products/10/image?v=1764645222279",
+                                    "hasImage": true
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "id": 76,
+                        "sectionId": 2,
+                        "refType": "VARIANT",
+                        "refId": 55,
+                        "displayName": "MARQUESITA 1 ingrediente",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-15T01:19:58.521Z",
+                        "updatedAt": "2025-12-02T03:13:19.392Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "VARIANT",
+                            "variant": {
+                                "id": 55,
+                                "name": "MARQUESITA 1 ingrediente",
+                                "priceCents": 5500,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "product": {
+                                    "id": 17,
+                                    "name": "MARQUESITAS DULCES",
+                                    "type": "VARIANTED",
+                                    "priceCents": null,
+                                    "isActive": true,
+                                    "isAvailable": true,
+                                    "imageUrl": "/products/17/image?v=1764271305634",
+                                    "hasImage": true
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "id": 77,
+                        "sectionId": 2,
+                        "refType": "VARIANT",
+                        "refId": 56,
+                        "displayName": "MARQUESITA 2 ingrediente",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-15T01:20:13.571Z",
+                        "updatedAt": "2025-12-02T03:13:19.393Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "VARIANT",
+                            "variant": {
+                                "id": 56,
+                                "name": "MARQUESITA 2 ingrediente",
+                                "priceCents": 5900,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "product": {
+                                    "id": 17,
+                                    "name": "MARQUESITAS DULCES",
+                                    "type": "VARIANTED",
+                                    "priceCents": null,
+                                    "isActive": true,
+                                    "isAvailable": true,
+                                    "imageUrl": "/products/17/image?v=1764271305634",
+                                    "hasImage": true
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "id": 78,
+                        "sectionId": 2,
+                        "refType": "VARIANT",
+                        "refId": 57,
+                        "displayName": "MARQUESITA 3 ingrediente",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-15T01:20:27.520Z",
+                        "updatedAt": "2025-11-15T01:24:26.366Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "VARIANT",
+                            "variant": {
+                                "id": 57,
+                                "name": "MARQUESITA 3 ingrediente",
+                                "priceCents": 6400,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "product": {
+                                    "id": 17,
+                                    "name": "MARQUESITAS DULCES",
+                                    "type": "VARIANTED",
+                                    "priceCents": null,
+                                    "isActive": true,
+                                    "isAvailable": true,
+                                    "imageUrl": "/products/17/image?v=1764271305634",
+                                    "hasImage": true
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "id": 79,
+                        "sectionId": 2,
+                        "refType": "VARIANT",
+                        "refId": 58,
+                        "displayName": "MARQUESITA Queso Bola + 1 ingrediente",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-15T01:20:45.453Z",
+                        "updatedAt": "2025-11-15T01:23:04.744Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "VARIANT",
+                            "variant": {
+                                "id": 58,
+                                "name": "MARQUESITA Queso Bola + 1 ingrediente",
+                                "priceCents": 6100,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "product": {
+                                    "id": 17,
+                                    "name": "MARQUESITAS DULCES",
+                                    "type": "VARIANTED",
+                                    "priceCents": null,
+                                    "isActive": true,
+                                    "isAvailable": true,
+                                    "imageUrl": "/products/17/image?v=1764271305634",
+                                    "hasImage": true
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "id": 80,
+                        "sectionId": 2,
+                        "refType": "VARIANT",
+                        "refId": 59,
+                        "displayName": "MARQUESITA Queso Bola + 2 ingrediente",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-15T01:21:12.887Z",
+                        "updatedAt": "2025-11-15T01:21:12.887Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "VARIANT",
+                            "variant": {
+                                "id": 59,
+                                "name": "MARQUESITA Queso Bola + 2 ingrediente",
+                                "priceCents": 6600,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "product": {
+                                    "id": 17,
+                                    "name": "MARQUESITAS DULCES",
+                                    "type": "VARIANTED",
+                                    "priceCents": null,
+                                    "isActive": true,
+                                    "isAvailable": true,
+                                    "imageUrl": "/products/17/image?v=1764271305634",
+                                    "hasImage": true
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "id": 81,
+                        "sectionId": 2,
+                        "refType": "VARIANT",
+                        "refId": 39,
+                        "displayName": "WAFFLE 1 ingrediente",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-15T01:22:21.348Z",
+                        "updatedAt": "2025-11-15T01:22:21.348Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "VARIANT",
+                            "variant": {
+                                "id": 39,
+                                "name": "WAFFLE 1 ingrediente",
+                                "priceCents": 5500,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "product": {
+                                    "id": 11,
+                                    "name": "WAFFLES DULCES",
+                                    "type": "VARIANTED",
+                                    "priceCents": null,
+                                    "isActive": true,
+                                    "isAvailable": true,
+                                    "imageUrl": "/products/11/image?v=1764271450597",
+                                    "hasImage": true
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "id": 82,
+                        "sectionId": 2,
+                        "refType": "VARIANT",
+                        "refId": 40,
+                        "displayName": "WAFFLE 2 ingrediente",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-15T01:22:35.330Z",
+                        "updatedAt": "2025-11-15T01:22:35.330Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "VARIANT",
+                            "variant": {
+                                "id": 40,
+                                "name": "WAFFLE 2 ingrediente",
+                                "priceCents": 5900,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "product": {
+                                    "id": 11,
+                                    "name": "WAFFLES DULCES",
+                                    "type": "VARIANTED",
+                                    "priceCents": null,
+                                    "isActive": true,
+                                    "isAvailable": true,
+                                    "imageUrl": "/products/11/image?v=1764271450597",
+                                    "hasImage": true
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "id": 83,
+                        "sectionId": 2,
+                        "refType": "VARIANT",
+                        "refId": 41,
+                        "displayName": "WAFFLE 3 ingrediente",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-15T01:22:54.965Z",
+                        "updatedAt": "2025-11-15T01:22:54.965Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "VARIANT",
+                            "variant": {
+                                "id": 41,
+                                "name": "WAFFLE 3 ingrediente",
+                                "priceCents": 6400,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "product": {
+                                    "id": 11,
+                                    "name": "WAFFLES DULCES",
+                                    "type": "VARIANTED",
+                                    "priceCents": null,
+                                    "isActive": true,
+                                    "isAvailable": true,
+                                    "imageUrl": "/products/11/image?v=1764271450597",
+                                    "hasImage": true
+                                }
+                            }
+                        }
+                    }
+                ]
+            },
+            {
+                "id": 4,
+                "menuId": 1,
+                "name": "Bebidas Calientes",
+                "position": 4,
+                "isActive": true,
+                "createdAt": "2025-11-14T18:35:14.346Z",
+                "updatedAt": "2025-12-02T03:13:26.776Z",
+                "deletedAt": null,
+                "categoryId": 3,
+                "items": [
+                    {
+                        "id": 49,
+                        "sectionId": 4,
+                        "refType": "PRODUCT",
+                        "refId": 34,
+                        "displayName": "Café Americano",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-14T18:35:41.383Z",
+                        "updatedAt": "2025-11-22T02:53:18.344Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "PRODUCT",
+                            "product": {
+                                "id": 34,
+                                "name": "Café Americano",
+                                "type": "SIMPLE",
+                                "priceCents": 3900,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "imageUrl": null,
+                                "hasImage": false
+                            }
+                        }
+                    },
+                    {
+                        "id": 50,
+                        "sectionId": 4,
+                        "refType": "VARIANT",
+                        "refId": 21,
+                        "displayName": "Cappuccino CH",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-14T18:36:15.692Z",
+                        "updatedAt": "2025-11-22T02:53:18.344Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "VARIANT",
+                            "variant": {
+                                "id": 21,
+                                "name": "CH",
+                                "priceCents": 5000,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "product": {
+                                    "id": 35,
+                                    "name": "Cappuccino",
+                                    "type": "VARIANTED",
+                                    "priceCents": null,
+                                    "isActive": true,
+                                    "isAvailable": true,
+                                    "imageUrl": null,
+                                    "hasImage": false
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "id": 51,
+                        "sectionId": 4,
+                        "refType": "VARIANT",
+                        "refId": 22,
+                        "displayName": "Cappuccino GDE",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-14T18:37:05.346Z",
+                        "updatedAt": "2025-11-22T02:53:18.346Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "VARIANT",
+                            "variant": {
+                                "id": 22,
+                                "name": "GDE",
+                                "priceCents": 5500,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "product": {
+                                    "id": 35,
+                                    "name": "Cappuccino",
+                                    "type": "VARIANTED",
+                                    "priceCents": null,
+                                    "isActive": true,
+                                    "isAvailable": true,
+                                    "imageUrl": null,
+                                    "hasImage": false
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "id": 52,
+                        "sectionId": 4,
+                        "refType": "VARIANT",
+                        "refId": 23,
+                        "displayName": "Cappuccino con Esencia CH",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-14T18:38:20.113Z",
+                        "updatedAt": "2025-11-22T02:53:18.344Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "VARIANT",
+                            "variant": {
+                                "id": 23,
+                                "name": "CH",
+                                "priceCents": 5500,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "product": {
+                                    "id": 36,
+                                    "name": "Cappuccino con Esencia",
+                                    "type": "VARIANTED",
+                                    "priceCents": null,
+                                    "isActive": true,
+                                    "isAvailable": true,
+                                    "imageUrl": null,
+                                    "hasImage": false
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "id": 53,
+                        "sectionId": 4,
+                        "refType": "VARIANT",
+                        "refId": 24,
+                        "displayName": "Cappuccino con Esencia GDE",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-14T18:38:43.985Z",
+                        "updatedAt": "2025-11-22T02:53:18.345Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "VARIANT",
+                            "variant": {
+                                "id": 24,
+                                "name": "GDE",
+                                "priceCents": 5900,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "product": {
+                                    "id": 36,
+                                    "name": "Cappuccino con Esencia",
+                                    "type": "VARIANTED",
+                                    "priceCents": null,
+                                    "isActive": true,
+                                    "isAvailable": true,
+                                    "imageUrl": null,
+                                    "hasImage": false
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "id": 54,
+                        "sectionId": 4,
+                        "refType": "VARIANT",
+                        "refId": 48,
+                        "displayName": "Chai Manzana Canela CH",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-14T18:39:36.379Z",
+                        "updatedAt": "2025-11-22T02:53:18.348Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "VARIANT",
+                            "variant": {
+                                "id": 48,
+                                "name": "CH",
+                                "priceCents": 5900,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "product": {
+                                    "id": 51,
+                                    "name": "Chai Manzana Canela",
+                                    "type": "VARIANTED",
+                                    "priceCents": null,
+                                    "isActive": true,
+                                    "isAvailable": true,
+                                    "imageUrl": null,
+                                    "hasImage": false
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "id": 55,
+                        "sectionId": 4,
+                        "refType": "VARIANT",
+                        "refId": 49,
+                        "displayName": "Chai Manzana Canela GDE",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-14T18:40:08.790Z",
+                        "updatedAt": "2025-11-22T02:53:13.832Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "VARIANT",
+                            "variant": {
+                                "id": 49,
+                                "name": "GDE",
+                                "priceCents": 6500,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "product": {
+                                    "id": 51,
+                                    "name": "Chai Manzana Canela",
+                                    "type": "VARIANTED",
+                                    "priceCents": null,
+                                    "isActive": true,
+                                    "isAvailable": true,
+                                    "imageUrl": null,
+                                    "hasImage": false
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "id": 56,
+                        "sectionId": 4,
+                        "refType": "VARIANT",
+                        "refId": 44,
+                        "displayName": "Chai normal CH",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-14T18:40:46.019Z",
+                        "updatedAt": "2025-11-22T02:49:17.305Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "VARIANT",
+                            "variant": {
+                                "id": 44,
+                                "name": "CH",
+                                "priceCents": 5900,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "product": {
+                                    "id": 48,
+                                    "name": "Chai Normal",
+                                    "type": "VARIANTED",
+                                    "priceCents": null,
+                                    "isActive": true,
+                                    "isAvailable": true,
+                                    "imageUrl": null,
+                                    "hasImage": false
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "id": 57,
+                        "sectionId": 4,
+                        "refType": "VARIANT",
+                        "refId": 45,
+                        "displayName": "Chai normal GDE",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-14T18:40:58.603Z",
+                        "updatedAt": "2025-11-22T02:47:25.498Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "VARIANT",
+                            "variant": {
+                                "id": 45,
+                                "name": "GDE",
+                                "priceCents": 6500,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "product": {
+                                    "id": 48,
+                                    "name": "Chai Normal",
+                                    "type": "VARIANTED",
+                                    "priceCents": null,
+                                    "isActive": true,
+                                    "isAvailable": true,
+                                    "imageUrl": null,
+                                    "hasImage": false
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "id": 58,
+                        "sectionId": 4,
+                        "refType": "VARIANT",
+                        "refId": 46,
+                        "displayName": "Chai Vainilla CH",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-14T18:41:33.416Z",
+                        "updatedAt": "2025-11-22T02:47:25.591Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "VARIANT",
+                            "variant": {
+                                "id": 46,
+                                "name": "CH",
+                                "priceCents": 5900,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "product": {
+                                    "id": 50,
+                                    "name": "Chai Vainilla",
+                                    "type": "VARIANTED",
+                                    "priceCents": null,
+                                    "isActive": true,
+                                    "isAvailable": true,
+                                    "imageUrl": null,
+                                    "hasImage": false
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "id": 59,
+                        "sectionId": 4,
+                        "refType": "VARIANT",
+                        "refId": 47,
+                        "displayName": "Chai Vainilla GDE",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-14T18:41:54.315Z",
+                        "updatedAt": "2025-11-14T18:41:54.315Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "VARIANT",
+                            "variant": {
+                                "id": 47,
+                                "name": "GDE",
+                                "priceCents": 6500,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "product": {
+                                    "id": 50,
+                                    "name": "Chai Vainilla",
+                                    "type": "VARIANTED",
+                                    "priceCents": null,
+                                    "isActive": true,
+                                    "isAvailable": true,
+                                    "imageUrl": null,
+                                    "hasImage": false
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "id": 89,
+                        "sectionId": 4,
+                        "refType": "VARIANT",
+                        "refId": 26,
+                        "displayName": "GDE",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-22T02:49:15.040Z",
+                        "updatedAt": "2025-11-22T02:49:15.040Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "VARIANT",
+                            "variant": {
+                                "id": 26,
+                                "name": "GDE",
+                                "priceCents": 5900,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "product": {
+                                    "id": 37,
+                                    "name": "Chocolate abuelita",
+                                    "type": "VARIANTED",
+                                    "priceCents": null,
+                                    "isActive": true,
+                                    "isAvailable": true,
+                                    "imageUrl": null,
+                                    "hasImage": false
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "id": 90,
+                        "sectionId": 4,
+                        "refType": "VARIANT",
+                        "refId": 29,
+                        "displayName": "Late frio",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-22T02:50:11.294Z",
+                        "updatedAt": "2025-11-22T02:50:11.294Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "VARIANT",
+                            "variant": {
+                                "id": 29,
+                                "name": "Late frio",
+                                "priceCents": 5500,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "product": {
+                                    "id": 49,
+                                    "name": "Late Frío",
+                                    "type": "VARIANTED",
+                                    "priceCents": null,
+                                    "isActive": true,
+                                    "isAvailable": true,
+                                    "imageUrl": null,
+                                    "hasImage": false
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "id": 91,
+                        "sectionId": 4,
+                        "refType": "VARIANT",
+                        "refId": 30,
+                        "displayName": "Late con escencia",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-22T02:50:32.862Z",
+                        "updatedAt": "2025-11-22T02:50:32.862Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "VARIANT",
+                            "variant": {
+                                "id": 30,
+                                "name": "Late con escencia",
+                                "priceCents": 5900,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "product": {
+                                    "id": 49,
+                                    "name": "Late Frío",
+                                    "type": "VARIANTED",
+                                    "priceCents": null,
+                                    "isActive": true,
+                                    "isAvailable": true,
+                                    "imageUrl": null,
+                                    "hasImage": false
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "id": 92,
+                        "sectionId": 4,
+                        "refType": "VARIANT",
+                        "refId": 85,
+                        "displayName": "Fresa-kiwi",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-22T02:50:46.073Z",
+                        "updatedAt": "2025-11-22T02:50:46.073Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "VARIANT",
+                            "variant": {
+                                "id": 85,
+                                "name": "Fresa-kiwi",
+                                "priceCents": 3900,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "product": {
+                                    "id": 62,
+                                    "name": "TISANAS",
+                                    "type": "VARIANTED",
+                                    "priceCents": null,
+                                    "isActive": true,
+                                    "isAvailable": true,
+                                    "imageUrl": null,
+                                    "hasImage": false
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "id": 93,
+                        "sectionId": 4,
+                        "refType": "VARIANT",
+                        "refId": 87,
+                        "displayName": "Frutas de la Pasión",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-22T02:50:59.538Z",
+                        "updatedAt": "2025-11-22T02:50:59.538Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "VARIANT",
+                            "variant": {
+                                "id": 87,
+                                "name": "Frutas de la Pasión",
+                                "priceCents": 3900,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "product": {
+                                    "id": 62,
+                                    "name": "TISANAS",
+                                    "type": "VARIANTED",
+                                    "priceCents": null,
+                                    "isActive": true,
+                                    "isAvailable": true,
+                                    "imageUrl": null,
+                                    "hasImage": false
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "id": 94,
+                        "sectionId": 4,
+                        "refType": "VARIANT",
+                        "refId": 86,
+                        "displayName": "Frutos Rojos",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-22T02:51:12.381Z",
+                        "updatedAt": "2025-11-22T02:51:12.381Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "VARIANT",
+                            "variant": {
+                                "id": 86,
+                                "name": "Frutos Rojos",
+                                "priceCents": 3900,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "product": {
+                                    "id": 62,
+                                    "name": "TISANAS",
+                                    "type": "VARIANTED",
+                                    "priceCents": null,
+                                    "isActive": true,
+                                    "isAvailable": true,
+                                    "imageUrl": null,
+                                    "hasImage": false
+                                }
+                            }
+                        }
+                    }
+                ]
+            },
+            {
+                "id": 3,
+                "menuId": 1,
+                "name": "Comnod",
+                "position": 22,
+                "isActive": true,
+                "createdAt": "2025-11-06T18:29:30.168Z",
+                "updatedAt": "2025-12-02T03:13:26.784Z",
+                "deletedAt": null,
+                "categoryId": null,
+                "items": [
+                    {
+                        "id": 40,
+                        "sectionId": 3,
+                        "refType": "COMBO",
+                        "refId": 38,
+                        "displayName": "assas",
+                        "displayPriceCents": null,
+                        "position": 0,
+                        "isFeatured": false,
+                        "isActive": true,
+                        "createdAt": "2025-11-06T18:29:44.556Z",
+                        "updatedAt": "2025-11-18T18:10:24.490Z",
+                        "deletedAt": null,
+                        "ref": {
+                            "kind": "COMBO",
+                            "product": {
+                                "id": 38,
+                                "name": "assas",
+                                "type": "COMBO",
+                                "priceCents": 11600,
+                                "isActive": true,
+                                "isAvailable": true,
+                                "imageUrl": null,
+                                "hasImage": false
+                            },
+                            "components": [
+                                {
+                                    "quantity": 1,
+                                    "isRequired": true,
+                                    "notes": null,
+                                    "product": {
+                                        "id": 28,
+                                        "name": "Crepas Saladas",
+                                        "type": "VARIANTED",
+                                        "priceCents": null,
+                                        "isActive": true,
+                                        "isAvailable": true,
+                                        "imageUrl": "/products/28/image?v=1764644643335",
+                                        "hasImage": true
+                                    },
+                                    "variant": null
+                                },
+                                {
+                                    "quantity": 1,
+                                    "isRequired": true,
+                                    "notes": null,
+                                    "product": {
+                                        "id": 35,
+                                        "name": "Cappuccino",
+                                        "type": "VARIANTED",
+                                        "priceCents": null,
+                                        "isActive": true,
+                                        "isAvailable": true,
+                                        "imageUrl": null,
+                                        "hasImage": false
+                                    },
+                                    "variant": {
+                                        "id": 21,
+                                        "name": "CH",
+                                        "priceCents": 5000,
+                                        "isActive": true,
+                                        "isAvailable": true
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        ]
+    },
+    "message": "OK"
+}

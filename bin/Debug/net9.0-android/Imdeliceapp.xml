@@ -20,6 +20,21 @@
             Limpia sesión y redirige al login si el token está vencido
             </summary>
         </member>
+        <member name="M:Imdeliceapp.Helpers.AuthHelper.ForzarLogoutAsync(System.String)">
+            <summary>
+            Limpia sesión y reemplaza MainPage por LoginPage. Seguro para llamar varias veces.
+            </summary>
+        </member>
+        <member name="M:Imdeliceapp.Helpers.AuthHelper.IniciarWatcherExpiracion">
+            <summary>
+            Inicia un watcher en background que cierra sesión cuando el token expira.
+            </summary>
+        </member>
+        <member name="M:Imdeliceapp.Helpers.AuthHelper.ObtenerTokenValidoAsync(Microsoft.Maui.Controls.Page)">
+            <summary>
+            Devuelve el token si existe y no está expirado; de lo contrario cierra sesión y devuelve null.
+            </summary>
+        </member>
         <member name="M:Imdeliceapp.Helpers.ViewCaptureExtensions.CaptureToPngFileAsync(Microsoft.Maui.IView,System.String)">
             <summary>Captura la vista a PNG, la guarda en caché y devuelve la ruta.</summary>
         </member>

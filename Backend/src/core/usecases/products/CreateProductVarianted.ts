@@ -9,6 +9,7 @@ export class CreateProductVarianted {
     description?: string;
     sku?: string;
     barcode?: string | null;
+    trackInventory?: boolean;
     image?: { buffer: Buffer; mimeType: string; size: number }; // 👈 EN VEZ DE imageUrl?
   }) {
     return this.repo.createVarianted(input);

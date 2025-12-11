@@ -11,6 +11,7 @@ export class PrismaProductRepository implements IProductRepository {
     description?: string;
     sku?: string;
     barcode?: string | null;
+    trackInventory?: boolean;
     image?: { buffer: Buffer; mimeType: string; size: number };
   }): Promise<Product> {
     return prisma.product.create({
@@ -22,6 +23,7 @@ export class PrismaProductRepository implements IProductRepository {
         description: data.description,
         sku: data.sku,
         barcode: data.barcode?.trim() ?? null,
+        trackInventory: data.trackInventory ?? true,
         image: data.image?.buffer,
         imageMimeType: data.image?.mimeType,
         imageSize: data.image?.size,
@@ -36,6 +38,7 @@ export class PrismaProductRepository implements IProductRepository {
     description?: string;
     sku?: string;
     barcode?: string | null;
+    trackInventory?: boolean;
     image?: { buffer: Buffer; mimeType: string; size: number };
   }): Promise<Product> {
     return prisma.product.create({
@@ -46,6 +49,7 @@ export class PrismaProductRepository implements IProductRepository {
         description: data.description,
         sku: data.sku,
         barcode: data.barcode?.trim() ?? null,
+        trackInventory: data.trackInventory ?? true,
         image: data.image?.buffer,
         imageMimeType: data.image?.mimeType,
         imageSize: data.image?.size,
@@ -60,9 +64,9 @@ export class PrismaProductRepository implements IProductRepository {
       }
     });
   }
-update(
+  update(
   id: number,
-  data: Partial<Pick<Product, 'name'|'categoryId'|'priceCents'|'description'|'sku'|'isActive'|'barcode'>> & {
+  data: Partial<Pick<Product, 'name'|'categoryId'|'priceCents'|'description'|'sku'|'isActive'|'barcode'|'trackInventory'>> & {
     image?: { buffer: Buffer; mimeType: string; size: number } | null;
   }
 ): Promise<Product> {
@@ -89,6 +93,7 @@ update(
         image:         data.image === undefined ? undefined : (data.image ? data.image.buffer : null),
         imageMimeType: data.image === undefined ? undefined : (data.image ? data.image.mimeType : null),
         imageSize:     data.image === undefined ? undefined : (data.image ? data.image.size : null),
+        trackInventory: data.trackInventory
       }
     });
 
@@ -387,6 +392,7 @@ update(
 
 async createCombo(data: {
   name: string; categoryId: number; priceCents: number; description?: string; sku?: string;
+  trackInventory?: boolean;
   image?: { buffer: Buffer; mimeType: string; size: number };
   items?: {
     componentProductId: number;
@@ -431,6 +437,7 @@ async createCombo(data: {
         priceCents: data.priceCents,
         description: data.description,
         sku: data.sku,
+        trackInventory: data.trackInventory ?? true,
           image: data.image?.buffer,
       imageMimeType: data.image?.mimeType,
       imageSize: data.image?.size,

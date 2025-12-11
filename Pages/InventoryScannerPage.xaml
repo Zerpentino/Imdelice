@@ -20,12 +20,13 @@
         <Entry x:Name="BarcodeEntry"
                Placeholder="Coloca aquí la pistola y escanea..."
                Completed="BarcodeEntry_Completed"
-               TextChanged="BarcodeEntry_TextChanged"/>
+               TextChanged="BarcodeEntry_TextChanged"
+               Unfocused="BarcodeEntry_Unfocused"
+               ReturnType="Done"/>
 
         <CollectionView x:Name="PendingList"
                         ItemsSource="{Binding PendingScans}"
-                        SelectionMode="Single"
-                        SelectionChanged="PendingList_SelectionChanged">
+                        SelectionMode="None">
           <CollectionView.EmptyView>
             <Label Text="Sin lecturas aún."
                    HorizontalOptions="Center"
@@ -47,6 +48,23 @@
                       Padding="12"
                       Margin="0,6"
                       BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1F1F1F}">
+                  <VisualStateManager.VisualStateGroups>
+                    <VisualStateGroup x:Name="CommonStates">
+                      <VisualState x:Name="Normal"/>
+                      <VisualState x:Name="PointerOver">
+                        <VisualState.Setters>
+                          <Setter Property="BackgroundColor"
+                                  Value="{AppThemeBinding Light=#FFFFFF, Dark=#1F1F1F}"/>
+                        </VisualState.Setters>
+                      </VisualState>
+                      <VisualState x:Name="Pressed">
+                        <VisualState.Setters>
+                          <Setter Property="BackgroundColor"
+                                  Value="{AppThemeBinding Light=#FFFFFF, Dark=#1F1F1F}"/>
+                        </VisualState.Setters>
+                      </VisualState>
+                    </VisualStateGroup>
+                  </VisualStateManager.VisualStateGroups>
                   <Label Text="{Binding DisplayName}"
                          FontAttributes="Bold"
                          TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
@@ -57,11 +75,19 @@
 
                   <VerticalStackLayout Grid.Column="1"
                                        HorizontalOptions="End"
-                                       Spacing="4">
-                    <Entry Text="{Binding Quantity, Mode=TwoWay}"
-                           Keyboard="Numeric"
-                           WidthRequest="120"
-                           Placeholder="Cantidad"/>
+                                       Spacing="6">
+                    <Label Text="{Binding Quantity}"
+                           HorizontalTextAlignment="End"
+                           FontSize="16"
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light=#4A148C, Dark=#B39DDB}"/>
+                    <Button Text="Editar"
+                            Padding="8,4"
+                            FontSize="12"
+                            BackgroundColor="{AppThemeBinding Light=#EEE, Dark=#333}"
+                            TextColor="{AppThemeBinding Light=#333, Dark=#EEE}"
+                            Command="{Binding Source={RelativeSource AncestorType={x:Type local:InventoryScannerPage}}, Path=BindingContext.EditQuantityCommand}"
+                            CommandParameter="{Binding}"/>
                   </VerticalStackLayout>
                 </Grid>
               </SwipeView>

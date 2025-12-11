@@ -111,6 +111,7 @@ model Product {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   isAvailable Boolean  @default(true) // ← DISPONIBLE HOY (independiente de isActive)
+  trackInventory Boolean @default(true)
 
   // back-relations
   variants              ProductVariant[]

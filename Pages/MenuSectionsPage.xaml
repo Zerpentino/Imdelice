@@ -30,7 +30,7 @@
                       Margin="12,0,12,0"
                       SelectionMode="None"
                       ItemSizingStrategy="MeasureFirstItem"
-                      ItemsUpdatingScrollMode="KeepScrollOffset">
+                      ItemsUpdatingScrollMode="KeepItemsInView">
 
         <CollectionView.EmptyView>
           <VerticalStackLayout Padding="32"
@@ -48,103 +48,67 @@
 
         <CollectionView.ItemTemplate>
           <DataTemplate>
-            <SwipeView>
-              <SwipeView.LeftItems>
-                <SwipeItems Mode="Reveal" SwipeBehaviorOnInvoked="Close">
-                  <SwipeItem Text="Eliminar"
-                             BackgroundColor="#E53935"
-                             Invoked="Delete_Clicked"
-                             IsVisible="{Binding Source={x:Reference Page}, Path=CanDelete}"
-                             IsEnabled="{Binding Source={x:Reference Page}, Path=CanDelete}"/>
-                </SwipeItems>
-              </SwipeView.LeftItems>
-
-              <SwipeView.RightItems>
-                <SwipeItems Mode="Reveal" SwipeBehaviorOnInvoked="Close">
-                  <SwipeItem Text="Editar"
-                             BackgroundColor="#4CAF50"
-                             Invoked="Edit_Clicked"
-                             IsVisible="{Binding Source={x:Reference Page}, Path=CanUpdate}"
-                             IsEnabled="{Binding Source={x:Reference Page}, Path=CanUpdate}"/>
-                </SwipeItems>
-              </SwipeView.RightItems>
-
-              <Grid Padding="14"
-                    Margin="0,6"
+            <Border Margin="0,6"
+                    Padding="12"
+                    BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E1E1E}"
+                    StrokeThickness="0"
+                    StrokeShape="{RoundRectangle CornerRadius=12}">
+              <Grid ColumnDefinitions="Auto,*,Auto"
                     ColumnSpacing="12"
-                    ColumnDefinitions="Auto,*,Auto,96"
-                    BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E1E1E}">
-
-                <Border WidthRequest="44"
-                        HeightRequest="44"
+                    RowDefinitions="Auto,Auto">
+                <Border WidthRequest="40"
+                        HeightRequest="40"
                         BackgroundColor="{AppThemeBinding Light=#EEE, Dark=#333}"
                         StrokeThickness="0"
-                        StrokeShape="{RoundRectangle CornerRadius=12}">
-                  <Grid>
-                    <Label Text="📄"
-                           FontSize="22"
-                           HorizontalOptions="Center"
-                           VerticalOptions="Center"/>
-                  </Grid>
+                        StrokeShape="{RoundRectangle CornerRadius=10}"
+                        Grid.RowSpan="2">
+                  <Label Text="📄"
+                         FontSize="20"
+                         HorizontalOptions="Center"
+                         VerticalOptions="Center"/>
                 </Border>
 
                 <VerticalStackLayout Grid.Column="1"
-                                     Spacing="4">
+                                     Grid.Row="0"
+                                     Spacing="2">
                   <Label Text="{Binding name}"
                          FontAttributes="Bold"
                          LineBreakMode="TailTruncation"
                          TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
-
-                  <Label Text="{Binding PositionDisplay}"
-                         FontSize="12"
-                         TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"/>
-
-                  <HorizontalStackLayout Spacing="8">
-                    <Border StrokeThickness="0"
-                            Padding="6,2"
-                            BackgroundColor="#EEE"
-                            StrokeShape="{RoundRectangle CornerRadius=8}">
-                      <Label Text="{Binding ItemsBadge}"
-                             FontSize="11"
-                             TextColor="#333"/>
-                    </Border>
-
-                    <Border StrokeThickness="0"
-                            Padding="6,2"
-                            BackgroundColor="#E6F4EA"
-                            StrokeShape="{RoundRectangle CornerRadius=8}"
-                            IsVisible="{Binding HasCategory}">
-                      <Label Text="{Binding CategoryBadge}"
-                             FontSize="11"
-                             TextColor="#1B5E20"/>
-                    </Border>
-
-                    <Border StrokeThickness="0"
-                            Padding="6,2"
-                            BackgroundColor="#FAD7D7"
-                            StrokeShape="{RoundRectangle CornerRadius=8}">
-                      <Border.Triggers>
-                        <DataTrigger TargetType="Border"
-                                     Binding="{Binding isActive}"
-                                     Value="True">
-                          <Setter Property="IsVisible" Value="False"/>
-                        </DataTrigger>
-                      </Border.Triggers>
-                      <Label Text="Inactiva"
-                             FontSize="11"
-                             TextColor="#B71C1C"/>
-                    </Border>
+                  <HorizontalStackLayout Spacing="6">
+                    <Label Text="{Binding PositionDisplay}"
+                           FontSize="12"
+                           TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"/>
+                    <Label Text="{Binding ItemsBadge}"
+                           FontSize="12"
+                           TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"/>
+                    <Label Text="{Binding CategoryBadge}"
+                           FontSize="12"
+                           TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"
+                           IsVisible="{Binding HasCategory}"/>
                   </HorizontalStackLayout>
                 </VerticalStackLayout>
 
-                <Switch Grid.Column="2"
-                        VerticalOptions="Center"
-                        IsToggled="{Binding isActive}"
-                        Toggled="ToggleActivo_Toggled"
-                        
-                        IsEnabled="{Binding Source={x:Reference Page}, Path=CanUpdate}"/>
+                <HorizontalStackLayout Grid.Column="2"
+                                        Grid.Row="0"
+                                        Spacing="6"
+                                        VerticalOptions="Center">
+                  <Switch IsToggled="{Binding isActive}"
+                          Toggled="ToggleActivo_Toggled"
+                          IsEnabled="{Binding Source={x:Reference Page}, Path=CanUpdate}"/>
+                  <Button Text="⋮"
+                          FontSize="16"
+                          WidthRequest="36"
+                          HeightRequest="36"
+                          CornerRadius="18"
+                          BackgroundColor="{AppThemeBinding Light=#EEE, Dark=#333}"
+                          TextColor="{AppThemeBinding Light=#444, Dark=#DDD}"
+                          CommandParameter="{Binding .}"
+                          Clicked="More_Clicked"/>
+                </HorizontalStackLayout>
 
-                <Button Grid.Column="3"
+                <Button Grid.Column="1"
+                        Grid.Row="1"
                         Text="Items"
                         HeightRequest="36"
                         Padding="10,6"
@@ -155,10 +119,10 @@
                         CornerRadius="8"
                         IsEnabled="{Binding Source={x:Reference Page}, Path=CanRead}"
                         IsVisible="{Binding Source={x:Reference Page}, Path=CanRead}"
-                        HorizontalOptions="End"
+                        HorizontalOptions="Start"
                         VerticalOptions="Center"/>
               </Grid>
-            </SwipeView>
+            </Border>
           </DataTemplate>
         </CollectionView.ItemTemplate>
 

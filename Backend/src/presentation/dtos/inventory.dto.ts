@@ -30,6 +30,7 @@ export const ListInventoryItemsQueryDto = z.object({
   locationId: z.coerce.number().int().positive().optional(),
   categoryId: z.coerce.number().int().positive().optional(),
   search: z.string().optional(),
+  trackInventory: z.coerce.boolean().optional(),
 });
 
 export const InventoryMovementsQueryDto = z.object({

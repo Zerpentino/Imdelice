@@ -135,6 +135,20 @@
                    Placeholder="Código de barras (opcional)"
                    Keyboard="Text"/>
           </Border>
+          <Grid ColumnDefinitions="Auto,*"
+                ColumnSpacing="12"
+                Padding="4,0">
+            <Label Text="Controlar inventario"
+                   VerticalTextAlignment="Center"
+                   FontSize="14"
+                   TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+            <Switch x:Name="SwTrackInventory"
+                    Grid.Column="1"
+                    IsToggled="True"
+                    HorizontalOptions="Start"/>
+          </Grid>
+          <Label Text="Si está apagado, este producto no generará movimientos ni ajustará inventario."
+                 Style="{StaticResource HintLabelStyle}"/>
 
           <VerticalStackLayout Spacing="6">
             <Border StrokeThickness="0"

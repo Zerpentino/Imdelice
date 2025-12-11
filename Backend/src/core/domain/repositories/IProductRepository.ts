@@ -59,6 +59,7 @@ export interface IProductRepository {
     description?: string;
     sku?: string;
     barcode?: string | null;
+    trackInventory?: boolean;
     image?: { buffer: Buffer; mimeType: string; size: number };
   }): Promise<Product>;
 
@@ -69,12 +70,13 @@ export interface IProductRepository {
     description?: string;
     sku?: string;
     barcode?: string | null;
+    trackInventory?: boolean;
     image?: { buffer: Buffer; mimeType: string; size: number };
   }): Promise<Product>;
 
 
   update(id: number, data: Partial<Pick<Product,
-    'name'|'categoryId'|'priceCents'|'description'|'sku'|'isActive'|'barcode'
+    'name'|'categoryId'|'priceCents'|'description'|'sku'|'isActive'|'barcode'|'trackInventory'
   >> & {
     image?: { buffer: Buffer; mimeType: string; size: number } | null; // null para eliminar imagen
   }): Promise<Product>;
@@ -109,6 +111,7 @@ export interface IProductRepository {
     priceCents: number;
     description?: string;
     sku?: string;
+    trackInventory?: boolean;
     image?: { buffer: Buffer; mimeType: string; size: number } | null; // null para eliminar imagen
     items?: {
       componentProductId: number;

@@ -69,10 +69,6 @@ export class PrismaInventoryRepository implements IInventoryRepository {
   }
 
   async listItems(filter: ListInventoryItemsInput = {}) {
-    const categoryFilter =
-      filter.categoryId !== undefined
-        ? { id: filter.categoryId }
-        : { slug: "inventario" };
 
     const items = await prisma.inventoryItem.findMany({
       where: {
@@ -81,14 +77,24 @@ export class PrismaInventoryRepository implements IInventoryRepository {
         locationId: filter.locationId,
         variantId:
           filter.variantId === undefined ? undefined : filter.variantId ?? null,
-        product: {
-          category: categoryFilter,
-          name: filter.search
+        product:
+          filter.categoryId || filter.search || filter.trackInventory !== undefined
             ? {
-                contains: filter.search,
+                is: {
+                  categoryId: filter.categoryId,
+                  trackInventory: filter.trackInventory ?? true,
+                  name: filter.search
+                    ? {
+                        contains: filter.search,
+                      }
+                    : undefined,
+                },
               }
-            : undefined,
-        },
+            : {
+                is: {
+                  trackInventory: filter.trackInventory ?? true,
+                },
+              },
       },
       include: {
         product: {
@@ -107,6 +113,7 @@ export class PrismaInventoryRepository implements IInventoryRepository {
             isAvailable: true,
             createdAt: true,
             updatedAt: true,
+            trackInventory: true,
             category: { select: { id: true, name: true, slug: true } },
           },
         },
@@ -133,7 +140,10 @@ export class PrismaInventoryRepository implements IInventoryRepository {
     });
 
     const inventoryProducts = await prisma.product.findMany({
-      where: { category: { slug: "inventario" } },
+      where: {
+        category: { slug: "inventario" },
+        trackInventory: filter.trackInventory ?? true,
+      },
       select: {
         id: true,
         name: true,
@@ -147,14 +157,17 @@ export class PrismaInventoryRepository implements IInventoryRepository {
         imageMimeType: true,
         imageSize: true,
         isAvailable: true,
+        trackInventory: true,
         createdAt: true,
         updatedAt: true,
         category: { select: { id: true, name: true, slug: true } },
       },
     });
     const existingIds = new Set(items.map(it => it.productId));
+    const filterLocationId = filter.locationId ?? null;
     for (const product of inventoryProducts) {
       if (existingIds.has(product.id)) continue;
+      if (filterLocationId && defaultLocation?.id !== filterLocationId) continue;
       const placeholder: any = {
         id: -product.id,
         productId: product.id,
@@ -173,6 +186,12 @@ export class PrismaInventoryRepository implements IInventoryRepository {
       };
       itemsWithMeta.push(this.attachProductImageMeta(placeholder));
     }
+
+    itemsWithMeta.sort((a, b) => {
+      const qtyA = Number((a as any).currentQuantity ?? 0);
+      const qtyB = Number((b as any).currentQuantity ?? 0);
+      return qtyA - qtyB;
+    });
 
     return itemsWithMeta;
   }
@@ -210,6 +229,27 @@ export class PrismaInventoryRepository implements IInventoryRepository {
     }
 
     return prisma.$transaction(async (tx) => {
+      const product = await tx.product.findUnique({
+        where: { id: input.productId },
+        select: { id: true, trackInventory: true },
+      });
+      if (!product) throw new Error("Product not found");
+
+      if (input.variantId) {
+        const variant = await tx.productVariant.findUnique({
+          where: { id: input.variantId },
+          select: { id: true, productId: true },
+        });
+        if (!variant) throw new Error("Variant not found");
+        if (variant.productId !== input.productId) {
+          throw new Error("Variant does not belong to product");
+        }
+      }
+
+      if (product.trackInventory === false) {
+        return null;
+      }
+
       const locationId = await this.resolveLocationId(tx, input.locationId);
       const quantity = new Prisma.Decimal(input.quantity);
       const unit = input.unit ?? UnitOfMeasure.UNIT;

@@ -56,23 +56,24 @@ class PrismaInventoryRepository {
         }).then(item => (item ? this.attachProductImageMeta(item) : null));
     }
     async listItems(filter = {}) {
-        const categoryFilter = filter.categoryId !== undefined
-            ? { id: filter.categoryId }
-            : { slug: "inventario" };
         const items = await prisma_1.prisma.inventoryItem.findMany({
             where: {
                 id: filter.id,
                 productId: filter.productId,
                 locationId: filter.locationId,
                 variantId: filter.variantId === undefined ? undefined : filter.variantId ?? null,
-                product: {
-                    category: categoryFilter,
-                    name: filter.search
-                        ? {
-                            contains: filter.search,
-                        }
-                        : undefined,
-                },
+                product: filter.categoryId || filter.search
+                    ? {
+                        is: {
+                            categoryId: filter.categoryId,
+                            name: filter.search
+                                ? {
+                                    contains: filter.search,
+                                }
+                                : undefined,
+                        },
+                    }
+                    : undefined,
             },
             include: {
                 product: {
@@ -134,8 +135,11 @@ class PrismaInventoryRepository {
             },
         });
         const existingIds = new Set(items.map(it => it.productId));
+        const filterLocationId = filter.locationId ?? null;
         for (const product of inventoryProducts) {
             if (existingIds.has(product.id))
+                continue;
+            if (filterLocationId && defaultLocation?.id !== filterLocationId)
                 continue;
             const placeholder = {
                 id: -product.id,

@@ -106,6 +106,7 @@ private getImagePayload(
       const prod  = await this.createSimpleUC.exec({
         ...dto,
         barcode: dto.barcode?.trim() ?? null,
+        trackInventory: dto.trackInventory ?? true,
         image
       });
 
@@ -123,6 +124,7 @@ private getImagePayload(
       const prod  = await this.createVariantedUC.exec({
         ...dto,
         barcode: dto.barcode?.trim() ?? null,
+        trackInventory: dto.trackInventory ?? true,
         variants: dto.variants.map(variant => ({
           ...variant,
           barcode: variant.barcode?.trim() ?? null
@@ -237,6 +239,7 @@ private getImagePayload(
             : dto.barcode === null
             ? null
             : dto.barcode.trim(),
+        trackInventory: dto.trackInventory,
         image
       });
       return success(res, prod, "Updated");
@@ -319,7 +322,7 @@ private getImagePayload(
         ? { buffer: (req as any).file.buffer, mimeType: (req as any).file.mimetype, size: (req as any).file.size }
         : undefined;
 
-    const prod = await this.createComboUC.exec({ ...dto, image });
+    const prod = await this.createComboUC.exec({ ...dto, trackInventory: dto.trackInventory ?? true, image });
     return success(res, prod, "Created", 201);
   } catch (err:any) {
     return fail(res, err?.message || "Error creating combo", 400, err);

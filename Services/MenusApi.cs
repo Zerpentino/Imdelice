@@ -194,6 +194,8 @@ public class MenusApi
         public bool isActive { get; init; }
         public bool? isAvailable { get; init; }
         public int? priceCents { get; init; }
+        public string? imageUrl { get; init; }
+        public bool? hasImage { get; init; }
         public List<ProductVariantDto> variants { get; init; } = new();
     }
 
@@ -242,10 +244,10 @@ public class MenusApi
         return env?.data;
     }
 
-    public async Task<List<MenuItemDto>> GetSectionItemsAsync(int sectionId)
+    public async Task<List<MenuItemDto>> GetSectionItemsAsync(int sectionId, CancellationToken ct = default)
     {
         using var http = await NewAuthClientAsync();
-        var resp = await http.GetAsync($"/api/menus/sections/{sectionId}/items");
+        var resp = await http.GetAsync($"/api/menus/sections/{sectionId}/items", ct);
         var body = await resp.Content.ReadAsStringAsync();
         if (!resp.IsSuccessStatusCode) throw new HttpRequestException(body);
 
@@ -253,10 +255,10 @@ public class MenusApi
         return env?.data ?? new();
     }
 
-    public async Task<List<MenuItemDto>> GetSectionItemsTrashAsync(int sectionId)
+    public async Task<List<MenuItemDto>> GetSectionItemsTrashAsync(int sectionId, CancellationToken ct = default)
     {
         using var http = await NewAuthClientAsync();
-        var resp = await http.GetAsync($"/api/menus/sections/{sectionId}/items/trash");
+        var resp = await http.GetAsync($"/api/menus/sections/{sectionId}/items/trash", ct);
         var body = await resp.Content.ReadAsStringAsync();
         if (!resp.IsSuccessStatusCode) throw new HttpRequestException(body);
 

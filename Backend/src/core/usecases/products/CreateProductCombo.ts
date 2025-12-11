@@ -3,6 +3,7 @@ export class CreateProductCombo {
   constructor(private repo: IProductRepository) {}
   exec(input: {
     name: string; categoryId: number; priceCents: number; description?: string; sku?: string; 
+    trackInventory?: boolean;
     image?: { buffer: Buffer; mimeType: string; size: number };  // 👈 reemplaza imageUrl?
     items?: {
       componentProductId: number;

@@ -10,7 +10,7 @@ router.use(authenticate);
 router.get("/", authorize("expenses.read"), asyncHandler(expensesController.list));
 router.get("/summary", authorize("expenses.read"), asyncHandler(expensesController.summary));
 router.get("/:id", authorize("expenses.read"), asyncHandler(expensesController.get));
-router.post("/", authorize("expenses.manage"), asyncHandler(expensesController.create));
+    router.post("/", authorize("expenses.manage"), asyncHandler(expensesController.create));
 router.patch("/:id", authorize("expenses.manage"), asyncHandler(expensesController.update));
 router.delete("/:id", authorize("expenses.manage"), asyncHandler(expensesController.remove));
 

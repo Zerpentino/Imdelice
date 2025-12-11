@@ -13,6 +13,7 @@ using Microsoft.Maui.Controls;
 using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Dispatching;
 using Microsoft.Maui.Graphics;
+using Microsoft.Maui.Devices;
 using System.Runtime.CompilerServices;
 
 namespace Imdeliceapp.Pages;
@@ -57,6 +58,7 @@ public partial class KdsPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+        try { DeviceDisplay.Current.KeepScreenOn = true; } catch { }
         await LoadTicketsAsync();
         StartAutoRefreshTimer();
         StartCountdownTimer();
@@ -64,6 +66,7 @@ public partial class KdsPage : ContentPage
 
     protected override void OnDisappearing()
     {
+        try { DeviceDisplay.Current.KeepScreenOn = false; } catch { }
         StopAutoRefreshTimer();
         StopCountdownTimer();
         base.OnDisappearing();
