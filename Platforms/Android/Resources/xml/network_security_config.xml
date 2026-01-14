@@ -2,7 +2,7 @@
 <network-security-config>
   <!-- Permite HTTP a tu IP local y al emulador -->
   <domain-config cleartextTrafficPermitted="true">
-    <domain includeSubdomains="true">192.168.49.193</domain>
+    <domain includeSubdomains="true">192.168.49.129</domain>
     <domain>localhost</domain>
   </domain-config>
 </network-security-config>

@@ -43,6 +43,8 @@ public partial class App : Application
             Resources ??= new ResourceDictionary();
     if (!Resources.ContainsKey("BoolToIconConverter"))
         Resources.Add("BoolToIconConverter", new BoolToIconConverter());
+    if (!Resources.ContainsKey("InverseBoolConverter"))
+        Resources.Add("InverseBoolConverter", new InverseBoolConverter());
     try
     {
         var saved = Preferences.Default.Get("perms_json", "");
@@ -145,6 +147,15 @@ public partial class App : Application
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         => throw new NotImplementedException();
+}
+
+    public class InverseBoolConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        => value is bool b ? !b : value;
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => value is bool b ? !b : value;
 }
 
 }

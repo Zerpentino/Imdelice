@@ -296,5 +296,21 @@
                        IsRunning="False"
                        HorizontalOptions="Center"
                        VerticalOptions="Center"/>
+
+    <!-- Loader para acciones rápidas (agregar al carrito) -->
+    <Grid x:Name="ActionOverlay"
+          Grid.RowSpan="3"
+          BackgroundColor="#80000000"
+          IsVisible="False"
+          InputTransparent="False"
+          ZIndex="2000">
+      <ActivityIndicator x:Name="ActionLoader"
+                         IsRunning="False"
+                         Color="White"
+                         WidthRequest="64"
+                         HeightRequest="64"
+                         HorizontalOptions="Center"
+                         VerticalOptions="Center"/>
+    </Grid>
   </Grid>
 </ContentPage>

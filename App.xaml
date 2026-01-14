@@ -3,8 +3,14 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:local="clr-namespace:Imdeliceapp"
              x:Class="Imdeliceapp.App">
-    <Application.Resources>
+<Application.Resources>
         <ResourceDictionary>
+            <!-- Colores para ActionSheet / Picker -->
+            <Color x:Key="ActionSheetTitleTextColor">#222222</Color>
+            <Color x:Key="ActionSheetMessageTextColor">#444444</Color>
+            <Color x:Key="ActionSheetOptionTextColor">#222222</Color>
+            <Color x:Key="ActionSheetCancelTextColor">#7b2d55</Color>
+            <Color x:Key="ActionSheetDestructiveTextColor">#c62828</Color>
             <!-- Sombra clarita para modo claro -->
     <Shadow x:Key="LightCardShadow"
             Brush="#00000033"
@@ -245,7 +251,7 @@
   </Style>
 
   
-  <x:String x:Key="urlbase">http://192.168.49.193:3000</x:String>
+  <x:String x:Key="urlbase">http://192.168.49.129:3000</x:String>
       <x:String x:Key="urlloginemail">/api/auth/email</x:String>
       <x:String x:Key="urlloginpin">/api/auth/pin</x:String>
 

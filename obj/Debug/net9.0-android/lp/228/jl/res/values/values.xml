@@ -1,5 +1,1 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="location_permission_missing_message">Looks like this app doesn\'t have location services configured. Please see OneSignal docs for more information.</string>
-    <string name="location_permission_missing_title">App Missing Permission</string>
-</resources>
+<resources><string name="location_permission_missing_message">Looks like this app doesn\'t have location services configured. Please see OneSignal docs for more information.</string><string name="location_permission_missing_title">App Missing Permission</string></resources>

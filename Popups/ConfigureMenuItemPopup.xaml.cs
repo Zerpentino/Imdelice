@@ -130,7 +130,7 @@ class ConfigureMenuItemViewModel : INotifyPropertyChanged
         Quantity = initialQuantity;
         Notes = existingEntry?.Notes ?? string.Empty;
 
-        ConfirmCommand = new Command(Confirm);
+        ConfirmCommand = new Command(async () => await ConfirmAsync());
         CancelCommand = new Command(() => _closeCallback(null));
 
         OnPropertyChanged(nameof(HasVariants));
@@ -183,6 +183,18 @@ class ConfigureMenuItemViewModel : INotifyPropertyChanged
     public ObservableCollection<ModifierGroupVm> ModifierGroups { get; }
 
     public bool HasModifiers => ModifierGroups.Count > 0;
+
+    bool _isConfirming;
+    public bool IsConfirming
+    {
+        get => _isConfirming;
+        set
+        {
+            if (_isConfirming == value) return;
+            _isConfirming = value;
+            OnPropertyChanged();
+        }
+    }
 
     public bool IsQuantityLocked => _isQuantityLocked;
     public bool IsQuantityEditable => !_isQuantityLocked;
@@ -312,8 +324,9 @@ class ConfigureMenuItemViewModel : INotifyPropertyChanged
         }
     }
 
-    void Confirm()
+    async Task ConfirmAsync()
     {
+        if (IsConfirming) return;
         ValidationMessage = null;
 
         if (SelectedVariant == null)
@@ -349,6 +362,10 @@ class ConfigureMenuItemViewModel : INotifyPropertyChanged
                 return;
             }
         }
+
+        IsConfirming = true;
+        await Task.Yield(); // deja renderizar el overlay antes de cerrar
+        await Task.Delay(300); // breve respiro para que el loader se pinte y quede encima
 
         var selectedModifiers = ModifierGroups
             .Select(group => group.ToCartSelection())
@@ -417,11 +434,6 @@ class ConfigureMenuItemViewModel : INotifyPropertyChanged
         if (baseItem.ComboComponents == null || baseItem.ComboComponents.Count == 0)
             return Enumerable.Empty<ComboChildVm>();
 
-        var selections = existingEntry?.ComboChildren?
-            .GroupBy(c => (c.ProductId, c.VariantId))
-            .ToDictionary(g => g.Key, g => g.First())
-            ?? new Dictionary<(int, int?), TakeOrderPage.ComboChildSelection>();
-
         var configMap = comboChildConfigurations?
             .GroupBy(c => (c.Component.ProductId, c.Component.VariantId))
             .ToDictionary(g => g.Key, g => g.First());
@@ -435,10 +447,12 @@ class ConfigureMenuItemViewModel : INotifyPropertyChanged
             ComboChildConfiguration? config = null;
             configMap?.TryGetValue((component.ProductId, component.VariantId), out config);
 
-            selections.TryGetValue((component.ProductId, component.VariantId), out var existing);
-            if (existing == null)
-                existing = selections.Values.FirstOrDefault(s => s.ProductId == component.ProductId);
-            list.Add(new ComboChildVm(component, config, existing ?? config?.ExistingSelection));
+            // Si la cantidad es >1, se crean filas independientes (1 unidad cada una) para poder elegir sabores diferentes.
+            var count = component.Quantity <= 0 ? 1 : component.Quantity;
+            for (int i = 0; i < count; i++)
+            {
+                list.Add(new ComboChildVm(component, config, null, forcedQuantity: 1));
+            }
         }
 
         return list;
@@ -527,13 +541,15 @@ class ComboChildVm : INotifyPropertyChanged
     public ComboChildVm(
         TakeOrderPage.MenuItemVm.ComboComponent component,
         ComboChildConfiguration? config,
-        TakeOrderPage.ComboChildSelection? existing)
+        TakeOrderPage.ComboChildSelection? existing,
+        int forcedQuantity = 0)
     {
         _component = component;
         _variantRulesLoader = config?.VariantRulesLoader;
-        Quantity = existing?.Quantity > 0
-            ? existing.Quantity
-            : (component.Quantity <= 0 ? 1 : component.Quantity);
+        var baseQty = component.Quantity <= 0 ? 1 : component.Quantity;
+        Quantity = forcedQuantity > 0
+            ? forcedQuantity
+            : (existing?.Quantity > 0 ? existing.Quantity : baseQty);
         IsRequired = component.IsRequired;
         Notes = existing?.Notes ?? config?.DisplayNotes ?? component.Notes;
 

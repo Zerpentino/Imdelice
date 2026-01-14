@@ -18,14 +18,28 @@ public partial class OrderMenuSelectorPopup : Popup
     readonly MenusApi _menusApi = new();
     readonly List<SectionVm> _allSections = new();
     readonly Dictionary<int, List<TakeOrderPage.MenuItemVm>> _itemsByProduct = new();
+    readonly List<MenuOptionVm> _menuOptions = new();
+    bool _isInitializing;
 
     public ObservableCollection<SectionVm> Sections { get; } = new();
+    public ObservableCollection<MenuOptionVm> MenuOptions { get; } = new();
 
-    string _menuName = "";
-    public string MenuName
+    MenuOptionVm? _selectedMenu;
+    public MenuOptionVm? SelectedMenu
     {
-        get => _menuName;
-        set { if (_menuName == value) return; _menuName = value; OnPropertyChanged(); }
+        get => _selectedMenu;
+        set
+        {
+            if (_selectedMenu == value) return;
+            _selectedMenu = value;
+            OnPropertyChanged();
+
+            if (_isInitializing || _selectedMenu == null)
+                return;
+
+            Preferences.Default.Set("active_menu_id", _selectedMenu.Id);
+            _ = LoadMenuPublicAsync(_selectedMenu.Id);
+        }
     }
 
     string _searchQuery = string.Empty;
@@ -62,6 +76,7 @@ public partial class OrderMenuSelectorPopup : Popup
         try
         {
             IsLoading = true;
+            _isInitializing = true;
             var menus = await _menusApi.GetMenusAsync();
             if (menus == null || menus.Count == 0)
             {
@@ -71,18 +86,45 @@ public partial class OrderMenuSelectorPopup : Popup
             }
 
             var storedId = Preferences.Default.Get("active_menu_id", 0);
-            var menu = menus.FirstOrDefault(m => m.id == storedId)
-                       ?? menus.FirstOrDefault(m => m.isActive)
-                       ?? menus.First();
+            _menuOptions.Clear();
+            MenuOptions.Clear();
+            foreach (var m in menus)
+            {
+                var option = new MenuOptionVm(m.id, m.name ?? $"Menú #{m.id}");
+                _menuOptions.Add(option);
+                MenuOptions.Add(option);
+            }
 
-            MenuName = menu.name ?? "Menú";
-            Preferences.Default.Set("active_menu_id", menu.id);
+            var initial = _menuOptions.FirstOrDefault(m => m.Id == storedId)
+                          ?? _menuOptions.FirstOrDefault(m => menus.FirstOrDefault(x => x.id == m.Id)?.isActive == true)
+                          ?? _menuOptions.FirstOrDefault();
 
-            var menuPublic = await _menusApi.GetMenuPublicAsync(menu.id);
+            SelectedMenu = initial;
+            if (initial != null)
+                await LoadMenuPublicAsync(initial.Id);
+        }
+        catch (Exception ex)
+        {
+            await Application.Current.MainPage.DisplayAlert("Menú", $"No se pudo cargar el menú: {ex.Message}", "OK");
+            Close();
+        }
+        finally
+        {
+            _isInitializing = false;
+            IsLoading = false;
+            OnPropertyChanged(nameof(ShowEmptyState));
+        }
+    }
+
+    async Task LoadMenuPublicAsync(int menuId)
+    {
+        try
+        {
+            IsLoading = true;
+            var menuPublic = await _menusApi.GetMenuPublicAsync(menuId);
             if (menuPublic?.sections == null)
             {
                 await Application.Current.MainPage.DisplayAlert("Menú", "No se pudieron cargar las secciones.", "OK");
-                Close();
                 return;
             }
 
@@ -121,11 +163,6 @@ public partial class OrderMenuSelectorPopup : Popup
             }
 
             ApplyFilter();
-        }
-        catch (Exception ex)
-        {
-            await Application.Current.MainPage.DisplayAlert("Menú", $"No se pudo cargar el menú: {ex.Message}", "OK");
-            Close();
         }
         finally
         {
@@ -219,6 +256,18 @@ public partial class OrderMenuSelectorPopup : Popup
             return (Title ?? string.Empty).ToLowerInvariant().Contains(q)
                    || (Subtitle ?? string.Empty).ToLowerInvariant().Contains(q);
         }
+    }
+
+    public class MenuOptionVm
+    {
+        public MenuOptionVm(int id, string name)
+        {
+            Id = id;
+            Name = name;
+        }
+
+        public int Id { get; }
+        public string Name { get; }
     }
 
     public class SelectionResult

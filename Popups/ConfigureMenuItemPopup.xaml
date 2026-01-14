@@ -9,8 +9,11 @@
           StrokeShape="{RoundRectangle CornerRadius=24}"
           BackgroundColor="{AppThemeBinding Light=White, Dark=#181818}"
           Padding="0">
-    <ScrollView>
-      <VerticalStackLayout Spacing="16" Padding="20" WidthRequest="360">
+    <Grid RowDefinitions="*">
+      <ScrollView Grid.Row="0"
+                  InputTransparent="{Binding IsConfirming}">
+        <VerticalStackLayout Spacing="16" Padding="20" WidthRequest="360"
+                             IsEnabled="{Binding IsConfirming, Converter={StaticResource InverseBoolConverter}}">
       <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
         <Button Text="←"
                 WidthRequest="32"
@@ -439,9 +442,25 @@
                 Text="{Binding ConfirmButtonText}"
                 Command="{Binding ConfirmCommand}"
                 BackgroundColor="#894164"
-                TextColor="White"/>
+                TextColor="White"
+                IsEnabled="{Binding IsConfirming, Converter={StaticResource InverseBoolConverter}}"/>
       </Grid>
       </VerticalStackLayout>
-    </ScrollView>
+      </ScrollView>
+      <Grid Grid.Row="0"
+            IsVisible="{Binding IsConfirming}"
+            BackgroundColor="#80000000"
+            InputTransparent="False"
+            VerticalOptions="FillAndExpand"
+            HorizontalOptions="FillAndExpand"
+            ZIndex="1000">
+        <ActivityIndicator IsRunning="True"
+                           Color="White"
+                           VerticalOptions="Center"
+                           HorizontalOptions="Center"
+                           WidthRequest="48"
+                           HeightRequest="48"/>
+      </Grid>
+    </Grid>
   </Border>
 </toolkit:Popup>

@@ -27,11 +27,18 @@ using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Graphics;
 using Microsoft.Maui.Networking;
 using Microsoft.Maui.Storage;
+using CommunityToolkit.Mvvm.Messaging;
+using CommunityToolkit.Mvvm.Messaging.Messages;
 
 namespace Imdeliceapp.Pages;
 
 public partial class TakeOrderPage : ContentPage
 {
+    public sealed class ToggleActionLoaderMessage : ValueChangedMessage<bool>
+    {
+        public ToggleActionLoaderMessage(bool value) : base(value) { }
+    }
+
     readonly MenusApi _menusApi = new();
     readonly ModifiersApi _modifiersApi = new();
     readonly OrdersApi _ordersApi = new();
@@ -122,6 +129,7 @@ public partial class TakeOrderPage : ContentPage
         MenuOptions.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasMenuOptions));
 
         ConfigureItemCommand = new Command<MenuItemVm>(async item => await ConfigureItemAsync(item!), item => item != null);
+        WeakReferenceMessenger.Default.Register<ToggleActionLoaderMessage>(this, (r, m) => SetActionLoading(m.Value));
 
         _orderHeaderState = OrderHeaderState.CreateDefault();
 
@@ -468,6 +476,13 @@ public partial class TakeOrderPage : ContentPage
         ItemsView.IsEnabled = !value;
     }
 
+    void SetActionLoading(bool value)
+    {
+        ActionOverlay.IsVisible = value;
+        ActionLoader.IsRunning = value;
+        ActionOverlay.InputTransparent = !value;
+    }
+
     async Task ConfigureItemAsync(MenuItemVm item, CartEntry? editingEntry = null)
     {
         if (item == null)
@@ -479,11 +494,22 @@ public partial class TakeOrderPage : ContentPage
         _ = Clipboard.Default.SetTextAsync(debugInfo);
 #endif
 
-        var result = await OpenConfiguratorAsync(item, editingEntry);
-        if (result is null)
-            return;
+        WeakReferenceMessenger.Default.Send(new ToggleActionLoaderMessage(true));
+        ConfigureMenuItemResult? result = null;
+        try
+        {
+            result = await OpenConfiguratorAsync(item, editingEntry);
+            if (result is null)
+                return;
 
-        AddOrUpdateCart(result);
+            // sigue encendido el loader mientras agregamos al carrito
+            AddOrUpdateCart(result);
+            await Task.Delay(250); // deja ver el loader un instante
+        }
+        finally
+        {
+            WeakReferenceMessenger.Default.Send(new ToggleActionLoaderMessage(false));
+        }
     }
 
     async Task<ConfigureMenuItemResult?> OpenConfiguratorAsync(

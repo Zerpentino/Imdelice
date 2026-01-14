@@ -34,12 +34,21 @@
       </Grid>
 
       <VerticalStackLayout Grid.Row="1"
-                           Spacing="6">
+                           Spacing="8">
         <Entry Placeholder="Buscar por nombre"
                Text="{Binding SearchQuery}"/>
-        <Label Text="{Binding MenuName}"
-               FontSize="12"
-               TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"/>
+        <Grid ColumnDefinitions="Auto,*"
+              ColumnSpacing="10">
+          <Label Text="Menú"
+                 VerticalOptions="Center"
+                 FontSize="12"
+                 TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"/>
+          <Picker Grid.Column="1"
+                  Title="Selecciona un menú"
+                  ItemsSource="{Binding MenuOptions}"
+                  ItemDisplayBinding="{Binding Name}"
+                  SelectedItem="{Binding SelectedMenu}"/>
+        </Grid>
       </VerticalStackLayout>
 
       <ScrollView Grid.Row="2">
