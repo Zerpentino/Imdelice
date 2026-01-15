@@ -341,7 +341,9 @@ public partial class PaymentsReportPage : ContentPage, INotifyPropertyChanged
                 OrderId = dto.orderId ?? dto.id,
                 Title = string.Join(" • ", titleParts),
                 Subtitle = subtitleParts.Count == 0 ? string.Empty : string.Join(" • ", subtitleParts),
-                TotalsSummary = $"Subtotal: {PaymentsReportPage.FormatCurrency(dto.subtotalCents)} · Total: {PaymentsReportPage.FormatCurrency(dto.totalCents)}",
+                TotalsSummary = dto.deliveryFeeCents != 0
+                    ? $"Subtotal: {PaymentsReportPage.FormatCurrency(dto.subtotalCents)} · Envío: {PaymentsReportPage.FormatCurrency(dto.deliveryFeeCents)} · Total: {PaymentsReportPage.FormatCurrency(dto.totalCents)}"
+                    : $"Subtotal: {PaymentsReportPage.FormatCurrency(dto.subtotalCents)} · Total: {PaymentsReportPage.FormatCurrency(dto.totalCents)}",
                 StatusDisplay = statusDisplay,
                 StatusColor = GetStatusColor(dto.status),
                 Payments = payments

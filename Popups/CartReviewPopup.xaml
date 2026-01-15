@@ -205,6 +205,16 @@
                     <Entry Text="{Binding ExternalRef}"
                            Placeholder="Número de pedido del proveedor"/>
                   </VerticalStackLayout>
+
+                  <VerticalStackLayout Spacing="6"
+                                       IsVisible="{Binding ShowDeliveryFee}">
+                    <Label Text="Costo de envío"
+                           FontSize="12"
+                           TextColor="{AppThemeBinding Light=#7A7480, Dark=#C6BAC4}"/>
+                    <Entry Text="{Binding DeliveryFeeText}"
+                           Placeholder="Ej. 35.00"
+                           Keyboard="Numeric"/>
+                  </VerticalStackLayout>
                 </VerticalStackLayout>
               </VerticalStackLayout>
             </VerticalStackLayout>

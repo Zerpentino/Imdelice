@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Imdeliceapp.Pages.QuickOrdersPage"
+             Title="Órdenes rápidas"
+             Shell.NavBarIsVisible="True"
+             BackgroundColor="{AppThemeBinding Light=#FAF7F5, Dark=#14110F}">
+    <ContentPage.Resources>
+        <LinearGradientBrush x:Key="QuickHeroLight" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#F6D7B3" Offset="0" />
+            <GradientStop Color="#B66A4B" Offset="1" />
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="QuickHeroDark" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#7B4B2F" Offset="0" />
+            <GradientStop Color="#3B1E17" Offset="1" />
+        </LinearGradientBrush>
+
+        <Style x:Key="QuickPrimaryButton" TargetType="Button">
+            <Setter Property="CornerRadius" Value="16" />
+            <Setter Property="FontAttributes" Value="Bold" />
+            <Setter Property="TextTransform" Value="None" />
+            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#6B2D5C, Dark=#F4D7C1}" />
+            <Setter Property="TextColor" Value="{AppThemeBinding Light=White, Dark=#2A1A14}" />
+            <Setter Property="Padding" Value="16,12" />
+        </Style>
+
+        <Style x:Key="QuickOutlineButton" TargetType="Button">
+            <Setter Property="CornerRadius" Value="14" />
+            <Setter Property="FontAttributes" Value="Bold" />
+            <Setter Property="TextTransform" Value="None" />
+            <Setter Property="BackgroundColor" Value="Transparent" />
+            <Setter Property="BorderWidth" Value="1" />
+            <Setter Property="BorderColor" Value="{AppThemeBinding Light=#E3C8B8, Dark=#3B2A24}" />
+            <Setter Property="TextColor" Value="{AppThemeBinding Light=#3B231B, Dark=#EAD9D1}" />
+            <Setter Property="Padding" Value="14,10" />
+        </Style>
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,*,Auto">
+        <VerticalStackLayout Grid.Row="0" Padding="20,16" Spacing="12">
+            <Border Background="{AppThemeBinding Light={StaticResource QuickHeroLight}, Dark={StaticResource QuickHeroDark}}"
+                    StrokeThickness="0"
+                    StrokeShape="RoundRectangle 18"
+                    Padding="16">
+                <VerticalStackLayout Spacing="6">
+                    <Label Text="Órdenes rápidas"
+                           FontAttributes="Bold"
+                           FontSize="20"
+                           TextColor="#2A1A14" />
+                    <Label Text="Registra pedidos con total fijo (DIDI)."
+                           FontSize="13"
+                           TextColor="#3A241D" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border StrokeThickness="1"
+                    Stroke="{AppThemeBinding Light=#EBD6CC, Dark=#3B2A24}"
+                    BackgroundColor="{AppThemeBinding Light=White, Dark=#1B1513}"
+                    StrokeShape="RoundRectangle 18"
+                    Padding="14">
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                    <VerticalStackLayout>
+                        <Label Text="Total"
+                               FontSize="12"
+                               TextColor="{AppThemeBinding Light=#6F6F6F, Dark=#BFBFBF}"/>
+                        <Entry Placeholder="$0.00"
+                               Keyboard="Numeric"
+                               Text="{Binding TotalText}"
+                               IsEnabled="{Binding IsNotBusy}"/>
+                    </VerticalStackLayout>
+                    <VerticalStackLayout Grid.Column="1">
+                        <Label Text="Servicio"
+                               FontSize="12"
+                               TextColor="{AppThemeBinding Light=#6F6F6F, Dark=#BFBFBF}"/>
+                        <Picker ItemsSource="{Binding ServiceTypes}"
+                                ItemDisplayBinding="{Binding Name}"
+                                SelectedItem="{Binding SelectedServiceType}"
+                                IsEnabled="{Binding IsNotBusy}"/>
+                    </VerticalStackLayout>
+                </Grid>
+            </Border>
+
+            <Button Text="Agregar producto"
+                    Clicked="AddItem_Clicked"
+                    IsEnabled="{Binding IsNotBusy}"
+                    Style="{StaticResource QuickPrimaryButton}"/>
+
+            <ActivityIndicator IsVisible="{Binding IsBusy}"
+                               IsRunning="{Binding IsBusy}"
+                               HorizontalOptions="Center"/>
+        </VerticalStackLayout>
+
+        <CollectionView Grid.Row="1"
+                        ItemsSource="{Binding Items}"
+                        SelectionMode="None"
+                        Margin="20,0">
+            <CollectionView.EmptyView>
+                <Label Text="Agrega productos para registrar la orden rápida."
+                       Margin="20"
+                       HorizontalTextAlignment="Center"
+                       TextColor="{AppThemeBinding Light=#777, Dark=#AAA}"/>
+            </CollectionView.EmptyView>
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Border Margin="0,8"
+                            Padding="12"
+                            StrokeThickness="1"
+                            Stroke="{AppThemeBinding Light=#E8D9D0, Dark=#3B2A24}"
+                            BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1F1A18}"
+                            StrokeShape="{RoundRectangle CornerRadius=16}">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                            <VerticalStackLayout Spacing="6">
+                                <Label Text="{Binding DisplayName}"
+                                       FontAttributes="Bold"
+                                       FontSize="14"
+                                       TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+                                <Label Text="{Binding VariantLabel}"
+                                       FontSize="12"
+                                       TextColor="{AppThemeBinding Light=#6E6E6E, Dark=#B5B5B5}"
+                                       IsVisible="{Binding HasVariant}"/>
+                                <Label Text="{Binding Quantity, StringFormat='Cantidad: {0}'}"
+                                       FontSize="12"
+                                       TextColor="{AppThemeBinding Light=#6E6E6E, Dark=#B5B5B5}"/>
+                            </VerticalStackLayout>
+
+                            <VerticalStackLayout Grid.Column="1"
+                                                 Spacing="8"
+                                                 HorizontalOptions="End"
+                                                 VerticalOptions="Center">
+                                <VerticalStackLayout Spacing="6" HorizontalOptions="End">
+                                    <Button Text="+"
+                                            WidthRequest="34"
+                                            HeightRequest="34"
+                                            CornerRadius="17"
+                                            Padding="0"
+                                            FontSize="16"
+                                            FontAttributes="Bold"
+                                            BackgroundColor="{AppThemeBinding Light=#6B2D5C, Dark=#F4D7C1}"
+                                            TextColor="{AppThemeBinding Light=White, Dark=#2A1A14}"
+                                            Clicked="Increase_Clicked"
+                                            CommandParameter="{Binding .}"
+                                            IsEnabled="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=IsNotBusy}"/>
+                                    <Button Text="-"
+                                            WidthRequest="34"
+                                            HeightRequest="34"
+                                            CornerRadius="17"
+                                            Padding="0"
+                                            FontSize="16"
+                                            FontAttributes="Bold"
+                                            BorderWidth="1"
+                                            BorderColor="{AppThemeBinding Light=#E3C8B8, Dark=#3B2A24}"
+                                            BackgroundColor="{AppThemeBinding Light=#F3E7E0, Dark=#2B201B}"
+                                            TextColor="{AppThemeBinding Light=#3B231B, Dark=#EAD9D1}"
+                                            Clicked="Decrease_Clicked"
+                                            CommandParameter="{Binding .}"
+                                            IsEnabled="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=IsNotBusy}"/>
+                                </VerticalStackLayout>
+
+                                <Button Text="Quitar"
+                                        Style="{StaticResource QuickOutlineButton}"
+                                        HorizontalOptions="End"
+                                        Clicked="RemoveItem_Clicked"
+                                        CommandParameter="{Binding .}"
+                                        IsEnabled="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=IsNotBusy}"/>
+                            </VerticalStackLayout>
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <Button Grid.Row="2"
+                Text="Registrar orden rápida"
+                Margin="20,12"
+                Clicked="Submit_Clicked"
+                IsEnabled="{Binding IsNotBusy}"
+                Style="{StaticResource QuickPrimaryButton}"/>
+    </Grid>
+</ContentPage>

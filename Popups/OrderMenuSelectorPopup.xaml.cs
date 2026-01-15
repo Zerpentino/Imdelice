@@ -142,8 +142,6 @@ public partial class OrderMenuSelectorPopup : Popup
                         var vm = TakeOrderPage.MenuItemVm.From(section, item);
                         if (vm == null || vm.ProductId == null || vm.ProductId <= 0)
                             continue;
-                        if (string.Equals(vm.Kind, "COMBO", StringComparison.OrdinalIgnoreCase))
-                            continue; // combos no se editan aquí
                         items.Add(new ProductVm(vm));
                         if (!_itemsByProduct.TryGetValue(vm.ProductId.Value, out var list))
                         {
@@ -186,15 +184,17 @@ public partial class OrderMenuSelectorPopup : Popup
     {
         if ((sender as Button)?.CommandParameter is not ProductVm vm)
             return;
-        if (!vm.MenuItem.ProductId.HasValue)
+        IReadOnlyList<TakeOrderPage.MenuItemVm> variants;
+        if (vm.MenuItem.ProductId.HasValue)
         {
-            Close(null);
-            return;
+            variants = _itemsByProduct.TryGetValue(vm.MenuItem.ProductId.Value, out var list)
+                ? list
+                : new List<TakeOrderPage.MenuItemVm> { vm.MenuItem };
         }
-
-        var variants = _itemsByProduct.TryGetValue(vm.MenuItem.ProductId.Value, out var list)
-            ? list
-            : new List<TakeOrderPage.MenuItemVm> { vm.MenuItem };
+        else
+        {
+            variants = new List<TakeOrderPage.MenuItemVm> { vm.MenuItem };
+        }
 
         Close(new SelectionResult(vm.MenuItem, variants));
     }

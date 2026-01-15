@@ -131,6 +131,15 @@
         </VerticalStackLayout>
 
         <VerticalStackLayout Spacing="6">
+          <Label Text="Costo de envío"
+                 FontAttributes="Bold"
+                 FontSize="14"/>
+          <Entry x:Name="DeliveryFeeEntry"
+                 Keyboard="Numeric"
+                 Placeholder="Ej. 35.00"/>
+        </VerticalStackLayout>
+
+        <VerticalStackLayout Spacing="6">
           <Label Text="Nota"
                  FontAttributes="Bold"
                  FontSize="14"/>

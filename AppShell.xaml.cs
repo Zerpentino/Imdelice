@@ -54,6 +54,7 @@ public partial class AppShell : Shell
 		Routing.RegisterRoute(nameof(ExpensesPage), typeof(ExpensesPage));
 		Routing.RegisterRoute(nameof(ExpenseEditorPage), typeof(ExpenseEditorPage));
 		Routing.RegisterRoute(nameof(ProfitLossPage), typeof(ProfitLossPage));
+		Routing.RegisterRoute(nameof(QuickOrdersPage), typeof(QuickOrdersPage));
 
 
 

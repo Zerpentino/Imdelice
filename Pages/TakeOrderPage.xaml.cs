@@ -1158,6 +1158,7 @@ public partial class TakeOrderPage : ContentPage
         {
             serviceType = string.IsNullOrWhiteSpace(header.ServiceType) ? DefaultServiceType : header.ServiceType,
             source = string.IsNullOrWhiteSpace(header.Source) ? DefaultSource : header.Source,
+            deliveryFeeCents = header.DeliveryFeeCents,
             status = Normalize(header.Status),
             platformMarkupPct = header.PlatformMarkupPct.HasValue
                 ? (int?)decimal.ToInt32(decimal.Round(header.PlatformMarkupPct.Value, MidpointRounding.AwayFromZero))
@@ -1315,6 +1316,7 @@ public partial class TakeOrderPage : ContentPage
         public string Source { get; set; } = DefaultSource;
         public string Status { get; set; } = "OPEN";
         public decimal? PlatformMarkupPct { get; set; }
+        public int? DeliveryFeeCents { get; set; }
         public int? TableId { get; set; }
         public string? TableName { get; set; }
         public int? Covers { get; set; }
@@ -1333,6 +1335,7 @@ public partial class TakeOrderPage : ContentPage
                 Source = Source,
                 Status = Status,
                 PlatformMarkupPct = PlatformMarkupPct,
+                DeliveryFeeCents = DeliveryFeeCents,
                 TableId = TableId,
                 TableName = TableName,
                 Covers = Covers,

@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
@@ -245,6 +246,71 @@ namespace Imdeliceapp.Pages
         }
     }
 
+    async void DeleteSwipe_Invoked(object sender, EventArgs e)
+    {
+        if ((sender as SwipeItem)?.BindingContext is not InventoryProductVm vm)
+            return;
+
+        if (!Perms.InventoryAdjust)
+        {
+            await DisplayAlert("Acceso restringido", "No puedes eliminar inventario.", "OK");
+            return;
+        }
+
+        var confirm = await DisplayAlert("Eliminar producto", $"¿Eliminar \"{vm.Name}\"?", "Sí, eliminar", "Cancelar");
+        if (!confirm)
+            return;
+
+        if (vm.CurrentQuantity.HasValue && vm.CurrentQuantity.Value > 0)
+        {
+            var confirmWithStock = await DisplayAlert(
+                "Producto con inventario",
+                $"Este producto tiene {vm.QuantityDisplay}. ¿Seguro que deseas eliminarlo?",
+                "Eliminar de todos modos",
+                "Cancelar");
+            if (!confirmWithStock)
+                return;
+        }
+
+        try
+        {
+            var token = await GetTokenAsync();
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                await AuthHelper.VerificarYRedirigirSiExpirado(this);
+                return;
+            }
+
+            var baseUrl = Application.Current?.Resources["urlbase"]?.ToString()?.TrimEnd('/');
+            if (string.IsNullOrWhiteSpace(baseUrl))
+            {
+                await ErrorHandler.MostrarErrorUsuario("No se pudo resolver el servidor.");
+                return;
+            }
+
+            using var http = NewAuthClient(baseUrl, token);
+            var resp = await http.DeleteAsync($"/api/products/{vm.Id}");
+            var body = await resp.Content.ReadAsStringAsync();
+            if (!resp.IsSuccessStatusCode)
+            {
+                if (resp.StatusCode == HttpStatusCode.Unauthorized)
+                {
+                    await AuthHelper.VerificarYRedirigirSiExpirado(this);
+                    return;
+                }
+                await ErrorHandler.MostrarErrorUsuario(string.IsNullOrWhiteSpace(body) ? "Error al eliminar." : body);
+                return;
+            }
+
+            _allProducts.RemoveAll(p => p.Id == vm.Id);
+            ApplyFilter(SearchBar.Text);
+        }
+        catch (Exception ex)
+        {
+            await ErrorHandler.MostrarErrorTecnico(ex, "Inventario – Eliminar");
+        }
+    }
+
     async void MovementsToolbar_Clicked(object sender, EventArgs e)
     {
         await Shell.Current.GoToAsync(nameof(InventoryMovementsPage));
@@ -416,6 +482,8 @@ public class InventoryProductVm : INotifyPropertyChanged
     public bool IsInventoryCategory =>
         (CategorySlug ?? CategoryName ?? string.Empty)
             .Contains("inventario", StringComparison.OrdinalIgnoreCase);
+
+    public decimal? CurrentQuantity => _quantity;
 
     public string QuantityDisplay =>
         _quantity.HasValue

@@ -11,6 +11,7 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using CommunityToolkit.Maui.Views;
+using Imdeliceapp;
 using Imdeliceapp.Helpers;
 using Imdeliceapp.Pages;
 using Imdeliceapp.Models;
@@ -156,6 +157,9 @@ class CartReviewViewModel : INotifyPropertyChanged
         CustomerName = _stateSnapshot.CustomerName ?? string.Empty;
         CustomerPhone = _stateSnapshot.CustomerPhone ?? string.Empty;
         ExternalRef = _stateSnapshot.ExternalRef ?? string.Empty;
+        DeliveryFeeText = _stateSnapshot.DeliveryFeeCents.HasValue
+            ? _stateSnapshot.DeliveryFeeCents.Value.ToCurrency().ToString("0.00", CultureInfo.CurrentCulture)
+            : string.Empty;
         PrepEtaText = _stateSnapshot.PrepEtaMinutes?.ToString(CultureInfo.InvariantCulture) ?? "30";
         _servedByUserId = ResolveServedByUserId(_stateSnapshot.ServedByUserId);
         _stateSnapshot.ServedByUserId = _servedByUserId;
@@ -191,6 +195,7 @@ class CartReviewViewModel : INotifyPropertyChanged
             OnPropertyChanged();
             OnPropertyChanged(nameof(ShowTableSelectors));
             OnPropertyChanged(nameof(ShowCustomerFields));
+            OnPropertyChanged(nameof(ShowDeliveryFee));
             OnPropertyChanged(nameof(IsSourceEnabled));
             if (!IsSourceEnabled)
                 ForceSourcePos();
@@ -369,6 +374,19 @@ class CartReviewViewModel : INotifyPropertyChanged
         }
     }
 
+    string _deliveryFeeText = string.Empty;
+    public string DeliveryFeeText
+    {
+        get => _deliveryFeeText;
+        set
+        {
+            if (_deliveryFeeText == value) return;
+            _deliveryFeeText = value;
+            OnPropertyChanged();
+            RefreshTotals();
+        }
+    }
+
     public ObservableCollection<TableOptionVm> TableOptions { get; } = new();
 
     TableOptionVm? _selectedTable;
@@ -397,6 +415,7 @@ class CartReviewViewModel : INotifyPropertyChanged
 
     public bool ShowTableSelectors => string.Equals(SelectedServiceType?.Value, "DINE_IN", StringComparison.OrdinalIgnoreCase);
     public bool ShowCustomerFields => !string.Equals(SelectedServiceType?.Value, "DINE_IN", StringComparison.OrdinalIgnoreCase);
+    public bool ShowDeliveryFee => string.Equals(SelectedServiceType?.Value, "DELIVERY", StringComparison.OrdinalIgnoreCase);
     public bool IsSourceEnabled => string.Equals(SelectedServiceType?.Value, "DELIVERY", StringComparison.OrdinalIgnoreCase);
 
     decimal _total;
@@ -541,7 +560,9 @@ class CartReviewViewModel : INotifyPropertyChanged
 
     void RefreshTotals()
     {
-        Total = _items.Sum(i => i.LineTotal);
+        var itemsTotal = _items.Sum(i => i.LineTotal);
+        var deliveryFee = ParseCurrencyAmount(DeliveryFeeText) ?? 0m;
+        Total = itemsTotal + deliveryFee;
     }
 
     void ForceSourcePos()
@@ -578,8 +599,31 @@ class CartReviewViewModel : INotifyPropertyChanged
         state.CustomerPhone = Normalize(CustomerPhone);
         state.ExternalRef = Normalize(ExternalRef);
         state.PlatformMarkupPct = ParseMarkupValue();
+        state.DeliveryFeeCents = ParseCurrencyCents(DeliveryFeeText);
 
         return state;
+    }
+
+    static int? ParseCurrencyCents(string? text)
+    {
+        var amount = ParseCurrencyAmount(text);
+        if (!amount.HasValue)
+            return null;
+        return (int)Math.Round(amount.Value * 100m, MidpointRounding.AwayFromZero);
+    }
+
+    static decimal? ParseCurrencyAmount(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return null;
+
+        var normalized = text.Trim();
+        if (decimal.TryParse(normalized, NumberStyles.Currency, CultureInfo.CurrentCulture, out var parsed))
+            return parsed;
+        if (decimal.TryParse(normalized, NumberStyles.Number, CultureInfo.InvariantCulture, out parsed))
+            return parsed;
+
+        return null;
     }
 
     decimal? ParsedMarkup => ParseMarkupValue();

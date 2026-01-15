@@ -26,6 +26,7 @@ public partial class OrderDetailPage : ContentPage
     readonly MenusApi _menusApi = new();
     readonly ModifiersApi _modifiersApi = new();
     readonly Dictionary<int, List<ModifierGroupDTO>> _modifierGroupsCache = new();
+    readonly Dictionary<int, List<TakeOrderPage.MenuItemVm>> _productVariantsCache = new();
     OrderDetailDTO? _currentOrder;
     readonly TimeSpan _prepEtaTickInterval = TimeSpan.FromSeconds(1);
     IDispatcherTimer? _prepEtaTimer;
@@ -61,6 +62,7 @@ public partial class OrderDetailPage : ContentPage
     string _subtotalFormatted = "$0.00";
     string _discountFormatted = "$0.00";
     string _serviceFeeFormatted = "$0.00";
+    string _deliveryFeeFormatted = "$0.00";
     string _taxFormatted = "$0.00";
     string _totalFormatted = "$0.00";
     string _paymentsTotalsFormatted = "$0.00";
@@ -237,6 +239,12 @@ public partial class OrderDetailPage : ContentPage
     {
         get => _serviceFeeFormatted;
         set { _serviceFeeFormatted = value; OnPropertyChanged(); }
+    }
+
+    public string DeliveryFeeFormatted
+    {
+        get => _deliveryFeeFormatted;
+        set { _deliveryFeeFormatted = value; OnPropertyChanged(); }
     }
 
     public bool HasChargesBreakdown
@@ -522,10 +530,12 @@ public partial class OrderDetailPage : ContentPage
         SubtotalFormatted = FormatCurrency(dto.subtotalCents);
         DiscountFormatted = FormatCurrency(dto.discountCents);
         ServiceFeeFormatted = FormatCurrency(dto.serviceFeeCents);
+        DeliveryFeeFormatted = FormatCurrency(dto.deliveryFeeCents);
         TaxFormatted = FormatCurrency(dto.taxCents);
         HasChargesBreakdown =
             dto.discountCents != 0 ||
             dto.serviceFeeCents != 0 ||
+            dto.deliveryFeeCents != 0 ||
             dto.taxCents != 0 ||
             dto.subtotalCents != dto.totalCents;
         TotalFormatted = FormatCurrency(dto.totalCents);
@@ -1010,12 +1020,6 @@ public partial class OrderDetailPage : ContentPage
                 return;
 
             var menuItem = selection.MenuItem;
-            if (string.Equals(menuItem.Kind, "COMBO", StringComparison.OrdinalIgnoreCase))
-            {
-                await ErrorHandler.MostrarErrorUsuario("Los combos solo se pueden armar desde la pantalla de toma de pedidos.");
-                continue;
-            }
-
             if (!menuItem.ProductId.HasValue)
             {
                 await ErrorHandler.MostrarErrorUsuario("El producto seleccionado no es válido.");
@@ -1023,6 +1027,11 @@ public partial class OrderDetailPage : ContentPage
             }
 
             var modifierGroups = await GetModifierGroupsForProductAsync(menuItem.ProductId.Value);
+            IReadOnlyList<ComboChildConfiguration>? comboChildConfigurations = null;
+            if (string.Equals(menuItem.Kind, "COMBO", StringComparison.OrdinalIgnoreCase))
+            {
+                comboChildConfigurations = await BuildComboChildConfigurationsAsync(menuItem);
+            }
             var configureResult = new ConfigureMenuItemResult(
                 menuItem,
                 menuItem,
@@ -1046,7 +1055,7 @@ public partial class OrderDetailPage : ContentPage
                 lockQuantity: false,
                 lockedQuantity: null,
                 confirmButtonText: "Agregar producto",
-                comboChildConfigurations: null,
+                comboChildConfigurations: comboChildConfigurations,
                 showBackButton: true);
 
             var configResult = await this.ShowPopupAsync(popup);
@@ -1280,12 +1289,15 @@ public partial class OrderDetailPage : ContentPage
             return;
 
         var isDineIn = string.Equals(_currentOrder.serviceType, "DINE_IN", StringComparison.OrdinalIgnoreCase);
+        var isDelivery = string.Equals(_currentOrder.serviceType, "DELIVERY", StringComparison.OrdinalIgnoreCase);
         var popup = new OrderMetaEditorPopup(
             _currentOrder.table?.id ?? _currentOrder.tableId,
             _currentOrder.covers,
             _currentOrder.note,
             _currentOrder.prepEtaMinutes,
-            isDineIn);
+            isDineIn,
+            _currentOrder.deliveryFeeCents,
+            isDelivery);
 
         if (await this.ShowPopupAsync(popup) is not UpdateOrderMetaDto dto)
             return;
@@ -1805,6 +1817,409 @@ public partial class OrderDetailPage : ContentPage
         {
             return new List<ModifierGroupDTO>();
         }
+    }
+
+    async Task<List<ComboChildConfiguration>> BuildComboChildConfigurationsAsync(TakeOrderPage.MenuItemVm baseItem)
+    {
+        var configs = new List<ComboChildConfiguration>();
+        if (baseItem?.ComboComponents == null || baseItem.ComboComponents.Count == 0)
+            return configs;
+
+        foreach (var component in baseItem.ComboComponents)
+        {
+            if (component.ProductId <= 0)
+                continue;
+
+            var variants = await ResolveComboChildVariantsAsync(component);
+            IReadOnlyList<TakeOrderPage.MenuItemVm> filteredVariants = variants;
+            if (component.VariantId.HasValue)
+            {
+                var desiredVariantId = component.VariantId.Value;
+                var onlyVariant = variants
+                    .Where(v => v.VariantId == desiredVariantId)
+                    .ToList();
+
+                if (onlyVariant.Count > 0)
+                {
+                    filteredVariants = onlyVariant;
+                }
+                else if (variants.Count > 0)
+                {
+                    filteredVariants = new List<TakeOrderPage.MenuItemVm> { variants[0] };
+                }
+            }
+
+            var modifierGroups = await GetModifierGroupsForProductAsync(component.ProductId);
+
+            Dictionary<int, IReadOnlyList<VariantModifierGroupLinkDTO>>? variantInlineRules = null;
+            foreach (var variant in filteredVariants)
+            {
+                if (!variant.VariantId.HasValue)
+                    continue;
+                var inline = variant.Raw?.@ref?.variant?.modifierGroups;
+                if (inline == null || inline.Count == 0)
+                    continue;
+                variantInlineRules ??= new Dictionary<int, IReadOnlyList<VariantModifierGroupLinkDTO>>();
+                variantInlineRules[variant.VariantId.Value] = inline;
+            }
+
+            IReadOnlyList<VariantModifierGroupLinkDTO>? inlineVariantRules =
+                component.VariantReference?.modifierGroups?.Count > 0
+                    ? component.VariantReference.modifierGroups
+                    : null;
+
+            Func<int, Task<IReadOnlyList<VariantModifierGroupLinkDTO>>>? loader = null;
+            if (inlineVariantRules != null)
+            {
+                loader = _ => Task.FromResult(inlineVariantRules);
+            }
+            else if (variantInlineRules != null || filteredVariants.Any(v => v.VariantId.HasValue))
+            {
+                loader = async variantId =>
+                {
+                    if (variantInlineRules != null && variantInlineRules.TryGetValue(variantId, out var cachedRules))
+                        return cachedRules;
+                    try
+                    {
+                        return await _menusApi.GetVariantModifierGroupsAsync(variantId);
+                    }
+                    catch
+                    {
+                        return Array.Empty<VariantModifierGroupLinkDTO>();
+                    }
+                };
+            }
+
+            var notesMetadata = ParseComboComponentNotes(component.Notes);
+            var allowVariantSelection = notesMetadata.AllowVariantSelection;
+
+            if (!allowVariantSelection && !component.VariantId.HasValue && component.VariantReference == null && filteredVariants.Count > 1)
+            {
+                var preferred = ResolvePreferredVariantForComponent(component, filteredVariants);
+                if (preferred != null)
+                    filteredVariants = new List<TakeOrderPage.MenuItemVm> { preferred };
+                else
+                    filteredVariants = new List<TakeOrderPage.MenuItemVm> { filteredVariants[0] };
+            }
+
+            configs.Add(new ComboChildConfiguration(
+                component,
+                filteredVariants,
+                modifierGroups,
+                loader,
+                null,
+                allowVariantSelection,
+                notesMetadata.DisplayNotes));
+        }
+
+        return configs;
+    }
+
+    async Task<List<TakeOrderPage.MenuItemVm>> ResolveComboChildVariantsAsync(TakeOrderPage.MenuItemVm.ComboComponent component)
+    {
+        if (component.ProductId <= 0)
+            return new List<TakeOrderPage.MenuItemVm>();
+
+        var virtualItems = BuildVirtualMenuItemsFromComponent(component);
+        if (component.VariantReference != null && virtualItems.Count > 0)
+            return virtualItems;
+        var virtualFallback = virtualItems.Count > 0 ? virtualItems : null;
+
+        var fallbackVariants = await FetchProductVariantsAsync(component.ProductId);
+        if (fallbackVariants.Count > 0)
+            return fallbackVariants;
+
+        return virtualFallback ?? new List<TakeOrderPage.MenuItemVm>();
+    }
+
+    async Task<List<TakeOrderPage.MenuItemVm>> FetchProductVariantsAsync(int productId)
+    {
+        if (productId <= 0)
+            return new List<TakeOrderPage.MenuItemVm>();
+
+        if (_productVariantsCache.TryGetValue(productId, out var cached) && cached.Count > 0)
+            return cached;
+
+        try
+        {
+            var product = await _menusApi.GetProductAsync(productId);
+            if (product == null)
+                return new List<TakeOrderPage.MenuItemVm>();
+
+            var section = new MenusApi.MenuPublicSectionDto
+            {
+                id = -product.id,
+                menuId = -1,
+                name = product.name ?? $"Producto #{product.id}",
+                position = 0,
+                isActive = product.isActive,
+                items = new List<MenusApi.MenuPublicItemDto>()
+            };
+
+            var productRef = new MenusApi.MenuPublicProductReference
+            {
+                id = product.id,
+                name = product.name ?? $"Producto #{product.id}",
+                type = product.type,
+                description = null,
+                priceCents = product.priceCents,
+                isActive = product.isActive,
+                isAvailable = product.isAvailable ?? true,
+                imageUrl = product.imageUrl,
+                hasImage = product.hasImage ?? false
+            };
+
+            var list = new List<TakeOrderPage.MenuItemVm>();
+            if (product.variants != null && product.variants.Count > 0)
+            {
+                foreach (var variant in product.variants.Where(v => v?.id > 0 && (v.isActive ?? true)))
+                {
+                    var variantImage = string.IsNullOrWhiteSpace(variant.imageUrl)
+                        ? product.imageUrl
+                        : variant.imageUrl;
+
+                    var variantRef = new MenusApi.MenuPublicVariantReference
+                    {
+                        id = variant.id,
+                        name = variant.name,
+                        priceCents = variant.priceCents,
+                        isActive = variant.isActive ?? true,
+                        isAvailable = variant.isAvailable ?? true,
+                        product = productRef,
+                        imageUrl = variantImage,
+                        hasImage = variant.hasImage ?? product.hasImage ?? false,
+                        modifierGroups = variant.modifierGroups ?? new List<VariantModifierGroupLinkDTO>()
+                    };
+
+                    var item = new MenusApi.MenuPublicItemDto
+                    {
+                        id = variant.id,
+                        sectionId = section.id,
+                        refType = "VARIANT",
+                        refId = variant.id,
+                        displayName = variant.name ?? product.name,
+                        displayPriceCents = variant.priceCents ?? product.priceCents,
+                        position = 0,
+                        isFeatured = false,
+                        isActive = variant.isActive ?? true,
+                        @ref = new MenusApi.MenuPublicReferenceDto
+                        {
+                            kind = "VARIANT",
+                            product = productRef,
+                            variant = variantRef,
+                            components = new List<MenusApi.MenuPublicComboComponent>()
+                        }
+                    };
+
+                    var vm = TakeOrderPage.MenuItemVm.From(section, item);
+                    if (vm != null)
+                        list.Add(vm);
+                }
+            }
+
+            if (list.Count == 0)
+            {
+                var item = new MenusApi.MenuPublicItemDto
+                {
+                    id = product.id,
+                    sectionId = section.id,
+                    refType = "PRODUCT",
+                    refId = product.id,
+                    displayName = product.name ?? $"Producto #{product.id}",
+                    displayPriceCents = product.priceCents,
+                    position = 0,
+                    isFeatured = false,
+                    isActive = product.isActive,
+                    @ref = new MenusApi.MenuPublicReferenceDto
+                    {
+                        kind = "PRODUCT",
+                        product = productRef,
+                        components = new List<MenusApi.MenuPublicComboComponent>()
+                    }
+                };
+
+                var vm = TakeOrderPage.MenuItemVm.From(section, item);
+                if (vm != null)
+                    list.Add(vm);
+            }
+
+            _productVariantsCache[productId] = list;
+            return list;
+        }
+        catch
+        {
+            return new List<TakeOrderPage.MenuItemVm>();
+        }
+    }
+
+    static ComboNotesMetadata ParseComboComponentNotes(string? rawNotes)
+    {
+        if (string.IsNullOrWhiteSpace(rawNotes))
+            return new ComboNotesMetadata(null, false);
+
+        var tokens = new[]
+        {
+            "[allow-variants]", "[allow-variant]", "[allowvariants]", "{allow-variants}", "{allowvariants}",
+            "(allow-variants)", "(allowvariants)", "<allow-variants>", "<allowvariants>", "allow-variants",
+            "allowvariants", "[permitir-variantes]", "permitir-variantes"
+        };
+
+        var normalized = rawNotes;
+        var allow = false;
+        foreach (var token in tokens)
+        {
+            if (normalized.IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                allow = true;
+                normalized = ReplaceIgnoreCase(normalized, token, string.Empty);
+            }
+        }
+
+        normalized = normalized
+            .Replace("[]", string.Empty)
+            .Replace("{}", string.Empty)
+            .Replace("()", string.Empty)
+            .Replace("<>", string.Empty)
+            .Trim('-', '.', ',', ';', ':', ' ')
+            .Trim();
+
+        return new ComboNotesMetadata(
+            string.IsNullOrWhiteSpace(normalized) ? null : normalized,
+            allow);
+    }
+
+    static TakeOrderPage.MenuItemVm? ResolvePreferredVariantForComponent(
+        TakeOrderPage.MenuItemVm.ComboComponent component,
+        IReadOnlyList<TakeOrderPage.MenuItemVm> variants)
+    {
+        if (variants == null || variants.Count == 0)
+            return null;
+
+        var expectedPrice = component.ProductReference?.priceCents;
+        if (expectedPrice.HasValue)
+        {
+            var priceMatch = variants.FirstOrDefault(v => GetVariantPriceCents(v) == expectedPrice.Value);
+            if (priceMatch != null)
+                return priceMatch;
+        }
+
+        var preferredName = component.ProductReference?.name;
+        if (!string.IsNullOrWhiteSpace(preferredName))
+        {
+            var normalizedName = NormalizeInvariant(preferredName);
+            var nameMatch = variants.FirstOrDefault(v =>
+                NormalizeInvariant(v.Raw?.@ref?.variant?.name ?? v.Title) == normalizedName);
+            if (nameMatch != null)
+                return nameMatch;
+        }
+
+        return variants[0];
+    }
+
+    static int? GetVariantPriceCents(TakeOrderPage.MenuItemVm item)
+    {
+        if (item.Raw?.displayPriceCents.HasValue == true)
+            return item.Raw.displayPriceCents.Value;
+        if (item.Raw?.@ref?.variant?.priceCents.HasValue == true)
+            return item.Raw.@ref.variant.priceCents.Value;
+        if (item.Raw?.@ref?.product?.priceCents.HasValue == true)
+            return item.Raw.@ref.product.priceCents.Value;
+        return (int?)Math.Round(item.UnitPrice * 100m, MidpointRounding.AwayFromZero);
+    }
+
+    static string ReplaceIgnoreCase(string source, string target, string replacement)
+    {
+        if (string.IsNullOrEmpty(source) || string.IsNullOrEmpty(target))
+            return source ?? string.Empty;
+        int index;
+        var builder = new StringBuilder();
+        int previousIndex = 0;
+        while ((index = source.IndexOf(target, previousIndex, StringComparison.OrdinalIgnoreCase)) >= 0)
+        {
+            builder.Append(source, previousIndex, index - previousIndex);
+            builder.Append(replacement);
+            previousIndex = index + target.Length;
+        }
+        builder.Append(source, previousIndex, source.Length - previousIndex);
+        return builder.ToString();
+    }
+
+    static string NormalizeInvariant(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? string.Empty
+            : value.Trim().ToLowerInvariant();
+    }
+
+    readonly record struct ComboNotesMetadata(string? DisplayNotes, bool AllowVariantSelection);
+
+    List<TakeOrderPage.MenuItemVm> BuildVirtualMenuItemsFromComponent(TakeOrderPage.MenuItemVm.ComboComponent? component)
+    {
+        var list = new List<TakeOrderPage.MenuItemVm>();
+        if (component == null)
+            return list;
+
+        var productRef = component.ProductReference ?? component.VariantReference?.product;
+        if (productRef == null)
+            return list;
+
+        if (component.VariantReference != null)
+        {
+            list.Add(CreateVirtualMenuItem(productRef, component.VariantReference));
+        }
+        else
+        {
+            list.Add(CreateVirtualMenuItem(productRef, null));
+        }
+
+        return list;
+    }
+
+    static TakeOrderPage.MenuItemVm CreateVirtualMenuItem(
+        MenusApi.MenuPublicProductReference productRef,
+        MenusApi.MenuPublicVariantReference? variantRef)
+    {
+        var priceValue = (variantRef?.priceCents ?? productRef.priceCents)?.ToCurrency();
+        var title = variantRef?.name ?? productRef.name;
+        var subtitle = variantRef?.product?.name ?? productRef.name;
+
+        return new TakeOrderPage.MenuItemVm
+        {
+            Id = -(variantRef?.id ?? productRef.id),
+            SectionId = -1,
+            DisplaySortOrder = 0,
+            Kind = variantRef != null ? "VARIANT" : "PRODUCT",
+            ProductId = productRef.id,
+            VariantId = variantRef?.id,
+            Title = string.IsNullOrWhiteSpace(title) ? productRef.name : title,
+            Subtitle = subtitle,
+            Description = productRef.description,
+            PriceLabel = priceValue.HasValue
+                ? priceValue.Value.ToString("$0.00", CultureInfo.CurrentCulture)
+                : "Precio base",
+            ReferenceLabel = variantRef != null
+                ? $"Variante #{variantRef.id}"
+                : $"Producto #{productRef.id}",
+            UnitPrice = priceValue ?? 0m,
+            Raw = new MenusApi.MenuPublicItemDto
+            {
+                id = variantRef?.id ?? productRef.id,
+                sectionId = -1,
+                refType = variantRef != null ? "VARIANT" : "PRODUCT",
+                refId = variantRef?.id ?? productRef.id,
+                displayName = title,
+                displayPriceCents = variantRef?.priceCents ?? productRef.priceCents,
+                position = 0,
+                isFeatured = false,
+                isActive = productRef.isActive,
+                @ref = new MenusApi.MenuPublicReferenceDto
+                {
+                    product = productRef,
+                    variant = variantRef
+                }
+            },
+            ComboComponents = Array.Empty<TakeOrderPage.MenuItemVm.ComboComponent>()
+        };
     }
 
     async Task RefundCurrentOrderAsync()

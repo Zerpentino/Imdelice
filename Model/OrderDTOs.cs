@@ -25,6 +25,7 @@ public class OrderSummaryDTO
     public int subtotalCents { get; set; }
     public int discountCents { get; set; }
     public int serviceFeeCents { get; set; }
+    public int deliveryFeeCents { get; set; }
     public int taxCents { get; set; }
     public int totalCents { get; set; }
     public int paymentsTotalCents { get; set; }
@@ -135,6 +136,7 @@ public class CreateOrderDTO
 {
     public string serviceType { get; set; } = string.Empty;
     public string source { get; set; } = "POS";
+    public int? deliveryFeeCents { get; set; }
     public string? status { get; set; }
     public decimal? platformMarkupPct { get; set; }
     public int? tableId { get; set; }
@@ -146,6 +148,20 @@ public class CreateOrderDTO
     public int? prepEtaMinutes { get; set; }
     public int? servedByUserId { get; set; }
     public List<CreateOrderItemDTO> items { get; set; } = new();
+}
+
+public class QuickOrderRequestDto
+{
+    public string? serviceType { get; set; }
+    public int totalCents { get; set; }
+    public List<QuickOrderItemDto> items { get; set; } = new();
+}
+
+public class QuickOrderItemDto
+{
+    public int productId { get; set; }
+    public int? variantId { get; set; }
+    public int quantity { get; set; }
 }
 
 public class CreateOrderItemDTO
@@ -194,6 +210,7 @@ public class UpdateOrderMetaDto
     public int? covers { get; set; }
     public string? note { get; set; }
     public int? prepEtaMinutes { get; set; }
+    public int? deliveryFeeCents { get; set; }
 }
 
 public class UpdateOrderStatusDto
@@ -299,6 +316,7 @@ public class PaymentsReportOrderDto
     public OrderTableDTO? table { get; set; }
     public string? note { get; set; }
     public int subtotalCents { get; set; }
+    public int deliveryFeeCents { get; set; }
     public int totalCents { get; set; }
     public List<PaymentsReportOrderPaymentDto> payments { get; set; } = new();
 }
@@ -327,6 +345,7 @@ public class OrderSplitRequestDto
     public bool SendTableId { get; set; }
     public string? note { get; set; }
     public int? covers { get; set; }
+    public int? deliveryFeeCents { get; set; }
 }
 
 public class OrderSplitResponseDto

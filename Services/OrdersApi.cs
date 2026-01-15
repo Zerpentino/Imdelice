@@ -156,6 +156,19 @@ public class OrdersApi
         return env?.data;
     }
 
+    public async Task<OrderDetailDTO?> CreateQuickOrderAsync(QuickOrderRequestDto dto)
+    {
+        using var http = await NewAuthClientAsync();
+        using var content = ToJsonContent(dto);
+        var resp = await http.PostAsync("/api/orders/quick", content);
+        var body = await resp.Content.ReadAsStringAsync();
+        if (!resp.IsSuccessStatusCode)
+            throw new HttpRequestException(body, null, resp.StatusCode);
+
+        var env = JsonSerializer.Deserialize<ApiEnvelope<OrderDetailDTO>>(body, _json);
+        return env?.data;
+    }
+
     public async Task<List<KdsTicketDTO>> GetKdsTicketsAsync(KdsQuery? query = null)
     {
         using var http = await NewAuthClientAsync();
@@ -316,6 +329,8 @@ public class OrdersApi
             payload["note"] = dto.note;
         if (dto.covers.HasValue)
             payload["covers"] = dto.covers.Value;
+        if (dto.deliveryFeeCents.HasValue)
+            payload["deliveryFeeCents"] = dto.deliveryFeeCents.Value;
 
         return payload;
     }

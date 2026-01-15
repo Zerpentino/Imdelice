@@ -106,7 +106,7 @@
                 BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E1E1E}"
                 Padding="14"
                 IsVisible="{Binding HasChargesBreakdown}">
-          <Grid RowDefinitions="Auto,Auto,Auto,Auto">
+          <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto">
             <Grid.ColumnDefinitions>
               <ColumnDefinition Width="*" />
               <ColumnDefinition Width="Auto" />
@@ -135,9 +135,17 @@
                    TextColor="{AppThemeBinding Light=#444, Dark=#DDD}"/>
 
             <Label Grid.Row="3"
-                   Text="Impuestos"
+                   Text="Envío"
                    TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"/>
             <Label Grid.Row="3"
+                   Grid.Column="1"
+                   Text="{Binding DeliveryFeeFormatted}"
+                   TextColor="{AppThemeBinding Light=#444, Dark=#DDD}"/>
+
+            <Label Grid.Row="4"
+                   Text="Impuestos"
+                   TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"/>
+            <Label Grid.Row="4"
                    Grid.Column="1"
                    Text="{Binding TaxFormatted}"
                    TextColor="{AppThemeBinding Light=#444, Dark=#DDD}"/>

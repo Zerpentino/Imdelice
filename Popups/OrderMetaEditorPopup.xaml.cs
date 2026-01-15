@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Linq;
 using CommunityToolkit.Maui.Views;
 using Imdeliceapp.Models;
@@ -13,16 +14,29 @@ public partial class OrderMetaEditorPopup : Popup
     readonly ObservableCollection<TableOptionVm> _tableOptions = new();
     readonly int? _initialTableId;
     readonly bool _allowTableSelection;
+    readonly bool _allowDeliveryFee;
 
-    public OrderMetaEditorPopup(int? tableId, int? covers, string? note, int? prepEtaMinutes, bool allowTableSelection)
+    public OrderMetaEditorPopup(
+        int? tableId,
+        int? covers,
+        string? note,
+        int? prepEtaMinutes,
+        bool allowTableSelection,
+        int? deliveryFeeCents,
+        bool allowDeliveryFee)
     {
         InitializeComponent();
         _initialTableId = tableId;
         _allowTableSelection = allowTableSelection;
+        _allowDeliveryFee = allowDeliveryFee;
 
         TableSection.IsVisible = _allowTableSelection;
         if (_allowTableSelection)
             TablePicker.ItemsSource = _tableOptions;
+
+        DeliveryFeeSection.IsVisible = _allowDeliveryFee;
+        if (deliveryFeeCents.HasValue)
+            DeliveryFeeEntry.Text = (deliveryFeeCents.Value / 100m).ToString("0.00");
 
         if (covers.HasValue)
             CoversEntry.Text = covers.Value.ToString();
@@ -83,12 +97,23 @@ public partial class OrderMetaEditorPopup : Popup
             return;
         }
 
+        int? deliveryFeeCents = null;
+        if (_allowDeliveryFee)
+        {
+            if (!TryParseNullableCurrencyCents(DeliveryFeeEntry.Text, out deliveryFeeCents))
+            {
+                ShowError("El costo de envío debe ser un número válido.");
+                return;
+            }
+        }
+
         var dto = new UpdateOrderMetaDto
         {
             tableId = tableId,
             covers = covers,
             prepEtaMinutes = prepEta,
-            note = string.IsNullOrWhiteSpace(NoteEditor.Text) ? null : NoteEditor.Text.Trim()
+            note = string.IsNullOrWhiteSpace(NoteEditor.Text) ? null : NoteEditor.Text.Trim(),
+            deliveryFeeCents = deliveryFeeCents
         };
 
         Close(dto);
@@ -103,6 +128,22 @@ public partial class OrderMetaEditorPopup : Popup
         if (int.TryParse(text.Trim(), out var parsed))
         {
             value = parsed;
+            return true;
+        }
+
+        return false;
+    }
+
+    static bool TryParseNullableCurrencyCents(string? text, out int? value)
+    {
+        value = null;
+        if (string.IsNullOrWhiteSpace(text))
+            return true;
+
+        if (decimal.TryParse(text.Trim(), NumberStyles.Currency, CultureInfo.CurrentCulture, out var parsed) ||
+            decimal.TryParse(text.Trim(), NumberStyles.Number, CultureInfo.InvariantCulture, out parsed))
+        {
+            value = (int)Math.Round(parsed * 100m, MidpointRounding.AwayFromZero);
             return true;
         }
 

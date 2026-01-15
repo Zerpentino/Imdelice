@@ -75,6 +75,13 @@
         <CollectionView.ItemTemplate>
           <DataTemplate>
             <SwipeView>
+              <SwipeView.LeftItems>
+                <SwipeItems Mode="Reveal">
+                  <SwipeItem Text="Eliminar"
+                             BackgroundColor="#E53935"
+                             Invoked="DeleteSwipe_Invoked"/>
+                </SwipeItems>
+              </SwipeView.LeftItems>
               <SwipeView.RightItems>
                 <SwipeItems Mode="Reveal">
                   <SwipeItem Text="Editar"

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -143,6 +144,12 @@ public partial class OrderSplitPopup : Popup
             return;
         }
 
+        if (!TryParseNullableCurrencyCents(DeliveryFeeEntry.Text, out var deliveryFeeCents))
+        {
+            ShowError("El costo de envío debe ser un número válido.");
+            return;
+        }
+
         var tableOption = TablePicker.SelectedItem as TableOptionVm;
         var serviceOption = ServiceTypePicker.SelectedItem as ServiceTypeOption;
         var note = string.IsNullOrWhiteSpace(NoteEditor.Text) ? null : NoteEditor.Text.Trim();
@@ -154,6 +161,7 @@ public partial class OrderSplitPopup : Popup
             note = note,
             covers = covers,
             tableId = tableOption?.Id,
+            deliveryFeeCents = deliveryFeeCents,
             SendTableId = tableOption != null && tableOption.Override
         };
 
@@ -181,6 +189,22 @@ public partial class OrderSplitPopup : Popup
         if (int.TryParse(text.Trim(), out var parsed))
         {
             value = parsed;
+            return true;
+        }
+
+        return false;
+    }
+
+    static bool TryParseNullableCurrencyCents(string? text, out int? value)
+    {
+        value = null;
+        if (string.IsNullOrWhiteSpace(text))
+            return true;
+
+        if (decimal.TryParse(text.Trim(), NumberStyles.Currency, CultureInfo.CurrentCulture, out var parsed) ||
+            decimal.TryParse(text.Trim(), NumberStyles.Number, CultureInfo.InvariantCulture, out parsed))
+        {
+            value = (int)Math.Round(parsed * 100m, MidpointRounding.AwayFromZero);
             return true;
         }
 

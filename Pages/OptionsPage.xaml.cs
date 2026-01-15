@@ -32,6 +32,8 @@ public partial class OptionsPage : ContentPage
         BtnPaymentsReport.IsEnabled = Perms.ExpensesRead;
         BtnInventory.IsVisible = Perms.InventoryRead;
         BtnInventory.IsEnabled = Perms.InventoryRead;
+        BtnQuickOrders.IsVisible = Perms.OrdersCreate;
+        BtnQuickOrders.IsEnabled = Perms.OrdersCreate;
         BtnExpenses.IsVisible = Perms.ExpensesRead;
         BtnProfitLoss.IsVisible = Perms.OrdersRead && Perms.ExpensesRead;
     }
@@ -129,6 +131,17 @@ public partial class OptionsPage : ContentPage
         }
 
         await Shell.Current.GoToAsync(nameof(ExpensesPage));
+    }
+
+    private async void OpenQuickOrders_Clicked(object sender, EventArgs e)
+    {
+        if (!Perms.OrdersCreate)
+        {
+            await DisplayAlert("Acceso restringido", "No puedes crear órdenes rápidas.", "OK");
+            return;
+        }
+
+        await Shell.Current.GoToAsync(nameof(QuickOrdersPage));
     }
 
 

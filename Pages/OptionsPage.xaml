@@ -156,6 +156,13 @@
                                                   IsVisible="False"
                                                   Margin="0,6"
                                                   WidthRequest="160"/>
+                                          <Button x:Name="BtnQuickOrders"
+                                                  Text="Órdenes rápidas"
+                                                  Clicked="OpenQuickOrders_Clicked"
+                                                  Style="{StaticResource OptionButtonStyle}"
+                                                  IsVisible="False"
+                                                  Margin="0,6"
+                                                  WidthRequest="160"/>
                                           <Button x:Name="BtnExpenses"
                                                   Text="Gastos"
                                                   Clicked="OpenExpenses_Clicked"
